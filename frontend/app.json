@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "QR Smart",
+    "slug": "qr-smart",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "backgroundColor": "#059669"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.qrsmart.scanner",
+      "infoPlist": {
+        "NSCameraUsageDescription": "QR Smart requires camera access to scan and decode QR codes in real-time.",
+        "NSPhotoLibraryUsageDescription": "QR Smart needs photo library access to scan QR codes from your saved photos.",
+        "NSPhotoLibraryAddUsageDescription": "QR Smart needs permission to save generated QR codes to your photo library."
+      }
+    },
+    "android": {
+      "package": "com.qrsmart.scanner",
+      "adaptiveIcon": {
+        "backgroundColor": "#059669",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow QR Smart to access your camera to scan QR codes."
+        }
+      ]
+    ],
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
