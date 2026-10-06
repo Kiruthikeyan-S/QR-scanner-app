@@ -1,0 +1,34 @@
+from typing import List, Union
+from pydantic_settings import BaseSettings
+from pydantic import AnyHttpUrl, field_validator
+import json
+
+class Settings(BaseSettings):
+    PROJECT_NAME: str = "QR Smart API"
+    VERSION: str = "1.0.0"
+    API_V1_STR: str = "/api/v1"
+    
+    # SQLite by default for development, ready for PostgreSQL in production (e.g. postgresql+psycopg2://user:pass@host/db)
+    DATABASE_URL: str = "sqlite:///./qr_smart.db"
+    
+    # CORS Origins
+    CORS_ORIGINS: Union[List[str], str] = ["*"]
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        if isinstance(v, str) and not v.startswith("["):
+            return [i.strip() for i in v.split(",")]
+        elif isinstance(v, str) and v.startswith("["):
+            try:
+                return json.loads(v)
+            except Exception:
+                return ["*"]
+        elif isinstance(v, list):
+            return v
+        return ["*"]
+
+    class Config:
+        case_sensitive = True
+        env_file = ".env"
+
+settings = Settings()
