@@ -19,6 +19,7 @@ import { PrimaryButton } from '../components/PrimaryButton';
 import { useTheme } from '../theme/ThemeContext';
 import { QR_TYPES } from '../constants/config';
 import { typography, borderRadius, spacing } from '../theme/typography';
+import { URLPreviewCard } from '../components/URLPreviewCard';
 import { QRFormatter } from '../utils/qrFormatter';
 import { triggerLightHaptic } from '../utils/feedback';
 
@@ -217,6 +218,19 @@ export const GeneratorFormScreen: React.FC = () => {
             <Text style={[styles.helpText, { color: theme.textMuted }]}>
               Protocol (https://) will be automatically added if omitted.
             </Text>
+
+            {/* Live Interactive URL Preview Card */}
+            <URLPreviewCard
+              url={url}
+              onSelectShortcut={(val) => {
+                if (val.startsWith('http') || val.includes('.')) {
+                  setUrl(val);
+                } else {
+                  setUrl((prev) => `${prev}${val}`);
+                }
+              }}
+              onClear={() => setUrl('')}
+            />
           </View>
         )}
 

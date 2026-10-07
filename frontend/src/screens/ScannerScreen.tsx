@@ -20,6 +20,7 @@ import { typography, spacing, borderRadius } from '../theme/typography';
 import { detectQRType } from '../utils/qrParser';
 import { HistoryStorage } from '../storage/historyStorage';
 import { SettingsStorage } from '../storage/settingsStorage';
+import { NotificationStorage } from '../storage/notificationStorage';
 import { triggerFeedback, triggerLightHaptic } from '../utils/feedback';
 import { ActionHandler } from '../utils/actionHandler';
 
@@ -70,6 +71,14 @@ export const ScannerScreen: React.FC = () => {
     const savedRecord = await HistoryStorage.add({
       type: qrType,
       data: rawData,
+    });
+
+    // Record in-app notification
+    await NotificationStorage.add({
+      title: 'QR Code Scanned',
+      message: `Scanned ${qrType.toUpperCase()} content: ${rawData.substring(0, 50)}${rawData.length > 50 ? '...' : ''}`,
+      type: 'scan',
+      data: { scanId: savedRecord.id, qrType, data: rawData },
     });
 
     // Navigate to Scan Result Screen

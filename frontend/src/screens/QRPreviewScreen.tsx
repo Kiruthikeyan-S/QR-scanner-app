@@ -21,6 +21,7 @@ import { PrimaryButton } from '../components/PrimaryButton';
 import { SecondaryButton } from '../components/SecondaryButton';
 import { Badge } from '../components/Badge';
 import { SavedQRStorage } from '../storage/savedQRStorage';
+import { NotificationStorage } from '../storage/notificationStorage';
 import { ActionHandler } from '../utils/actionHandler';
 import { triggerFeedback, triggerLightHaptic } from '../utils/feedback';
 
@@ -56,10 +57,17 @@ export const QRPreviewScreen: React.FC = () => {
       return;
     }
 
-    await SavedQRStorage.add({
+    const saved = await SavedQRStorage.add({
       name: saveTitle.trim(),
       type,
       data,
+    });
+
+    await NotificationStorage.add({
+      title: 'QR Code Saved',
+      message: `"${saveTitle.trim()}" (${type.toUpperCase()}) was saved to your collection.`,
+      type: 'saved',
+      data: { savedId: saved.id, name: saveTitle.trim(), qrType: type, data },
     });
 
     setSaveModalVisible(false);

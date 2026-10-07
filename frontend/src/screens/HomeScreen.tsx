@@ -22,6 +22,9 @@ import { QR_TYPES } from '../constants/config';
 import { triggerLightHaptic } from '../utils/feedback';
 import { ActionHandler } from '../utils/actionHandler';
 
+import { NotificationModal } from '../components/NotificationModal';
+import { NotificationStorage } from '../storage/notificationStorage';
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const HomeScreen: React.FC = () => {
@@ -31,14 +34,20 @@ export const HomeScreen: React.FC = () => {
 
   const [recentScan, setRecentScan] = useState<ScanRecord | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [notificationModalVisible, setNotificationModalVisible] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   const loadData = async () => {
-    const history = await HistoryStorage.getAll();
+    const [history, unread] = await Promise.all([
+      HistoryStorage.getAll(),
+      NotificationStorage.getUnreadCount(),
+    ]);
     if (history.length > 0) {
       setRecentScan(history[0]);
     } else {
       setRecentScan(null);
     }
+    setUnreadNotifications(unread);
   };
 
   useFocusEffect(
@@ -84,18 +93,42 @@ export const HomeScreen: React.FC = () => {
           </Pressable>
         </View>
 
-        <Pressable
-          onPress={() => {
-            triggerLightHaptic();
-            navigation.navigate('GeneratorSelect');
-          }}
-          style={({ pressed }) => [
-            styles.headerIconBtn,
-            { backgroundColor: theme.surfaceVariant, opacity: pressed ? 0.7 : 1 },
-          ]}
-        >
-          <AppIcon name="add" size={22} color={theme.text} />
-        </Pressable>
+        <View style={styles.headerRight}>
+          {/* Notification Bell */}
+          <Pressable
+            onPress={() => {
+              triggerLightHaptic();
+              setNotificationModalVisible(true);
+            }}
+            style={({ pressed }) => [
+              styles.headerIconBtn,
+              { backgroundColor: theme.surfaceVariant, opacity: pressed ? 0.7 : 1 },
+            ]}
+          >
+            <AppIcon name="notifications-outline" size={20} color={theme.text} />
+            {unreadNotifications > 0 && (
+              <View style={[styles.notifBadge, { backgroundColor: palette.rose[500] }]}>
+                <Text style={styles.notifBadgeText}>
+                  {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                </Text>
+              </View>
+            )}
+          </Pressable>
+
+          {/* New QR Button */}
+          <Pressable
+            onPress={() => {
+              triggerLightHaptic();
+              navigation.navigate('GeneratorSelect');
+            }}
+            style={({ pressed }) => [
+              styles.headerIconBtn,
+              { backgroundColor: theme.surfaceVariant, opacity: pressed ? 0.7 : 1 },
+            ]}
+          >
+            <AppIcon name="add" size={22} color={theme.text} />
+          </Pressable>
+        </View>
       </View>
 
       <ScrollView
@@ -373,6 +406,15 @@ export const HomeScreen: React.FC = () => {
           </View>
         )}
       </ScrollView>
+
+      {/* Notification Center Modal */}
+      <NotificationModal
+        visible={notificationModalVisible}
+        onClose={() => {
+          setNotificationModalVisible(false);
+          loadData();
+        }}
+      />
     </View>
   );
 };
@@ -392,6 +434,11 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   appIcon: {
     width: 32,
@@ -415,6 +462,26 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
+  },
+  notifBadge: {
+    position: 'absolute',
+    top: -3,
+    right: -3,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+  notifBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '700',
+    lineHeight: 10,
   },
   scrollContent: {
     padding: spacing.lg,

@@ -51,7 +51,13 @@ export type IconName =
   | 'cloud-offline-outline'
   | 'refresh-outline'
   | 'close'
-  | 'add';
+  | 'add'
+  | 'bell'
+  | 'bell-outline'
+  | 'notifications'
+  | 'notifications-outline'
+  | 'checkmark-circle'
+  | 'information-circle';
 
 interface AppIconProps {
   name: IconName | string;
@@ -66,7 +72,7 @@ export const AppIcon: React.FC<AppIconProps> = ({
   color = '#059669',
   style,
 }) => {
-  // Direct SVG Fallbacks for core bottom navigation & essential actions to guarantee 100% crisp rendering
+  // Direct SVG Fallbacks for core icons to guarantee 100% crisp vector rendering
   switch (name) {
     case 'home':
       return (
@@ -137,6 +143,26 @@ export const AppIcon: React.FC<AppIconProps> = ({
           <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
             <Circle cx="12" cy="12" r="3" />
             <Path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </Svg>
+        </View>
+      );
+
+    case 'bell':
+    case 'notifications':
+      return (
+        <View style={[{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }, style]}>
+          <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+            <Path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
+          </Svg>
+        </View>
+      );
+    case 'bell-outline':
+    case 'notifications-outline':
+      return (
+        <View style={[{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }, style]}>
+          <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <Path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <Path d="M13.73 21a2 2 0 0 1-3.46 0" />
           </Svg>
         </View>
       );
