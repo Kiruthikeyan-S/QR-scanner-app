@@ -1,12 +1,12 @@
 import React from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
 import { MainTabParamList } from '../types/navigation';
 import { HomeScreen } from '../screens/HomeScreen';
 import { HistoryScreen } from '../screens/HistoryScreen';
 import { SavedQRsScreen } from '../screens/SavedQRsScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { AppIcon, IconName } from '../components/AppIcon';
 import { useTheme } from '../theme/ThemeContext';
 import { palette } from '../theme/colors';
 import { typography, borderRadius } from '../theme/typography';
@@ -34,8 +34,8 @@ export const BottomTabNavigator: React.FC = () => {
           fontSize: typography.fontSize.xs,
           fontWeight: typography.fontWeight.semibold,
         },
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName: keyof typeof Ionicons.glyphMap = 'help-circle-outline';
+        tabBarIcon: ({ focused, color }) => {
+          let iconName: IconName = 'home-outline';
 
           if (route.name === 'HomeTab') {
             iconName = focused ? 'home' : 'home-outline';
@@ -58,7 +58,7 @@ export const BottomTabNavigator: React.FC = () => {
                 },
               ]}
             >
-              <Ionicons name={iconName} size={22} color={color} />
+              <AppIcon name={iconName} size={22} color={color} />
             </View>
           );
         },

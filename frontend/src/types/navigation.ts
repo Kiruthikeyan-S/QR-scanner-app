@@ -28,4 +28,5 @@ export type RootStackParamList = {
     isSaved?: boolean;
     savedId?: string;
   };
+  NetworkChecker: undefined;
 };

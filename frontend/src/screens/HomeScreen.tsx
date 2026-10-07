@@ -7,7 +7,6 @@ import {
   Pressable,
   RefreshControl,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -16,6 +15,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { palette } from '../theme/colors';
 import { typography, borderRadius, spacing } from '../theme/typography';
 import { Badge } from '../components/Badge';
+import { AppIcon } from '../components/AppIcon';
 import { HistoryStorage } from '../storage/historyStorage';
 import { ScanRecord } from '../types/qr';
 import { QR_TYPES } from '../constants/config';
@@ -76,10 +76,12 @@ export const HomeScreen: React.FC = () => {
       >
         <View style={styles.headerLeft}>
           <View style={[styles.appIcon, { backgroundColor: theme.primaryLight }]}>
-            <Ionicons name="qr-code" size={20} color={theme.primary} />
+            <AppIcon name="qr-code" size={20} color={theme.primary} />
           </View>
           <Text style={[styles.appTitle, { color: theme.text }]}>QR Smart</Text>
-          <Badge label="OFFLINE READY" variant="primary" size="sm" style={styles.headerBadge} />
+          <Pressable onPress={() => navigation.navigate('NetworkChecker')}>
+            <Badge label="OFFLINE READY" variant="primary" size="sm" style={styles.headerBadge} />
+          </Pressable>
         </View>
 
         <Pressable
@@ -92,7 +94,7 @@ export const HomeScreen: React.FC = () => {
             { backgroundColor: theme.surfaceVariant, opacity: pressed ? 0.7 : 1 },
           ]}
         >
-          <Ionicons name="add" size={22} color={theme.text} />
+          <AppIcon name="add" size={22} color={theme.text} />
         </Pressable>
       </View>
 
@@ -145,7 +147,7 @@ export const HomeScreen: React.FC = () => {
                 { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.18)' : palette.emerald[50] },
               ]}
             >
-              <Ionicons name="camera" size={28} color={palette.emerald[500]} />
+              <AppIcon name="camera" size={28} color={palette.emerald[500]} />
             </View>
             <Badge label="INSTANT SCAN" variant="primary" size="sm" />
           </View>
@@ -157,15 +159,15 @@ export const HomeScreen: React.FC = () => {
 
           <View style={[styles.pillTagsRow, { borderTopColor: theme.borderLight }]}>
             <View style={styles.pillTag}>
-              <Ionicons name="flash-outline" size={13} color={palette.emerald[600]} />
+              <AppIcon name="flash-outline" size={13} color={palette.emerald[600]} />
               <Text style={[styles.pillTagText, { color: theme.textSecondary }]}>High-Speed</Text>
             </View>
             <View style={styles.pillTag}>
-              <Ionicons name="shield-checkmark-outline" size={13} color={palette.emerald[600]} />
+              <AppIcon name="shield-checkmark-outline" size={13} color={palette.emerald[600]} />
               <Text style={[styles.pillTagText, { color: theme.textSecondary }]}>Safe Preview</Text>
             </View>
             <View style={styles.pillTag}>
-              <Ionicons name="cloud-offline-outline" size={13} color={palette.emerald[600]} />
+              <AppIcon name="cloud-offline-outline" size={13} color={palette.emerald[600]} />
               <Text style={[styles.pillTagText, { color: theme.textSecondary }]}>100% Offline</Text>
             </View>
           </View>
@@ -195,7 +197,7 @@ export const HomeScreen: React.FC = () => {
                 { backgroundColor: isDark ? 'rgba(99, 102, 241, 0.18)' : palette.indigo[50] },
               ]}
             >
-              <Ionicons name="qr-code-outline" size={28} color={palette.indigo[500]} />
+              <AppIcon name="qr-code-outline" size={28} color={palette.indigo[500]} />
             </View>
             <Badge label="CREATE NEW" variant="secondary" size="sm" />
           </View>
@@ -207,19 +209,19 @@ export const HomeScreen: React.FC = () => {
 
           <View style={[styles.pillTagsRow, { borderTopColor: theme.borderLight }]}>
             <View style={styles.pillTag}>
-              <Ionicons name="globe-outline" size={13} color={palette.indigo[500]} />
+              <AppIcon name="globe-outline" size={13} color={palette.indigo[500]} />
               <Text style={[styles.pillTagText, { color: theme.textSecondary }]}>URL</Text>
             </View>
             <View style={styles.pillTag}>
-              <Ionicons name="wifi-outline" size={13} color={palette.indigo[500]} />
+              <AppIcon name="wifi-outline" size={13} color={palette.indigo[500]} />
               <Text style={[styles.pillTagText, { color: theme.textSecondary }]}>Wi-Fi</Text>
             </View>
             <View style={styles.pillTag}>
-              <Ionicons name="person-outline" size={13} color={palette.indigo[500]} />
+              <AppIcon name="person-outline" size={13} color={palette.indigo[500]} />
               <Text style={[styles.pillTagText, { color: theme.textSecondary }]}>vCard</Text>
             </View>
             <View style={styles.pillTag}>
-              <Ionicons name="location-outline" size={13} color={palette.indigo[500]} />
+              <AppIcon name="location-outline" size={13} color={palette.indigo[500]} />
               <Text style={[styles.pillTagText, { color: theme.textSecondary }]}>Maps</Text>
             </View>
           </View>
@@ -255,7 +257,7 @@ export const HomeScreen: React.FC = () => {
             ]}
           >
             <View style={[styles.quickIconBox, { backgroundColor: palette.indigo[50] }]}>
-              <Ionicons name="wifi" size={20} color={palette.indigo[600]} />
+              <AppIcon name="wifi" size={20} color={palette.indigo[600]} />
             </View>
             <Text style={[styles.quickActionLabel, { color: theme.text }]}>Share Wi-Fi</Text>
             <Text style={[styles.quickActionSub, { color: theme.textSecondary }]}>Create code</Text>
@@ -277,17 +279,17 @@ export const HomeScreen: React.FC = () => {
             ]}
           >
             <View style={[styles.quickIconBox, { backgroundColor: palette.emerald[50] }]}>
-              <Ionicons name="globe" size={20} color={palette.emerald[600]} />
+              <AppIcon name="globe" size={20} color={palette.emerald[600]} />
             </View>
             <Text style={[styles.quickActionLabel, { color: theme.text }]}>Web Link</Text>
             <Text style={[styles.quickActionSub, { color: theme.textSecondary }]}>URL code</Text>
           </Pressable>
 
-          {/* Quick Action 3: Contact vCard */}
+          {/* Quick Action 3: Network Checker */}
           <Pressable
             onPress={() => {
               triggerLightHaptic();
-              navigation.navigate('GeneratorForm', { type: 'contact' });
+              navigation.navigate('NetworkChecker');
             }}
             style={({ pressed }) => [
               styles.quickActionCard,
@@ -299,10 +301,10 @@ export const HomeScreen: React.FC = () => {
             ]}
           >
             <View style={[styles.quickIconBox, { backgroundColor: palette.cyan[50] }]}>
-              <Ionicons name="person" size={20} color={palette.cyan[600]} />
+              <AppIcon name="shield-checkmark" size={20} color={palette.cyan[600]} />
             </View>
-            <Text style={[styles.quickActionLabel, { color: theme.text }]}>Contact</Text>
-            <Text style={[styles.quickActionSub, { color: theme.textSecondary }]}>vCard code</Text>
+            <Text style={[styles.quickActionLabel, { color: theme.text }]}>Network Check</Text>
+            <Text style={[styles.quickActionSub, { color: theme.textSecondary }]}>Diagnostics</Text>
           </Pressable>
         </View>
 
@@ -344,8 +346,8 @@ export const HomeScreen: React.FC = () => {
                     },
                   ]}
                 >
-                  <Ionicons
-                    name={recentMeta.iconName as any}
+                  <AppIcon
+                    name={recentMeta.iconName}
                     size={20}
                     color={recentMeta.color}
                   />
@@ -365,7 +367,7 @@ export const HomeScreen: React.FC = () => {
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 style={[styles.recentCopyBtn, { backgroundColor: theme.surfaceVariant }]}
               >
-                <Ionicons name="copy-outline" size={16} color={theme.textSecondary} />
+                <AppIcon name="copy-outline" size={16} color={theme.textSecondary} />
               </Pressable>
             </Pressable>
           </View>

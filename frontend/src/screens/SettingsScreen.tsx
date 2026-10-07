@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../theme/ThemeContext';
 import { palette } from '../theme/colors';
 import { typography, borderRadius, spacing } from '../theme/typography';
@@ -28,6 +29,7 @@ import { triggerFeedback, triggerLightHaptic } from '../utils/feedback';
 
 export const SettingsScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
   const { theme, isDark, themeMode, setThemeMode } = useTheme();
   const [permission, requestPermission] = useCameraPermissions();
 
@@ -230,6 +232,17 @@ export const SettingsScreen: React.FC = () => {
             subtitle={settings.backendUrl || 'http://localhost:8000'}
             type="navigation"
             onPress={() => setApiUrlModalVisible(true)}
+          />
+          <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+
+          <SettingRow
+            icon="wifi-outline"
+            iconColor={theme.primary}
+            iconBgColor={theme.primaryLight}
+            title="Network Checker"
+            subtitle="Test network connection and offline diagnostics"
+            type="navigation"
+            onPress={() => navigation.navigate('NetworkChecker')}
           />
           <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
 
