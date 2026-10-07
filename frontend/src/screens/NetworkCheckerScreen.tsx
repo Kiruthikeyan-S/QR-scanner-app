@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,7 +17,7 @@ import { SecondaryButton } from '../components/SecondaryButton';
 import { Badge } from '../components/Badge';
 import { AppIcon } from '../components/AppIcon';
 import { useNetwork } from '../hooks/useNetwork';
-import { apiFetch } from '../api/client';
+import { apiFetch, getBaseApiUrl } from '../api/client';
 import { triggerLightHaptic, triggerFeedback } from '../utils/feedback';
 
 export const NetworkCheckerScreen: React.FC = () => {
@@ -27,21 +27,31 @@ export const NetworkCheckerScreen: React.FC = () => {
   const network = useNetwork();
 
   const [checkingBackend, setCheckingBackend] = useState(false);
-  const [backendStatus, setBackendStatus] = useState<string | null>(null);
+  const [backendStatus, setBackendStatus] = useState<'online' | 'offline' | 'untested'>('untested');
+  const [backendUrl, setBackendUrl] = useState<string>('http://localhost:8000');
+  const [latencyMs, setLatencyMs] = useState<number | null>(null);
+
+  useEffect(() => {
+    getBaseApiUrl().then(setBackendUrl);
+  }, []);
 
   const handleCheckAgain = async () => {
     triggerLightHaptic();
     await network.refresh();
 
     setCheckingBackend(true);
+    const startTime = Date.now();
     const res = await apiFetch<{ status: string }>('/health');
+    const elapsed = Date.now() - startTime;
     setCheckingBackend(false);
 
     if (res.data?.status === 'ok') {
-      setBackendStatus('Online & Connected');
+      setBackendStatus('online');
+      setLatencyMs(elapsed);
       triggerFeedback();
     } else {
-      setBackendStatus('Backend unreachable (App works 100% offline)');
+      setBackendStatus('offline');
+      setLatencyMs(null);
     }
   };
 
@@ -52,7 +62,7 @@ export const NetworkCheckerScreen: React.FC = () => {
       <View style={{ paddingTop: insets.top }}>
         <ScreenHeader
           title="Network Checker"
-          subtitle="Connection diagnostics"
+          subtitle="Real-time connection diagnostics"
           showBack
           onBack={() => navigation.goBack()}
         />
@@ -117,12 +127,12 @@ export const NetworkCheckerScreen: React.FC = () => {
 
             <Text style={[styles.onlineTitle, { color: theme.text }]}>Network Connected</Text>
             <Text style={[styles.onlineSub, { color: theme.textSecondary }]}>
-              Your device is actively connected to the network.
+              Your device is actively connected to {network.networkType}.
             </Text>
           </View>
         )}
 
-        {/* Diagnostics Card */}
+        {/* Network Diagnostics Card */}
         <View
           style={[
             styles.detailsCard,
@@ -132,18 +142,15 @@ export const NetworkCheckerScreen: React.FC = () => {
             },
           ]}
         >
-          <Text style={[styles.detailsHeading, { color: theme.text }]}>Connection Details</Text>
+          <Text style={[styles.detailsHeading, { color: theme.text }]}>Device Network Details</Text>
 
           <View style={[styles.detailRow, { borderBottomColor: theme.borderLight }]}>
             <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Connection Status</Text>
-            <Text
-              style={[
-                styles.detailValue,
-                { color: isOnline ? theme.primary : theme.danger },
-              ]}
-            >
-              {isOnline ? 'Online' : 'Disconnected'}
-            </Text>
+            <Badge
+              label={isOnline ? 'ONLINE' : 'DISCONNECTED'}
+              variant={isOnline ? 'primary' : 'warning'}
+              size="sm"
+            />
           </View>
 
           <View style={[styles.detailRow, { borderBottomColor: theme.borderLight }]}>
@@ -153,40 +160,94 @@ export const NetworkCheckerScreen: React.FC = () => {
             </Text>
           </View>
 
-          <View style={[styles.detailRow, { borderBottomColor: theme.borderLight }]}>
+          <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
             <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Device IP Address</Text>
-            <Text style={[styles.detailValue, { color: theme.text }]}>
-              {network.ipAddress || 'Not Assigned'}
+            <View style={[styles.ipBox, { backgroundColor: theme.surfaceVariant }]}>
+              <Text style={[styles.ipText, { color: theme.text }]}>
+                {network.ipAddress || '0.0.0.0'}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* FastAPI Backend Diagnostics Card (Properly Styled & Formatted) */}
+        <View
+          style={[
+            styles.detailsCard,
+            {
+              backgroundColor: theme.surface,
+              borderColor: theme.border,
+            },
+          ]}
+        >
+          <View style={styles.backendHeaderRow}>
+            <Text style={[styles.detailsHeading, { color: theme.text, marginBottom: 0 }]}>
+              FastAPI Backend Service
+            </Text>
+            <Badge
+              label={
+                backendStatus === 'online'
+                  ? 'ONLINE'
+                  : backendStatus === 'offline'
+                  ? 'OFFLINE'
+                  : 'UNTESTED'
+              }
+              variant={
+                backendStatus === 'online'
+                  ? 'primary'
+                  : backendStatus === 'offline'
+                  ? 'warning'
+                  : 'neutral'
+              }
+              size="sm"
+            />
+          </View>
+
+          <View style={[styles.backendUrlBox, { backgroundColor: theme.surfaceVariant, borderColor: theme.borderLight }]}>
+            <Text style={[styles.backendUrlLabel, { color: theme.textSecondary }]}>Target Endpoint:</Text>
+            <Text style={[styles.backendUrlText, { color: theme.text }]} numberOfLines={1}>
+              {backendUrl}/health
             </Text>
           </View>
 
-          <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
-            <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>FastAPI Backend</Text>
-            <Text
-              style={[
-                styles.detailValue,
-                {
-                  color: backendStatus?.includes('Online')
-                    ? theme.primary
-                    : theme.textSecondary,
-                },
-              ]}
-            >
-              {checkingBackend ? 'Testing...' : backendStatus || 'Not tested'}
-            </Text>
+          <View style={styles.backendStatusContainer}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View
+                style={[
+                  styles.statusDot,
+                  {
+                    backgroundColor:
+                      backendStatus === 'online'
+                        ? theme.primary
+                        : backendStatus === 'offline'
+                        ? theme.danger
+                        : theme.textMuted,
+                  },
+                ]}
+              />
+              <Text style={[styles.backendStatusText, { color: theme.text }]}>
+                {checkingBackend
+                  ? 'Pinging server...'
+                  : backendStatus === 'online'
+                  ? `Connected (${latencyMs || 0}ms response)`
+                  : backendStatus === 'offline'
+                  ? 'Unreachable (App operates 100% offline)'
+                  : 'Ready for connectivity test'}
+              </Text>
+            </View>
           </View>
         </View>
 
         {/* Action Button */}
         <PrimaryButton
-          title="Refresh Network Diagnostics"
+          title="Refresh Diagnostics"
           icon="refresh-outline"
           loading={network.loading || checkingBackend}
           onPress={handleCheckAgain}
           style={{ marginBottom: spacing.md }}
         />
 
-        {/* Offline Engine Info Card */}
+        {/* Offline Engine Info Banner */}
         <View
           style={[
             styles.infoCard,
@@ -198,10 +259,10 @@ export const NetworkCheckerScreen: React.FC = () => {
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
             <AppIcon name="shield-checkmark" size={18} color={theme.primary} style={{ marginRight: 6 }} />
-            <Text style={[styles.infoCardTitle, { color: theme.text }]}>Offline Engine Active</Text>
+            <Text style={[styles.infoCardTitle, { color: theme.text }]}>100% Offline Engine</Text>
           </View>
           <Text style={[styles.infoCardText, { color: theme.textSecondary }]}>
-            Even if there is no internet network, QR Smart's camera scanner, QR generator, history, and saved codes remain 100% functional on your device.
+            QR Smart operates completely on-device. All QR code camera scanning, vector generation, history, and saved codes work without an internet connection.
           </Text>
         </View>
       </ScrollView>
@@ -281,7 +342,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.xl,
     borderWidth: 1,
     padding: spacing.lg,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   detailsHeading: {
     fontSize: typography.fontSize.base,
@@ -301,6 +362,52 @@ const styles = StyleSheet.create({
   detailValue: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semibold,
+  },
+  ipBox: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: borderRadius.md,
+  },
+  ipText: {
+    fontSize: typography.fontSize.xs,
+    fontFamily: typography.fontFamily.mono,
+    fontWeight: typography.fontWeight.medium,
+  },
+  backendHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  backendUrlBox: {
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    marginBottom: spacing.md,
+  },
+  backendUrlLabel: {
+    fontSize: 10,
+    textTransform: 'uppercase',
+    fontWeight: typography.fontWeight.bold,
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  backendUrlText: {
+    fontSize: typography.fontSize.xs,
+    fontFamily: typography.fontFamily.mono,
+  },
+  backendStatusContainer: {
+    paddingTop: spacing.xs,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: spacing.sm,
+  },
+  backendStatusText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.medium,
   },
   infoCard: {
     borderRadius: borderRadius.xl,

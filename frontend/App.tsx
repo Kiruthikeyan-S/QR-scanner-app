@@ -7,6 +7,7 @@ import { useFonts } from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { RootNavigator } from './src/navigation/RootNavigator';
+import { NetworkGate } from './src/components/NetworkGate';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -83,12 +84,12 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <>
+    <NetworkGate>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <NavigationContainer theme={navigationTheme}>
         <RootNavigator />
       </NavigationContainer>
-    </>
+    </NetworkGate>
   );
 };
 
