@@ -37,4 +37,5 @@ export type RootStackParamList = {
     };
   };
   NetworkChecker: undefined;
+  BarcodeGenerator: undefined;
 };

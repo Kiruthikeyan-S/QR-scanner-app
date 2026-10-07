@@ -8,6 +8,7 @@ import { GeneratorSelectScreen } from '../screens/GeneratorSelectScreen';
 import { GeneratorFormScreen } from '../screens/GeneratorFormScreen';
 import { QRPreviewScreen } from '../screens/QRPreviewScreen';
 import { NetworkCheckerScreen } from '../screens/NetworkCheckerScreen';
+import { BarcodeGeneratorScreen } from '../screens/BarcodeGeneratorScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -34,6 +35,7 @@ export const RootNavigator: React.FC = () => {
       <Stack.Screen name="GeneratorForm" component={GeneratorFormScreen} />
       <Stack.Screen name="QRPreview" component={QRPreviewScreen} />
       <Stack.Screen name="NetworkChecker" component={NetworkCheckerScreen} />
+      <Stack.Screen name="BarcodeGenerator" component={BarcodeGeneratorScreen} />
     </Stack.Navigator>
   );
 };

@@ -241,10 +241,83 @@ export const HomeScreen: React.FC = () => {
             </View>
             <View style={styles.pillTag}>
               <AppIcon name="document-attach-outline" size={13} color={palette.indigo[500]} />
-              <Text style={[styles.pillTagText, { color: theme.textSecondary }]}>File</Text>
+              <Text style={[styles.pillTagText, { color: theme.textSecondary }]}>PDF</Text>
             </View>
           </View>
         </Pressable>
+
+        {/* CREATE TOOLS Section */}
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>CREATE TOOLS</Text>
+        </View>
+
+        <View style={styles.toolsGrid}>
+          {/* Photo QR Shortcut */}
+          <Pressable
+            onPress={() => {
+              triggerLightHaptic();
+              navigation.navigate('GeneratorForm', { type: 'photo' });
+            }}
+            style={({ pressed }) => [
+              styles.toolCard,
+              {
+                backgroundColor: theme.surface,
+                borderColor: theme.border,
+                opacity: pressed ? 0.8 : 1,
+              },
+            ]}
+          >
+            <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.18)' : palette.emerald[50] }]}>
+              <AppIcon name="image" size={22} color={palette.emerald[500]} />
+            </View>
+            <Text style={[styles.toolTitle, { color: theme.text }]}>Photo QR</Text>
+            <Text style={[styles.toolSubtitle, { color: theme.textSecondary }]}>Image to QR</Text>
+          </Pressable>
+
+          {/* PDF QR Shortcut */}
+          <Pressable
+            onPress={() => {
+              triggerLightHaptic();
+              navigation.navigate('GeneratorForm', { type: 'file' });
+            }}
+            style={({ pressed }) => [
+              styles.toolCard,
+              {
+                backgroundColor: theme.surface,
+                borderColor: theme.border,
+                opacity: pressed ? 0.8 : 1,
+              },
+            ]}
+          >
+            <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.18)' : palette.cyan[50] }]}>
+              <AppIcon name="document-text" size={22} color={palette.cyan[500]} />
+            </View>
+            <Text style={[styles.toolTitle, { color: theme.text }]}>PDF QR</Text>
+            <Text style={[styles.toolSubtitle, { color: theme.textSecondary }]}>Document QR</Text>
+          </Pressable>
+
+          {/* Barcode Shortcut */}
+          <Pressable
+            onPress={() => {
+              triggerLightHaptic();
+              navigation.navigate('BarcodeGenerator');
+            }}
+            style={({ pressed }) => [
+              styles.toolCard,
+              {
+                backgroundColor: theme.surface,
+                borderColor: theme.border,
+                opacity: pressed ? 0.8 : 1,
+              },
+            ]}
+          >
+            <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(99, 102, 241, 0.18)' : palette.indigo[50] }]}>
+              <AppIcon name="barcode" size={22} color={palette.indigo[500]} />
+            </View>
+            <Text style={[styles.toolTitle, { color: theme.text }]}>Barcode</Text>
+            <Text style={[styles.toolSubtitle, { color: theme.textSecondary }]}>Create Barcode</Text>
+          </Pressable>
+        </View>
 
         {/* Quick Actions Shortcuts */}
         <View style={styles.sectionHeader}>
@@ -542,6 +615,36 @@ const styles = StyleSheet.create({
   },
   timestampText: {
     fontSize: typography.fontSize.xs,
+  },
+  toolsGrid: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.base,
+  },
+  toolCard: {
+    flex: 1,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    padding: spacing.sm + 2,
+    alignItems: 'center',
+  },
+  toolIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xs,
+  },
+  toolTitle: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+    textAlign: 'center',
+  },
+  toolSubtitle: {
+    fontSize: 10,
+    textAlign: 'center',
+    marginTop: 2,
   },
   quickActionsGrid: {
     flexDirection: 'row',
