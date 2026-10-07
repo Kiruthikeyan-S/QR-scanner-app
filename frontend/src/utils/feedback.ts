@@ -1,5 +1,4 @@
 import * as Haptics from 'expo-haptics';
-import { Audio } from 'expo-av';
 
 export const triggerFeedback = async (options: { vibration?: boolean; sound?: boolean } = { vibration: true, sound: true }) => {
   if (options.vibration) {
