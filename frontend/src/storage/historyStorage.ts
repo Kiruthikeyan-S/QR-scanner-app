@@ -25,8 +25,8 @@ export const HistoryStorage = {
         scanned_at: record.scanned_at || new Date().toISOString(),
       };
 
-      // Add to front of history and deduplicate recent adjacent if identical within 5s
-      const updated = [newRecord, ...history];
+      // Add to front of history, limit to 500 records
+      const updated = [newRecord, ...history].slice(0, 500);
       await AsyncStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(updated));
       return newRecord;
     } catch (e) {

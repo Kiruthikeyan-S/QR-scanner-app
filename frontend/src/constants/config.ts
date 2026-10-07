@@ -93,6 +93,16 @@ export const QR_TYPES: Record<QRType, QRTypeMetadata> = {
     badgeBgDark: 'rgba(245, 158, 11, 0.15)',
     prefixExample: 'geo:37.7749,-122.4194',
   },
+  barcode: {
+    type: 'barcode',
+    label: 'Barcode',
+    description: 'Product or inventory linear barcode',
+    iconName: 'barcode-outline',
+    color: palette.indigo[600],
+    badgeBgLight: palette.indigo[50],
+    badgeBgDark: 'rgba(99, 102, 241, 0.15)',
+    prefixExample: '8901234567890',
+  },
 };
 
 export const APP_INFO = {

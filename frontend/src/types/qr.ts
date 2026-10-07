@@ -6,7 +6,8 @@ export type QRType =
   | 'email'
   | 'sms'
   | 'contact'
-  | 'location';
+  | 'location'
+  | 'barcode';
 
 export interface ScanRecord {
   id: string;
