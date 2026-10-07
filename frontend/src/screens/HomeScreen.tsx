@@ -236,12 +236,12 @@ export const HomeScreen: React.FC = () => {
               <Text style={[styles.pillTagText, { color: theme.textSecondary }]}>Wi-Fi</Text>
             </View>
             <View style={styles.pillTag}>
-              <AppIcon name="person-outline" size={13} color={palette.indigo[500]} />
-              <Text style={[styles.pillTagText, { color: theme.textSecondary }]}>vCard</Text>
+              <AppIcon name="image-outline" size={13} color={palette.indigo[500]} />
+              <Text style={[styles.pillTagText, { color: theme.textSecondary }]}>Photo</Text>
             </View>
             <View style={styles.pillTag}>
-              <AppIcon name="location-outline" size={13} color={palette.indigo[500]} />
-              <Text style={[styles.pillTagText, { color: theme.textSecondary }]}>Maps</Text>
+              <AppIcon name="document-attach-outline" size={13} color={palette.indigo[500]} />
+              <Text style={[styles.pillTagText, { color: theme.textSecondary }]}>File</Text>
             </View>
           </View>
         </Pressable>

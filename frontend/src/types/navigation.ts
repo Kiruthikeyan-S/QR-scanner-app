@@ -1,9 +1,10 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
-import { QRType, ScanRecord, SavedQRRecord } from './qr';
+import { QRType, ScanRecord, SavedQRRecord, QRCustomization } from './qr';
 
 export type MainTabParamList = {
   HomeTab: undefined;
   HistoryTab: undefined;
+  ScanTab: undefined;
   SavedTab: undefined;
   SettingsTab: undefined;
 };
@@ -27,6 +28,13 @@ export type RootStackParamList = {
     title?: string;
     isSaved?: boolean;
     savedId?: string;
+    customization?: QRCustomization;
+    fileMeta?: {
+      filename: string;
+      size_formatted: string;
+      file_type: 'photo' | 'file';
+      content_type?: string;
+    };
   };
   NetworkChecker: undefined;
 };

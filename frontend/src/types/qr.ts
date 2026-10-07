@@ -7,7 +7,30 @@ export type QRType =
   | 'sms'
   | 'contact'
   | 'location'
-  | 'barcode';
+  | 'barcode'
+  | 'photo'
+  | 'file';
+
+export interface QRCustomization {
+  fgColor: string;
+  bgColor: string;
+  centerIcon?: string;
+  customLogoUri?: string;
+  size: number;
+  errorCorrectionLevel: 'L' | 'M' | 'Q' | 'H';
+}
+
+export interface UploadedFileMeta {
+  token_id: string;
+  filename: string;
+  content_type: string;
+  size_bytes: number;
+  size_formatted: string;
+  file_type: 'photo' | 'file';
+  view_url: string;
+  download_url: string;
+  qr_url: string;
+}
 
 export interface ScanRecord {
   id: string;

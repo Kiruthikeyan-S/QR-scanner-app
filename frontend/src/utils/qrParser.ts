@@ -33,6 +33,16 @@ export function detectQRType(rawText: string): QRType {
     return 'email';
   }
 
+  // Photo QR detection
+  if (/\/files\/view\/P-[a-zA-Z0-9]+/i.test(text) || /\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(text)) {
+    return 'photo';
+  }
+
+  // File / PDF QR detection
+  if (/\/files\/view\/F-[a-zA-Z0-9]+/i.test(text) || /\.(pdf|docx?|xlsx?|txt|csv|zip)(\?.*)?$/i.test(text)) {
+    return 'file';
+  }
+
   // URL detection
   if (/^(https?:\/\/|ftp:\/\/|www\.)[^\s/$.?#].[^\s]*$/i.test(text)) {
     return 'url';
@@ -56,6 +66,48 @@ export function parseQRData(rawData: string): ParsedQRDetails {
   const type = detectQRType(raw);
 
   switch (type) {
+    case 'photo': {
+      let photoUrl = raw;
+      if (!/^https?:\/\//i.test(photoUrl)) photoUrl = `https://${photoUrl}`;
+      return {
+        type: 'photo',
+        raw: photoUrl,
+        title: 'Photo QR Image',
+        subtitle: 'Secure Photo Cloud Link',
+        fields: [
+          { label: 'File Type', value: 'Image / Photo' },
+          { label: 'Photo URL', value: photoUrl },
+          { label: 'Access', value: 'Instant Browser Preview & Download' },
+        ],
+        primaryAction: {
+          label: 'Preview Photo',
+          icon: 'image-outline',
+          actionType: 'open_url',
+        },
+      };
+    }
+
+    case 'file': {
+      let fileUrl = raw;
+      if (!/^https?:\/\//i.test(fileUrl)) fileUrl = `https://${fileUrl}`;
+      return {
+        type: 'file',
+        raw: fileUrl,
+        title: 'Document / PDF QR',
+        subtitle: 'Secure Document Cloud Link',
+        fields: [
+          { label: 'File Type', value: 'Document / PDF File' },
+          { label: 'Document URL', value: fileUrl },
+          { label: 'Access', value: 'Download & View Document' },
+        ],
+        primaryAction: {
+          label: 'Open Document',
+          icon: 'document-text-outline',
+          actionType: 'open_url',
+        },
+      };
+    }
+
     case 'url': {
       let normalizedUrl = raw;
       if (!/^https?:\/\//i.test(normalizedUrl) && !/^ftp:\/\//i.test(normalizedUrl)) {

@@ -1,20 +1,25 @@
 import React from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet, Platform, Pressable } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { MainTabParamList } from '../types/navigation';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { MainTabParamList, RootStackParamList } from '../types/navigation';
 import { HomeScreen } from '../screens/HomeScreen';
 import { HistoryScreen } from '../screens/HistoryScreen';
+import { ScannerScreen } from '../screens/ScannerScreen';
 import { SavedQRsScreen } from '../screens/SavedQRsScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { AppIcon, IconName } from '../components/AppIcon';
 import { useTheme } from '../theme/ThemeContext';
 import { palette } from '../theme/colors';
 import { typography, borderRadius } from '../theme/typography';
+import { triggerLightHaptic } from '../utils/feedback';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export const BottomTabNavigator: React.FC = () => {
   const { theme, isDark } = useTheme();
+  const rootNav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   return (
     <Tab.Navigator
@@ -26,7 +31,7 @@ export const BottomTabNavigator: React.FC = () => {
           backgroundColor: theme.navBackground,
           borderTopColor: theme.navBorder,
           borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 88 : 64,
+          height: Platform.OS === 'ios' ? 88 : 68,
           paddingBottom: Platform.OS === 'ios' ? 28 : 10,
           paddingTop: 8,
         },
@@ -75,6 +80,33 @@ export const BottomTabNavigator: React.FC = () => {
         options={{ tabBarLabel: 'History' }}
       />
       <Tab.Screen
+        name="ScanTab"
+        component={ScannerScreen}
+        options={{
+          tabBarLabel: 'SCAN',
+          tabBarLabelStyle: {
+            fontSize: 10,
+            fontWeight: '700',
+            color: theme.primary,
+            marginTop: 4,
+          },
+          tabBarButton: (props) => (
+            <Pressable
+              {...(props as any)}
+              onPress={() => {
+                triggerLightHaptic();
+                rootNav.navigate('Scanner');
+              }}
+              style={styles.centerScanButtonWrapper}
+            >
+              <View style={[styles.centerScanButton, { backgroundColor: theme.primary }]}>
+                <AppIcon name="qr-code" size={26} color="#FFFFFF" />
+              </View>
+            </Pressable>
+          ),
+        }}
+      />
+      <Tab.Screen
         name="SavedTab"
         component={SavedQRsScreen}
         options={{ tabBarLabel: 'Saved' }}
@@ -95,5 +127,25 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  centerScanButtonWrapper: {
+    top: -16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flex: 1,
+  },
+  centerScanButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 6,
+    shadowColor: '#059669',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
   },
 });

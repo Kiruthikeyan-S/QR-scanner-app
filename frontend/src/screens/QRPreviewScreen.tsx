@@ -8,18 +8,20 @@ import {
   Modal,
   TextInput,
 } from 'react-native';
-import QRCode from 'react-native-qrcode-svg';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../types/navigation';
 import { useTheme } from '../theme/ThemeContext';
+import { palette } from '../theme/colors';
 import { QR_TYPES } from '../constants/config';
 import { typography, borderRadius, spacing } from '../theme/typography';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { SecondaryButton } from '../components/SecondaryButton';
 import { Badge } from '../components/Badge';
+import { CustomQRCode } from '../components/CustomQRCode';
 import { SavedQRStorage } from '../storage/savedQRStorage';
 import { NotificationStorage } from '../storage/notificationStorage';
 import { ActionHandler } from '../utils/actionHandler';
@@ -34,7 +36,7 @@ export const QRPreviewScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<PreviewRouteProp>();
 
-  const { type, data, title, isSaved: initialIsSaved, savedId } = route.params;
+  const { type, data, title, isSaved: initialIsSaved, savedId, customization, fileMeta } = route.params;
   const meta = QR_TYPES[type] || QR_TYPES.text;
 
   const [isSaved, setIsSaved] = useState(Boolean(initialIsSaved));
@@ -135,17 +137,14 @@ export const QRPreviewScreen: React.FC = () => {
             <Badge label={meta.label} variant="primary" size="sm" />
           </View>
 
-          {/* High Contrast QR Code with Quiet-Zone */}
+          {/* High Contrast QR Code with Quiet-Zone & Custom Styling */}
           <View style={styles.qrWrapper}>
-            <View style={styles.qrBackground}>
-              <QRCode
-                value={data || 'https://qrsmart.app'}
-                size={220}
-                color="#0F172A"
-                backgroundColor="#FFFFFF"
-                getRef={(ref) => (qrRef.current = ref)}
-              />
-            </View>
+            <CustomQRCode
+              value={data || 'https://qrsmart.app'}
+              size={220}
+              customization={customization}
+              getRef={(ref) => (qrRef.current = ref)}
+            />
           </View>
 
           {/* Title and Raw Data */}
@@ -160,11 +159,32 @@ export const QRPreviewScreen: React.FC = () => {
           </View>
         </View>
 
+        {/* File / Photo Metadata Box if present */}
+        {fileMeta && (
+          <View style={[styles.fileMetaCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <View style={[styles.fileMetaIconBox, { backgroundColor: theme.primaryLight }]}>
+              <Ionicons
+                name={fileMeta.file_type === 'photo' ? 'image' : 'document-text'}
+                size={22}
+                color={theme.primary}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.fileMetaName, { color: theme.text }]} numberOfLines={1}>
+                {fileMeta.filename}
+              </Text>
+              <Text style={[styles.fileMetaSize, { color: theme.textSecondary }]}>
+                {fileMeta.size_formatted} • {fileMeta.file_type.toUpperCase()}
+              </Text>
+            </View>
+          </View>
+        )}
+
         {/* Primary Actions */}
         <PrimaryButton
           title={isSaved ? 'Saved in Collection' : 'Save to My QR Codes'}
           icon={isSaved ? 'checkmark-circle' : 'bookmark'}
-          variant={isSaved ? 'emerald' : 'emerald'}
+          variant="emerald"
           onPress={handleSave}
           style={styles.actionBtn}
         />
@@ -200,7 +220,7 @@ export const QRPreviewScreen: React.FC = () => {
           icon="add-circle-outline"
           variant="ghost"
           onPress={() => navigation.navigate('GeneratorSelect')}
-          style={{ marginTop: spacing.sm }}
+          style={{ marginTop: spacing.xs }}
         />
       </ScrollView>
 
@@ -211,30 +231,27 @@ export const QRPreviewScreen: React.FC = () => {
         animationType="fade"
         onRequestClose={() => setSaveModalVisible(false)}
       >
-        <View style={styles.modalBackdrop}>
+        <View style={styles.modalOverlay}>
           <View style={[styles.modalCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
             <Text style={[styles.modalTitle, { color: theme.text }]}>Save QR Code</Text>
             <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
-              Enter a recognizable name to store this QR code in your Saved tab.
+              Enter a name to easily find this QR code in your saved collection.
             </Text>
 
             <TextInput
               style={[
                 styles.modalInput,
-                {
-                  backgroundColor: theme.inputBackground,
-                  borderColor: theme.inputBorder,
-                  color: theme.text,
-                },
+                { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text },
               ]}
               value={saveTitle}
               onChangeText={setSaveTitle}
               placeholder="e.g. My Website QR"
               placeholderTextColor={theme.textMuted}
               autoFocus
+              selectTextOnFocus
             />
 
-            <View style={styles.modalButtons}>
+            <View style={styles.modalActionRow}>
               <SecondaryButton
                 title="Cancel"
                 variant="ghost"
@@ -266,7 +283,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: spacing.xl,
     alignItems: 'center',
-    marginBottom: spacing.xl,
+    marginBottom: spacing.md,
     elevation: 3,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
@@ -280,34 +297,52 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   qrWrapper: {
-    padding: spacing.base,
+    padding: spacing.sm,
     borderRadius: borderRadius.xl,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    marginBottom: spacing.lg,
-  },
-  qrBackground: {
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: spacing.lg,
   },
   qrTitle: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     textAlign: 'center',
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
   },
   monoBox: {
     width: '100%',
     padding: spacing.md,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    marginTop: spacing.sm,
   },
   monoText: {
     fontFamily: typography.fontFamily.mono,
     fontSize: typography.fontSize.xs,
-    textAlign: 'center',
+    lineHeight: typography.lineHeight.xs,
+  },
+  fileMetaCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    marginBottom: spacing.md,
+  },
+  fileMetaIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  fileMetaName: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+  },
+  fileMetaSize: {
+    fontSize: typography.fontSize.xs,
+    marginTop: 2,
   },
   actionBtn: {
     marginBottom: spacing.md,
@@ -319,19 +354,20 @@ const styles = StyleSheet.create({
   gridBtn: {
     flex: 1,
   },
-  modalBackdrop: {
+  modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.xl,
   },
   modalCard: {
     width: '100%',
+    maxWidth: 400,
     borderRadius: borderRadius['2xl'],
     borderWidth: 1,
     padding: spacing.xl,
-    elevation: 5,
+    elevation: 6,
   },
   modalTitle: {
     fontSize: typography.fontSize.lg,
@@ -339,18 +375,19 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   modalSubtitle: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
+    lineHeight: typography.lineHeight.xs,
     marginBottom: spacing.lg,
   },
   modalInput: {
     height: 48,
-    borderWidth: 1,
     borderRadius: borderRadius.lg,
+    borderWidth: 1,
     paddingHorizontal: spacing.md,
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     marginBottom: spacing.xl,
   },
-  modalButtons: {
+  modalActionRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },

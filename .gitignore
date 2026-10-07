@@ -19,6 +19,8 @@ ENV/
 *.db
 *.sqlite3
 qr_smart.db
+backend/app/uploads/
+uploads/
 
 # Environment variables
 .env

@@ -103,6 +103,26 @@ export const QR_TYPES: Record<QRType, QRTypeMetadata> = {
     badgeBgDark: 'rgba(99, 102, 241, 0.15)',
     prefixExample: '8901234567890',
   },
+  photo: {
+    type: 'photo',
+    label: 'Photo QR',
+    description: 'Upload and share image or photo via secure QR code',
+    iconName: 'image-outline',
+    color: palette.emerald[500],
+    badgeBgLight: palette.emerald[50],
+    badgeBgDark: 'rgba(16, 185, 129, 0.15)',
+    prefixExample: 'https://api.example.com/files/P-8X29K',
+  },
+  file: {
+    type: 'file',
+    label: 'File / PDF QR',
+    description: 'Upload and share PDF, documents, or data files via QR code',
+    iconName: 'document-attach-outline',
+    color: palette.cyan[600],
+    badgeBgLight: palette.cyan[50],
+    badgeBgDark: 'rgba(6, 182, 212, 0.15)',
+    prefixExample: 'https://api.example.com/files/F-a82Mx91P',
+  },
 };
 
 export const APP_INFO = {
