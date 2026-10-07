@@ -15,6 +15,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../types/navigation';
 import { useTheme } from '../theme/ThemeContext';
+import { palette } from '../theme/colors';
 import { typography, borderRadius, spacing } from '../theme/typography';
 import { HistoryStorage } from '../storage/historyStorage';
 import { ScanRecord, QRType } from '../types/qr';
@@ -37,13 +38,17 @@ const FILTER_OPTIONS: { label: string; value: 'all' | QRType }[] = [
 
 export const HistoryScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const navigation = useNavigation<NavigationProp>();
 
   const [history, setHistory] = useState<ScanRecord[]>([]);
   const [filter, setFilter] = useState<'all' | QRType>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+
+  // Selection Mode state
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const loadHistory = async () => {
     const list = await HistoryStorage.getAll();
@@ -53,6 +58,11 @@ export const HistoryScreen: React.FC = () => {
   useFocusEffect(
     useCallback(() => {
       loadHistory();
+      return () => {
+        // Reset selection mode when navigating away
+        setIsSelectionMode(false);
+        setSelectedIds(new Set());
+      };
     }, [])
   );
 
@@ -62,43 +72,77 @@ export const HistoryScreen: React.FC = () => {
     setRefreshing(false);
   };
 
-  const handleDeleteItem = (id: string) => {
-    Alert.alert(
-      'Delete Scan Record',
-      'Are you sure you want to delete this scan from history?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            await HistoryStorage.delete(id);
-            await loadHistory();
-            triggerLightHaptic();
-          },
-        },
-      ]
-    );
+  const handleCardPress = (item: ScanRecord) => {
+    if (isSelectionMode) {
+      triggerLightHaptic();
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(item.id)) {
+          next.delete(item.id);
+        } else {
+          next.add(item.id);
+        }
+        return next;
+      });
+    } else {
+      triggerLightHaptic();
+      navigation.navigate('ScanResult', {
+        data: item.data,
+        type: item.type,
+        scannedAt: item.scanned_at,
+        fromHistoryId: item.id,
+      });
+    }
   };
 
-  const handleClearAll = () => {
-    if (history.length === 0) return;
-    Alert.alert(
-      'Clear All History',
-      'Are you sure you want to delete all scan history records? This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Clear All',
-          style: 'destructive',
-          onPress: async () => {
-            await HistoryStorage.clearAll();
-            await loadHistory();
-            triggerFeedback();
-          },
+  const handleCardLongPress = (id: string) => {
+    triggerLightHaptic();
+    if (!isSelectionMode) {
+      setIsSelectionMode(true);
+      setSelectedIds(new Set([id]));
+    } else {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) {
+          next.delete(id);
+        } else {
+          next.add(id);
+        }
+        return next;
+      });
+    }
+  };
+
+  const handleExitSelectionMode = () => {
+    triggerLightHaptic();
+    setIsSelectionMode(false);
+    setSelectedIds(new Set());
+  };
+
+  const handleDeleteSelected = () => {
+    const count = selectedIds.size;
+    if (count === 0) return;
+
+    const message =
+      count === 1
+        ? 'Are you sure you want to delete 1 selected scan record?'
+        : `Are you sure you want to delete ${count} selected scan records?`;
+
+    Alert.alert('Delete Selected', message, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          const idsToDelete = Array.from(selectedIds);
+          await HistoryStorage.deleteMultiple(idsToDelete);
+          setIsSelectionMode(false);
+          setSelectedIds(new Set());
+          await loadHistory();
+          triggerFeedback();
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const filteredHistory = history.filter((item) => {
@@ -111,7 +155,7 @@ export const HistoryScreen: React.FC = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Header */}
+      {/* Header Bar */}
       <View
         style={[
           styles.header,
@@ -122,24 +166,43 @@ export const HistoryScreen: React.FC = () => {
           },
         ]}
       >
-        <View style={styles.headerLeft}>
-          <Text style={[styles.headerTitle, { color: theme.text }]}>Scan History</Text>
-          <Text style={[styles.headerCount, { color: theme.textSecondary }]}>
-            ({history.length})
-          </Text>
-        </View>
+        {isSelectionMode ? (
+          <View style={styles.selectionHeader}>
+            <View style={styles.selectionLeft}>
+              <Pressable
+                onPress={handleExitSelectionMode}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={({ pressed }) => [styles.closeBtn, { opacity: pressed ? 0.7 : 1 }]}
+              >
+                <Ionicons name="close" size={24} color={theme.text} />
+              </Pressable>
+              <Text style={[styles.selectionTitle, { color: theme.text }]}>
+                {selectedIds.size} Selected
+              </Text>
+            </View>
 
-        {history.length > 0 && (
-          <Pressable
-            onPress={handleClearAll}
-            style={({ pressed }) => [
-              styles.clearBtn,
-              { backgroundColor: 'rgba(239, 68, 68, 0.1)', opacity: pressed ? 0.7 : 1 },
-            ]}
-          >
-            <Ionicons name="trash-outline" size={16} color={theme.danger} style={{ marginRight: 4 }} />
-            <Text style={[styles.clearBtnText, { color: theme.danger }]}>Clear All</Text>
-          </Pressable>
+            {selectedIds.size > 0 && (
+              <Pressable
+                onPress={handleDeleteSelected}
+                style={({ pressed }) => [
+                  styles.deleteBtn,
+                  {
+                    backgroundColor: isDark
+                      ? 'rgba(244, 63, 94, 0.18)'
+                      : palette.rose[50],
+                    opacity: pressed ? 0.7 : 1,
+                  },
+                ]}
+              >
+                <Ionicons name="trash-outline" size={16} color={palette.rose[500]} style={{ marginRight: 6 }} />
+                <Text style={[styles.deleteBtnText, { color: palette.rose[500] }]}>Delete</Text>
+              </Pressable>
+            )}
+          </View>
+        ) : (
+          <View style={styles.normalHeader}>
+            <Text style={[styles.headerTitle, { color: theme.text }]}>Scan History</Text>
+          </View>
         )}
       </View>
 
@@ -240,15 +303,10 @@ export const HistoryScreen: React.FC = () => {
         renderItem={({ item }) => (
           <HistoryCard
             item={item}
-            onPress={() =>
-              navigation.navigate('ScanResult', {
-                data: item.data,
-                type: item.type,
-                scannedAt: item.scanned_at,
-                fromHistoryId: item.id,
-              })
-            }
-            onDelete={() => handleDeleteItem(item.id)}
+            isSelectionMode={isSelectionMode}
+            isSelected={selectedIds.has(item.id)}
+            onPress={() => handleCardPress(item)}
+            onLongPress={() => handleCardLongPress(item.id)}
           />
         )}
       />
@@ -261,35 +319,49 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.md,
     borderBottomWidth: 1,
   },
-  headerLeft: {
+  normalHeader: {
     flexDirection: 'row',
-    alignItems: 'baseline',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    minHeight: 36,
   },
   headerTitle: {
     fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
   },
-  headerCount: {
-    fontSize: typography.fontSize.sm,
-    marginLeft: spacing.xs,
+  selectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 36,
   },
-  clearBtn: {
+  selectionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  closeBtn: {
+    marginRight: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectionTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+  },
+  deleteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.xs + 2,
     borderRadius: borderRadius.md,
   },
-  clearBtnText: {
+  deleteBtnText: {
     fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.semibold,
+    fontWeight: typography.fontWeight.bold,
   },
   controlsSection: {
     paddingVertical: spacing.sm,
@@ -324,6 +396,7 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.xs,
   },
   listContent: {
-    padding: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
   },
 });

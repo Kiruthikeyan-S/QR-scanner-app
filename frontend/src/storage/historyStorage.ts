@@ -52,6 +52,19 @@ export const HistoryStorage = {
     }
   },
 
+  async deleteMultiple(ids: string[]): Promise<boolean> {
+    try {
+      const idSet = new Set(ids);
+      const history = await this.getAll();
+      const updated = history.filter((item) => !idSet.has(item.id));
+      await AsyncStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(updated));
+      return true;
+    } catch (e) {
+      console.warn('Failed to delete multiple items from history', e);
+      return false;
+    }
+  },
+
   async clearAll(): Promise<boolean> {
     try {
       await AsyncStorage.removeItem(STORAGE_KEYS.HISTORY);
