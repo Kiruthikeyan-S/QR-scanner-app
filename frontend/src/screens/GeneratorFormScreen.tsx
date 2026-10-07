@@ -104,6 +104,15 @@ export const GeneratorFormScreen: React.FC = () => {
   const handlePickPhoto = async () => {
     try {
       triggerLightHaptic();
+      const permResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permResult.granted) {
+        Alert.alert(
+          'Permission Required',
+          'Please allow photo gallery access in your device settings to select images.'
+        );
+        return;
+      }
+
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         allowsEditing: false,

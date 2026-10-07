@@ -9,6 +9,7 @@ import {
   TextInput,
   Linking,
   Platform,
+  Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCameraPermissions } from 'expo-camera';
@@ -26,6 +27,8 @@ import { UserSettings, defaultSettings } from '../types/settings';
 import { APP_INFO } from '../constants/config';
 import { triggerFeedback, triggerLightHaptic } from '../utils/feedback';
 
+import { getBaseApiUrl, getAutoDetectedHost } from '../api/client';
+
 export const SettingsScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
@@ -33,15 +36,18 @@ export const SettingsScreen: React.FC = () => {
   const [permission, requestPermission] = useCameraPermissions();
 
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
+  const [activeBackendUrl, setActiveBackendUrl] = useState<string>('http://localhost:8000');
   const [apiUrlModalVisible, setApiUrlModalVisible] = useState(false);
   const [tempApiUrl, setTempApiUrl] = useState('');
   const [aboutModalVisible, setAboutModalVisible] = useState(false);
   const [privacyModalVisible, setPrivacyModalVisible] = useState(false);
 
   useEffect(() => {
-    SettingsStorage.get().then((loaded) => {
+    SettingsStorage.get().then(async (loaded) => {
       setSettings(loaded);
-      setTempApiUrl(loaded.backendUrl || 'http://localhost:8000');
+      const activeUrl = await getBaseApiUrl();
+      setActiveBackendUrl(activeUrl);
+      setTempApiUrl(loaded.backendUrl || activeUrl);
     });
   }, []);
 
@@ -80,9 +86,10 @@ export const SettingsScreen: React.FC = () => {
   const handleSaveApiUrl = async () => {
     let clean = tempApiUrl.trim();
     if (!clean) {
-      clean = 'http://localhost:8000';
+      clean = getAutoDetectedHost();
     }
     await updateSetting('backendUrl', clean);
+    setActiveBackendUrl(clean);
     setApiUrlModalVisible(false);
     triggerFeedback();
     Alert.alert('Backend URL Saved', `FastAPI backend URL set to:\n${clean}`);
@@ -225,7 +232,7 @@ export const SettingsScreen: React.FC = () => {
             iconColor={palette.cyan[600]}
             iconBgColor={palette.cyan[50]}
             title="FastAPI Backend URL"
-            subtitle={settings.backendUrl || 'http://localhost:8000'}
+            subtitle={activeBackendUrl}
             type="navigation"
             onPress={() => setApiUrlModalVisible(true)}
           />
@@ -314,6 +321,18 @@ export const SettingsScreen: React.FC = () => {
               autoCapitalize="none"
               autoCorrect={false}
             />
+
+            <Pressable
+              onPress={() => {
+                triggerLightHaptic();
+                setTempApiUrl(getAutoDetectedHost());
+              }}
+              style={{ marginVertical: spacing.xs, alignSelf: 'flex-start' }}
+            >
+              <Text style={{ fontSize: typography.fontSize.xs, color: theme.primary, fontWeight: '600' }}>
+                Auto-fill detected IP ({getAutoDetectedHost()})
+              </Text>
+            </Pressable>
 
             <Text style={[styles.ipHint, { color: theme.textMuted }]}>
               Tip: When testing on a physical mobile device, use your computer's local Wi-Fi IP address instead of localhost.
