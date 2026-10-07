@@ -18,7 +18,6 @@ import { useTheme } from '../theme/ThemeContext';
 import { palette } from '../theme/colors';
 import { typography, borderRadius, spacing } from '../theme/typography';
 import { SettingRow } from '../components/SettingRow';
-import { Badge } from '../components/Badge';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { SecondaryButton } from '../components/SecondaryButton';
 import { SettingsStorage } from '../storage/settingsStorage';
@@ -146,10 +145,7 @@ export const SettingsScreen: React.FC = () => {
               <Ionicons name="shield-checkmark" size={24} color={theme.primary} />
             </View>
             <View style={{ flex: 1 }}>
-              <View style={styles.bannerTitleRow}>
-                <Text style={[styles.bannerTitle, { color: theme.text }]}>QR Smart Pro</Text>
-                <Badge label="OFFLINE ENGINE" variant="primary" size="sm" />
-              </View>
+              <Text style={[styles.bannerTitle, { color: theme.text }]}>QR Smart</Text>
               <Text style={[styles.bannerSubtitle, { color: theme.textSecondary }]}>
                 Optical Clarity Design Language • Safe & Local
               </Text>
@@ -434,15 +430,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: spacing.md,
   },
-  bannerTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 2,
-  },
   bannerTitle: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.bold,
+    marginBottom: 2,
   },
   bannerSubtitle: {
     fontSize: typography.fontSize.xs,

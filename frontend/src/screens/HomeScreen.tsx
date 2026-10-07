@@ -14,7 +14,6 @@ import { RootStackParamList } from '../types/navigation';
 import { useTheme } from '../theme/ThemeContext';
 import { palette } from '../theme/colors';
 import { typography, borderRadius, spacing } from '../theme/typography';
-import { Badge } from '../components/Badge';
 import { AppIcon } from '../components/AppIcon';
 import { HistoryStorage } from '../storage/historyStorage';
 import { ScanRecord } from '../types/qr';
@@ -88,9 +87,6 @@ export const HomeScreen: React.FC = () => {
             <AppIcon name="qr-code" size={20} color={theme.primary} />
           </View>
           <Text style={[styles.appTitle, { color: theme.text }]}>QR Smart</Text>
-          <Pressable onPress={() => navigation.navigate('NetworkChecker')}>
-            <Badge label="OFFLINE READY" variant="primary" size="sm" style={styles.headerBadge} />
-          </Pressable>
         </View>
 
         <View style={styles.headerRight}>
@@ -173,16 +169,13 @@ export const HomeScreen: React.FC = () => {
             },
           ]}
         >
-          <View style={styles.heroTopRow}>
-            <View
-              style={[
-                styles.heroIconCircle,
-                { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.18)' : palette.emerald[50] },
-              ]}
-            >
-              <AppIcon name="camera" size={28} color={palette.emerald[500]} />
-            </View>
-            <Badge label="INSTANT SCAN" variant="primary" size="sm" />
+          <View
+            style={[
+              styles.heroIconCircle,
+              { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.18)' : palette.emerald[50] },
+            ]}
+          >
+            <AppIcon name="camera" size={28} color={palette.emerald[500]} />
           </View>
 
           <Text style={[styles.heroTitle, { color: theme.text }]}>Scan QR Code</Text>
@@ -198,10 +191,6 @@ export const HomeScreen: React.FC = () => {
             <View style={styles.pillTag}>
               <AppIcon name="shield-checkmark-outline" size={13} color={palette.emerald[600]} />
               <Text style={[styles.pillTagText, { color: theme.textSecondary }]}>Safe Preview</Text>
-            </View>
-            <View style={styles.pillTag}>
-              <AppIcon name="cloud-offline-outline" size={13} color={palette.emerald[600]} />
-              <Text style={[styles.pillTagText, { color: theme.textSecondary }]}>100% Offline</Text>
             </View>
           </View>
         </Pressable>
@@ -223,16 +212,13 @@ export const HomeScreen: React.FC = () => {
             },
           ]}
         >
-          <View style={styles.heroTopRow}>
-            <View
-              style={[
-                styles.heroIconCircle,
-                { backgroundColor: isDark ? 'rgba(99, 102, 241, 0.18)' : palette.indigo[50] },
-              ]}
-            >
-              <AppIcon name="qr-code-outline" size={28} color={palette.indigo[500]} />
-            </View>
-            <Badge label="CREATE NEW" variant="secondary" size="sm" />
+          <View
+            style={[
+              styles.heroIconCircle,
+              { backgroundColor: isDark ? 'rgba(99, 102, 241, 0.18)' : palette.indigo[50] },
+            ]}
+          >
+            <AppIcon name="qr-code-outline" size={28} color={palette.indigo[500]} />
           </View>
 
           <Text style={[styles.heroTitle, { color: theme.text }]}>Generate QR Code</Text>
@@ -451,10 +437,6 @@ const styles = StyleSheet.create({
   appTitle: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
-    marginRight: spacing.sm,
-  },
-  headerBadge: {
-    marginLeft: spacing.xs,
   },
   headerIconBtn: {
     width: 36,
@@ -508,18 +490,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 10,
   },
-  heroTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md,
-  },
   heroIconCircle: {
     width: 52,
     height: 52,
     borderRadius: borderRadius.xl,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: spacing.md,
   },
   heroTitle: {
     fontSize: typography.fontSize.xl,

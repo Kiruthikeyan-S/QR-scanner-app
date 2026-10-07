@@ -130,10 +130,9 @@ export const QRPreviewScreen: React.FC = () => {
             },
           ]}
         >
-          {/* Type Badge & Status */}
+          {/* Type Badge */}
           <View style={styles.cardHeader}>
             <Badge label={meta.label} variant="primary" size="sm" />
-            <Text style={[styles.offlineText, { color: theme.textMuted }]}>Offline Ready</Text>
           </View>
 
           {/* High Contrast QR Code with Quiet-Zone */}
@@ -277,12 +276,8 @@ const styles = StyleSheet.create({
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     marginBottom: spacing.lg,
-  },
-  offlineText: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.medium,
   },
   qrWrapper: {
     padding: spacing.base,

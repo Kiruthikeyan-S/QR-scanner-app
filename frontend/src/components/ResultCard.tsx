@@ -5,7 +5,6 @@ import { ParsedQRDetails } from '../types/qr';
 import { useTheme } from '../theme/ThemeContext';
 import { QR_TYPES } from '../constants/config';
 import { typography, borderRadius, spacing } from '../theme/typography';
-import { Badge } from './Badge';
 import { ActionHandler } from '../utils/actionHandler';
 import { triggerLightHaptic } from '../utils/feedback';
 
@@ -82,8 +81,6 @@ export const ResultCard: React.FC<ResultCardProps> = ({ details, scannedAt, styl
             <Text style={[styles.timestamp, { color: theme.textSecondary }]}>{formattedDate}</Text>
           </View>
         </View>
-
-        <Badge label="VERIFIED" variant="primary" size="sm" />
       </View>
 
       {/* Main Content Box with Mono Typography */}
