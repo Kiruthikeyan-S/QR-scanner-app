@@ -147,9 +147,8 @@ export const QR_TYPES: Record<QRType, QRTypeMetadata> = {
 
 export const APP_INFO = {
   name: 'QR Smart',
-  tagline: 'Scanner & Generator',
+  tagline: 'Fast & Secure QR Toolkit',
   version: '1.0.0',
   build: '100',
-  designSystem: 'Optical Clarity',
-  copyright: '© 2026 QR Smart Team',
+  copyright: '© 2026 QR Smart',
 };

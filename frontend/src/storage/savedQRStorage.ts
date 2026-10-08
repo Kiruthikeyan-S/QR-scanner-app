@@ -93,4 +93,12 @@ export const SavedQRStorage = {
       return false;
     }
   },
+
+  async clearAll(): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(STORAGE_KEYS.SAVED_QRS);
+    } catch (e) {
+      console.warn('Failed to clear saved QRs', e);
+    }
+  },
 };

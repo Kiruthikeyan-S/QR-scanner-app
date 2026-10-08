@@ -23,6 +23,7 @@ import { PrimaryButton } from '../components/PrimaryButton';
 import { SecondaryButton } from '../components/SecondaryButton';
 import { SettingsStorage } from '../storage/settingsStorage';
 import { HistoryStorage } from '../storage/historyStorage';
+import { SavedQRStorage } from '../storage/savedQRStorage';
 import { UserSettings, defaultSettings } from '../types/settings';
 import { APP_INFO } from '../constants/config';
 import { triggerFeedback, triggerLightHaptic } from '../utils/feedback';
@@ -77,6 +78,25 @@ export const SettingsScreen: React.FC = () => {
             await HistoryStorage.clearAll();
             triggerFeedback();
             Alert.alert('History Cleared', 'All scan history records have been removed.');
+          },
+        },
+      ]
+    );
+  };
+
+  const handleClearAllSaved = () => {
+    Alert.alert(
+      'Clear Saved QRs',
+      'Are you sure you want to remove all saved QR codes from your collection?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear All',
+          style: 'destructive',
+          onPress: async () => {
+            await SavedQRStorage.clearAll();
+            triggerFeedback();
+            Alert.alert('Saved QRs Cleared', 'All saved items have been removed.');
           },
         },
       ]
@@ -154,7 +174,7 @@ export const SettingsScreen: React.FC = () => {
             <View style={{ flex: 1 }}>
               <Text style={[styles.bannerTitle, { color: theme.text }]}>QR Smart</Text>
               <Text style={[styles.bannerSubtitle, { color: theme.textSecondary }]}>
-                Optical Clarity Design Language • Safe & Local
+                Fast & Secure QR Toolkit • Privacy-First
               </Text>
             </View>
           </View>
@@ -168,7 +188,7 @@ export const SettingsScreen: React.FC = () => {
           <SettingRow
             icon="pulse-outline"
             title="Vibration Feedback"
-            subtitle="Vibrate device when QR is decoded"
+            subtitle="Vibrate on successful scan"
             type="toggle"
             value={settings.vibration}
             onValueChange={(val) => updateSetting('vibration', val)}
@@ -178,7 +198,7 @@ export const SettingsScreen: React.FC = () => {
           <SettingRow
             icon="volume-high-outline"
             title="Sound Feedback"
-            subtitle="Play sound tone on scan success"
+            subtitle="Play tone on successful scan"
             type="toggle"
             value={settings.sound}
             onValueChange={(val) => updateSetting('sound', val)}
@@ -188,7 +208,7 @@ export const SettingsScreen: React.FC = () => {
           <SettingRow
             icon="clipboard-outline"
             title="Auto-Copy Scanned Data"
-            subtitle="Copy decoded text to clipboard immediately"
+            subtitle="Copy decoded text to clipboard automatically"
             type="toggle"
             value={settings.autoCopy}
             onValueChange={(val) => updateSetting('autoCopy', val)}
@@ -205,7 +225,7 @@ export const SettingsScreen: React.FC = () => {
             iconColor={isDark ? palette.indigo[400] : palette.amber[500]}
             iconBgColor={isDark ? 'rgba(99, 102, 241, 0.15)' : palette.amber[50]}
             title="Dark Mode"
-            subtitle="Toggle Optical Clarity high-contrast dark theme"
+            subtitle="High-contrast dark appearance"
             type="toggle"
             value={isDark}
             onValueChange={handleToggleDarkMode}
@@ -215,7 +235,7 @@ export const SettingsScreen: React.FC = () => {
           <SettingRow
             icon="camera-outline"
             title="Camera Permission"
-            subtitle={permission?.granted ? 'Access Granted' : 'Requires permission to scan'}
+            subtitle={permission?.granted ? 'Ready for instant scanning' : 'Requires permission to scan'}
             type="badge"
             badgeText={permission?.granted ? 'GRANTED' : 'DENIED'}
             onPress={handleCameraPermissionPress}
@@ -224,17 +244,30 @@ export const SettingsScreen: React.FC = () => {
 
         {/* Section 3: DATA & STORAGE */}
         <Text style={[styles.sectionHeading, { color: theme.textSecondary }]}>
-          DATA & BACKEND
+          DATA & STORAGE
         </Text>
         <View style={[styles.cardGroup, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <SettingRow
-            icon="server-outline"
-            iconColor={palette.cyan[600]}
-            iconBgColor={palette.cyan[50]}
-            title="FastAPI Backend URL"
-            subtitle={activeBackendUrl}
-            type="navigation"
-            onPress={() => setApiUrlModalVisible(true)}
+            icon="trash-outline"
+            iconColor={palette.rose[500]}
+            iconBgColor={palette.rose[50]}
+            title="Clear Scan History"
+            subtitle="Remove all scan history records"
+            type="action"
+            isDestructive
+            onPress={handleClearAllHistory}
+          />
+          <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+
+          <SettingRow
+            icon="albums-outline"
+            iconColor={palette.amber[600]}
+            iconBgColor={palette.amber[50]}
+            title="Clear Saved Collection"
+            subtitle="Remove all custom saved QR codes"
+            type="action"
+            isDestructive
+            onPress={handleClearAllSaved}
           />
           <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
 
@@ -242,20 +275,10 @@ export const SettingsScreen: React.FC = () => {
             icon="wifi-outline"
             iconColor={theme.primary}
             iconBgColor={theme.primaryLight}
-            title="Network Checker"
-            subtitle="Test network connection and offline diagnostics"
+            title="Network Diagnostics"
+            subtitle="Test network connection latency & status"
             type="navigation"
             onPress={() => navigation.navigate('NetworkChecker')}
-          />
-          <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-
-          <SettingRow
-            icon="trash-outline"
-            title="Clear Scan History"
-            subtitle="Remove all saved scan history items"
-            type="action"
-            isDestructive
-            onPress={handleClearAllHistory}
           />
         </View>
 
@@ -283,10 +306,10 @@ export const SettingsScreen: React.FC = () => {
         {/* App Version Footer */}
         <View style={styles.footerInfo}>
           <Text style={[styles.footerText, { color: theme.textMuted }]}>
-            {APP_INFO.name} • Version {APP_INFO.version} (Build {APP_INFO.build})
+            {APP_INFO.name} • v{APP_INFO.version} (Build {APP_INFO.build})
           </Text>
           <Text style={[styles.footerSubText, { color: theme.textMuted }]}>
-            {APP_INFO.designSystem} • {APP_INFO.copyright}
+            {APP_INFO.copyright} • All rights reserved
           </Text>
         </View>
       </ScrollView>
@@ -366,13 +389,14 @@ export const SettingsScreen: React.FC = () => {
           <View style={[styles.modalCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
             <Text style={[styles.modalTitle, { color: theme.text }]}>About QR Smart</Text>
             <Text style={[styles.modalContent, { color: theme.textSecondary }]}>
-              QR Smart is a high-speed, secure QR scanner and generator built with React Native, Expo, and FastAPI.
+              QR Smart is an all-in-one, privacy-focused QR and barcode toolkit designed for speed, security, and simplicity.
               {'\n\n'}
               Features:
-              {'\n'}• 100% Offline-first scanning & generation
-              {'\n'}• Optical Clarity Design Language
-              {'\n'}• Support for URL, Wi-Fi, vCard, Email, SMS, Phone & Location
-              {'\n'}• Safe URL previewing before opening
+              {'\n'}• High-speed scanner for QR codes and barcodes
+              {'\n'}• Built-in URL Safety & Phishing Protection
+              {'\n'}• Multi-format QR creation (Wi-Fi, Contact, Photo, PDF, Order ID, JSON, and more)
+              {'\n'}• Offline-first history and collection management
+              {'\n'}• High-resolution PNG and PDF export
             </Text>
 
             <PrimaryButton
