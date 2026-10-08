@@ -122,7 +122,6 @@ export const QRPreviewScreen: React.FC = () => {
       <View style={{ paddingTop: insets.top }}>
         <ScreenHeader
           title="Generated QR"
-          subtitle="Ready to scan, test, and share"
           showBack
           onBack={() => navigation.goBack()}
           rightAction={{

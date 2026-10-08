@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
+import * as Network from 'expo-network';
 import { RootStackParamList } from '../types/navigation';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { PrimaryButton } from '../components/PrimaryButton';
@@ -105,6 +106,10 @@ export const GeneratorFormScreen: React.FC = () => {
 
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadDetailText, setUploadDetailText] = useState('');
+
+  // Single Upload Cache: stores upload results by local URI so customizations don't re-upload
+  const uploadCache = useRef<Record<string, any>>({});
 
   // Full-size image preview modal
   const [previewModalVisible, setPreviewModalVisible] = useState(false);
@@ -133,7 +138,7 @@ export const GeneratorFormScreen: React.FC = () => {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         allowsEditing: false,
-        quality: 0.9,
+        quality: 0.85,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
@@ -436,9 +441,36 @@ export const GeneratorFormScreen: React.FC = () => {
           return;
         }
 
+        // 1. Check if already uploaded and cached
+        const cached = uploadCache.current[selectedPhoto.uri];
+        if (cached && cached.url && cached.url.startsWith('https://')) {
+          payload = cached.url;
+          title = `Photo: ${cached.filename}`;
+          fileMeta = {
+            filename: cached.filename,
+            size_formatted: cached.size_formatted,
+            file_type: 'photo' as const,
+            content_type: cached.content_type,
+          };
+          break;
+        }
+
+        // 2. Pre-check network state to fail fast if offline
+        try {
+          const netState = await Network.getNetworkStateAsync();
+          if (netState.isConnected === false) {
+            Alert.alert(
+              'No Internet Connection',
+              'An active internet connection is required to upload photos and generate shareable QR codes.'
+            );
+            return;
+          }
+        } catch {}
+
         try {
           setIsUploading(true);
-          setUploadProgress(20);
+          setUploadProgress(10);
+          setUploadDetailText(`Uploading ${selectedPhoto.name}...`);
 
           const result = await FileUploadService.uploadFile(
             selectedPhoto.uri,
@@ -446,7 +478,12 @@ export const GeneratorFormScreen: React.FC = () => {
             'photo',
             selectedPhoto.mimeType,
             selectedPhoto.size,
-            (p) => setUploadProgress(p)
+            (p, sent, total) => {
+              setUploadProgress(p);
+              if (sent && total) {
+                setUploadDetailText(`Uploading... ${p}% (${FileUploadService.formatBytes(sent)} / ${FileUploadService.formatBytes(total)})`);
+              }
+            }
           );
 
           payload = result.url || result.view_url || result.qr_url || '';
@@ -467,6 +504,9 @@ export const GeneratorFormScreen: React.FC = () => {
             );
             return;
           }
+
+          // Cache upload result
+          uploadCache.current[selectedPhoto.uri] = result;
 
           title = `Photo: ${result.filename}`;
           fileMeta = {
@@ -490,9 +530,36 @@ export const GeneratorFormScreen: React.FC = () => {
           return;
         }
 
+        // 1. Check if already uploaded and cached
+        const cached = uploadCache.current[selectedPdf.uri];
+        if (cached && cached.url && cached.url.startsWith('https://')) {
+          payload = cached.url;
+          title = `PDF: ${cached.filename}`;
+          fileMeta = {
+            filename: cached.filename,
+            size_formatted: cached.size_formatted,
+            file_type: 'file' as const,
+            content_type: cached.content_type,
+          };
+          break;
+        }
+
+        // 2. Pre-check network state to fail fast if offline
+        try {
+          const netState = await Network.getNetworkStateAsync();
+          if (netState.isConnected === false) {
+            Alert.alert(
+              'No Internet Connection',
+              'An active internet connection is required to upload documents and generate shareable QR codes.'
+            );
+            return;
+          }
+        } catch {}
+
         try {
           setIsUploading(true);
-          setUploadProgress(20);
+          setUploadProgress(10);
+          setUploadDetailText(`Uploading ${selectedPdf.name}...`);
 
           const result = await FileUploadService.uploadFile(
             selectedPdf.uri,
@@ -500,7 +567,12 @@ export const GeneratorFormScreen: React.FC = () => {
             'file',
             selectedPdf.mimeType,
             selectedPdf.size,
-            (p) => setUploadProgress(p)
+            (p, sent, total) => {
+              setUploadProgress(p);
+              if (sent && total) {
+                setUploadDetailText(`Uploading... ${p}% (${FileUploadService.formatBytes(sent)} / ${FileUploadService.formatBytes(total)})`);
+              }
+            }
           );
 
           payload = result.url || result.view_url || result.qr_url || '';
@@ -521,6 +593,9 @@ export const GeneratorFormScreen: React.FC = () => {
             );
             return;
           }
+
+          // Cache upload result
+          uploadCache.current[selectedPdf.uri] = result;
 
           title = `PDF: ${result.filename}`;
           fileMeta = {
@@ -1253,10 +1328,23 @@ export const GeneratorFormScreen: React.FC = () => {
         {/* Upload Progress Indicator */}
         {isUploading && (
           <View style={[styles.uploadingBox, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            <ActivityIndicator size="small" color={theme.primary} style={{ marginRight: spacing.sm }} />
-            <Text style={[styles.uploadingText, { color: theme.text }]}>
-              Uploading to server... {uploadProgress > 0 ? `${uploadProgress}%` : ''}
-            </Text>
+            <View style={styles.uploadingHeaderRow}>
+              <ActivityIndicator size="small" color={theme.primary} style={{ marginRight: spacing.sm }} />
+              <Text style={[styles.uploadingText, { color: theme.text }]} numberOfLines={1}>
+                {uploadDetailText || 'Uploading file to cloud storage...'}
+              </Text>
+            </View>
+            <View style={[styles.progressBarTrack, { backgroundColor: theme.borderLight }]}>
+              <View
+                style={[
+                  styles.progressBarFill,
+                  {
+                    backgroundColor: theme.primary,
+                    width: `${Math.max(8, Math.min(100, uploadProgress))}%`,
+                  },
+                ]}
+              />
+            </View>
           </View>
         )}
 
@@ -1596,17 +1684,30 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   uploadingBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
     padding: spacing.md,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
     marginBottom: spacing.md,
   },
+  uploadingHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
   uploadingText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
+    flex: 1,
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+  },
+  progressBarTrack: {
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+    width: '100%',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 3,
   },
   generateBtn: {
     marginTop: spacing.md,

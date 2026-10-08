@@ -142,64 +142,6 @@ class StorageService:
         return None
 
     @classmethod
-    def upload_to_cloud_fallback(
-        cls,
-        filename: str,
-        file_bytes: bytes,
-        file_type: str,
-        mime_type: str
-    ) -> Optional[str]:
-        """
-        Zero-config high-speed Cloud CDN fallback.
-        Guarantees a 100% public HTTPS URL for Photo and PDF QR codes.
-        """
-        logger.info(f"[CLOUD FALLBACK] Uploading {filename} ({file_type}) to public CDN...")
-
-        # 1. For Photos: Upload to FreeImage / ImgBB global CDN
-        if file_type == "photo" or mime_type.startswith("image/"):
-            try:
-                resp = requests.post(
-                    "https://freeimage.host/api/1/upload",
-                    data={
-                        "key": "6d207e02198a847aa98d0a2a901485a5",
-                        "action": "upload",
-                        "format": "json"
-                    },
-                    files={"source": (filename, file_bytes, mime_type)},
-                    verify=False,
-                    timeout=15
-                )
-                if resp.status_code == 200:
-                    data = resp.json()
-                    img_url = data.get("image", {}).get("url") or data.get("image", {}).get("display_url")
-                    if img_url and img_url.startswith("https://"):
-                        logger.info(f"[CLOUD CDN PHOTO OK] {img_url}")
-                        return img_url
-            except Exception as e:
-                logger.warning(f"[CLOUD CDN PHOTO FAILED]: {e}")
-
-        # 2. For PDFs and files (or if image upload fallback needed): Upload to tmpfiles CDN
-        try:
-            resp = requests.post(
-                "https://tmpfiles.org/api/v1/upload",
-                files={"file": (filename, file_bytes, mime_type)},
-                verify=False,
-                timeout=15
-            )
-            if resp.status_code == 200:
-                data = resp.json()
-                raw_url = data.get("data", {}).get("url", "")
-                if "tmpfiles.org/" in raw_url:
-                    parts = raw_url.split("tmpfiles.org/")
-                    direct_url = f"https://tmpfiles.org/dl/{parts[1]}"
-                    logger.info(f"[CLOUD CDN FILE OK] {direct_url}")
-                    return direct_url
-        except Exception as e:
-            logger.warning(f"[CLOUD CDN TMPFILES FAILED]: {e}")
-
-        return None
-
-    @classmethod
     def validate_file(cls, filename: str, file_bytes: bytes, file_type: str, content_type: Optional[str] = None) -> tuple[bool, Optional[str]]:
         """
         Validates file size and extension according to app security limits.
@@ -230,13 +172,13 @@ class StorageService:
         fallback_base_url: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        Complete upload pipeline:
-        1. Validate file
-        2. Generate unique random ID & storage path
-        3. Upload to Supabase Storage or Cloud Storage CDN -> Get HTTPS URL
-        4. Return metadata payload with verified public HTTPS URL
+        High-performance direct upload pipeline:
+        1. Fast validation
+        2. Generate unique storage path
+        3. Upload directly to Supabase Storage -> Get public HTTPS URL
+        4. Return metadata payload
         """
-        # Validate
+        # 1. Validate
         is_valid, err_msg = cls.validate_file(filename, file_bytes, file_type, content_type)
         if not is_valid:
             raise ValueError(err_msg)
@@ -261,34 +203,22 @@ class StorageService:
 
         file_size = len(file_bytes)
 
-        # 1. Attempt Supabase Storage Upload
+        # 2. Upload to Supabase Storage
         public_url = cls.upload_to_supabase(
             file_bytes=file_bytes,
             storage_path=storage_path,
             mime_type=mime_type
         )
 
-        provider = "supabase"
-
-        # 2. If Supabase is not configured or returned no URL, use Cloud Storage CDN
-        if not public_url:
-            public_url = cls.upload_to_cloud_fallback(
-                filename=f"{file_id}_{filename}",
-                file_bytes=file_bytes,
-                file_type=file_type,
-                mime_type=mime_type
-            )
-            provider = "cloud_cdn"
-
-        # 3. Final verification: Enforce public HTTPS URL
+        # 3. Strict verification: Enforce public HTTPS URL
         if not public_url or not public_url.startswith("https://"):
-            logger.error("[STORAGE ERROR] Could not obtain a public HTTPS URL.")
+            logger.error("[STORAGE ERROR] Supabase upload failed or not configured.")
             raise ValueError(
-                "Unable to obtain a public HTTPS URL for QR code creation. "
-                "Please verify internet connectivity or configure Supabase Storage in backend/.env."
+                "Unable to upload to cloud storage. Please ensure Supabase Storage is configured in backend/.env "
+                "with valid SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY."
             )
 
-        logger.info(f"[STORAGE SUCCESS] Provider={provider}, URL={public_url}")
+        logger.info(f"[STORAGE SUCCESS] Provider=supabase, URL={public_url}")
 
         return {
             "success": True,
@@ -308,6 +238,6 @@ class StorageService:
             "view_url": public_url,
             "download_url": public_url,
             "qr_url": public_url,
-            "storage_provider": provider,
-            "is_supabase": (provider == "supabase"),
+            "storage_provider": "supabase",
+            "is_supabase": True,
         }

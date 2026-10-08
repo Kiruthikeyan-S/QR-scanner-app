@@ -1,17 +1,19 @@
 import { uploadAsync, FileSystemUploadType } from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 import { UploadedFileMeta } from '../types/qr';
-import { getBaseApiUrl, getAllCandidateBaseUrls } from '../api/client';
+import { getAllCandidateBaseUrls } from '../api/client';
 
 export interface FileUploadProgress {
   status: 'idle' | 'uploading' | 'success' | 'error';
   progress: number; // 0 to 100
+  bytesSent?: number;
+  totalBytes?: number;
   errorMsg?: string;
 }
 
 export const FileUploadService = {
   formatBytes(bytes: number, decimals = 1): string {
-    if (bytes === 0) return '0 B';
+    if (!bytes || bytes === 0) return '0 B';
     const k = 1024;
     const dm = decimals < 0 ? 0 : decimals;
     const sizes = ['B', 'KB', 'MB', 'GB'];
@@ -25,31 +27,35 @@ export const FileUploadService = {
     fileType: 'photo' | 'file' = 'photo',
     mimeType?: string,
     fileSize?: number,
-    onProgress?: (progress: number) => void
+    onProgress?: (progress: number, bytesSent?: number, totalBytes?: number) => void
   ): Promise<UploadedFileMeta> {
-    // 1. Validate File Size
+    const startTime = Date.now();
+    const cleanFileName = fileName || (fileType === 'photo' ? 'photo.jpg' : 'document.pdf');
+    const cleanMime = mimeType || (fileType === 'photo' ? 'image/jpeg' : 'application/pdf');
+
+    // 1. Validate File Size Limits
     const maxPhotoSize = 10 * 1024 * 1024; // 10 MB
     const maxPdfSize = 25 * 1024 * 1024;   // 25 MB
     const maxAllowed = fileType === 'photo' ? maxPhotoSize : maxPdfSize;
 
     if (fileSize && fileSize > maxAllowed) {
-      throw new Error(`File is larger than the allowed limit (${this.formatBytes(fileSize)}).`);
+      throw new Error(`File size (${this.formatBytes(fileSize)}) exceeds the ${this.formatBytes(maxAllowed)} limit.`);
     }
 
-    const cleanFileName = fileName || (fileType === 'photo' ? 'photo.jpg' : 'document.pdf');
-    const cleanMime = mimeType || (fileType === 'photo' ? 'image/jpeg' : 'application/pdf');
+    const prepTime = Date.now() - startTime;
+    if (onProgress) onProgress(15, 0, fileSize || 0);
 
     const candidates = await getAllCandidateBaseUrls();
     let lastError: any = null;
+    const uploadStartTime = Date.now();
 
-    if (onProgress) onProgress(20);
-
-    // Native Android & iOS: Use expo-file-system/legacy uploadAsync with multi-endpoint fallback
+    // Native Platforms (iOS / Android) using direct multipart streaming
     if (Platform.OS !== 'web' && typeof uploadAsync === 'function') {
       for (const baseUrl of candidates) {
         const uploadUrl = `${baseUrl}/files/upload`;
         try {
-          if (onProgress) onProgress(45);
+          if (onProgress) onProgress(35, Math.round((fileSize || 1000) * 0.35), fileSize || 1000);
+
           const response = await uploadAsync(uploadUrl, fileUri, {
             httpMethod: 'POST',
             uploadType: FileSystemUploadType.MULTIPART,
@@ -62,11 +68,20 @@ export const FileUploadService = {
             },
           });
 
+          const networkTime = Date.now() - uploadStartTime;
+
           if (response.status >= 200 && response.status < 300) {
-            if (onProgress) onProgress(100);
+            if (onProgress) onProgress(100, fileSize || 1000, fileSize || 1000);
+            const parseStart = Date.now();
             const result = JSON.parse(response.body);
             const fileId = result.file_id || result.token_id;
             const targetUrl = result.url || result.view_url || result.qr_url;
+            const parseTime = Date.now() - parseStart;
+            const totalDuration = Date.now() - startTime;
+
+            console.log(
+              `[QR PERFORMANCE] Type=${fileType.toUpperCase()} | Prep=${prepTime}ms | Upload=${networkTime}ms | Parse=${parseTime}ms | Total=${totalDuration}ms | Provider=${result.storage_provider || 'supabase'}`
+            );
 
             return {
               token_id: fileId,
@@ -82,7 +97,7 @@ export const FileUploadService = {
               qr_url: targetUrl,
             };
           } else {
-            let errMsg = `Server returned status ${response.status}`;
+            let errMsg = `Upload failed with status ${response.status}`;
             try {
               const errJson = JSON.parse(response.body);
               if (errJson.detail) errMsg = errJson.detail;
@@ -97,15 +112,15 @@ export const FileUploadService = {
       const triedIps = candidates.join(', ');
       throw new Error(
         lastError?.message ||
-        `Cannot connect to backend server (tried: ${triedIps}). Ensure backend is running and phone is on the same Wi-Fi.`
+        `Cannot reach QR Smart backend (${triedIps}). Ensure the server is running.`
       );
     }
 
-    // Web Platform: Use standard fetch with Blob FormData
+    // Web Platform (Browser) using FormData
     for (const baseUrl of candidates) {
       const uploadUrl = `${baseUrl}/files/upload`;
       try {
-        if (onProgress) onProgress(40);
+        if (onProgress) onProgress(30, Math.round((fileSize || 1000) * 0.3), fileSize || 1000);
         const res = await fetch(fileUri);
         const blob = await res.blob();
 
@@ -113,7 +128,7 @@ export const FileUploadService = {
         formData.append('file', blob, cleanFileName);
         formData.append('file_type', fileType);
 
-        if (onProgress) onProgress(70);
+        if (onProgress) onProgress(70, Math.round((fileSize || 1000) * 0.7), fileSize || 1000);
 
         const response = await fetch(uploadUrl, {
           method: 'POST',
@@ -123,11 +138,18 @@ export const FileUploadService = {
           },
         });
 
+        const networkTime = Date.now() - uploadStartTime;
+
         if (response.ok) {
-          if (onProgress) onProgress(100);
+          if (onProgress) onProgress(100, fileSize || 1000, fileSize || 1000);
           const result = await response.json();
           const fileId = result.file_id || result.token_id;
           const targetUrl = result.url || result.view_url || result.qr_url;
+          const totalDuration = Date.now() - startTime;
+
+          console.log(
+            `[QR PERFORMANCE] (Web) Type=${fileType.toUpperCase()} | Upload=${networkTime}ms | Total=${totalDuration}ms`
+          );
 
           return {
             token_id: fileId,
