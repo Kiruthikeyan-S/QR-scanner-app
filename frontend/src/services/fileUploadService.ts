@@ -1,5 +1,4 @@
-import * as FileSystem from 'expo-file-system';
-import { FileSystemUploadType } from 'expo-file-system/legacy';
+import { uploadAsync, FileSystemUploadType } from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 import { UploadedFileMeta } from '../types/qr';
 import { getBaseApiUrl } from '../api/client';
@@ -42,15 +41,15 @@ export const FileUploadService = {
     const cleanMime = mimeType || (fileType === 'photo' ? 'image/jpeg' : 'application/pdf');
 
     const baseUrl = await getBaseApiUrl();
-    const uploadUrl = `${baseUrl}/api/v1/files/upload`;
+    const uploadUrl = `${baseUrl}/files/upload`;
 
     if (onProgress) onProgress(20);
 
-    // Try native FileSystem.uploadAsync on iOS & Android
-    if (Platform.OS !== 'web' && typeof FileSystem.uploadAsync === 'function') {
+    // Native Android & iOS: Use expo-file-system/legacy uploadAsync
+    if (Platform.OS !== 'web' && typeof uploadAsync === 'function') {
       try {
         if (onProgress) onProgress(50);
-        const response = await FileSystem.uploadAsync(uploadUrl, fileUri, {
+        const response = await uploadAsync(uploadUrl, fileUri, {
           httpMethod: 'POST',
           uploadType: FileSystemUploadType.MULTIPART,
           fieldName: 'file',
@@ -96,23 +95,21 @@ export const FileUploadService = {
         if (err.message && (err.message.includes('Network') || err.message.includes('connection') || err.message.includes('Failed to connect'))) {
           throw new Error(`Cannot connect to backend server at ${baseUrl}. Ensure backend is running and phone is on the same Wi-Fi.`);
         }
-        console.warn('FileSystem.uploadAsync error, attempting fetch fallback...', err);
+        throw err;
       }
     }
 
-    // Fallback: Standard fetch with FormData
-    const formData = new FormData();
-    const filePayload: any = {
-      uri: fileUri,
-      name: cleanFileName,
-      type: cleanMime,
-    };
-
-    formData.append('file', filePayload);
-    formData.append('file_type', fileType);
-
+    // Web Platform: Use standard fetch with Blob FormData
     try {
-      if (onProgress) onProgress(60);
+      if (onProgress) onProgress(40);
+      const res = await fetch(fileUri);
+      const blob = await res.blob();
+
+      const formData = new FormData();
+      formData.append('file', blob, cleanFileName);
+      formData.append('file_type', fileType);
+
+      if (onProgress) onProgress(70);
 
       const response = await fetch(uploadUrl, {
         method: 'POST',
