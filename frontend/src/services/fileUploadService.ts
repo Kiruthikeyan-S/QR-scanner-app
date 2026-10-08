@@ -76,16 +76,21 @@ export const FileUploadService = {
         const result = JSON.parse(response.body);
         if (onProgress) onProgress(100);
 
+        const fileId = result.file_id || result.token_id;
+        const targetUrl = result.url || result.view_url || result.qr_url;
+
         return {
-          token_id: result.token_id,
-          filename: result.filename || cleanFileName,
-          content_type: result.content_type || cleanMime,
-          size_bytes: result.size_bytes || fileSize || 0,
+          token_id: fileId,
+          file_id: fileId,
+          filename: result.file_name || result.filename || cleanFileName,
+          content_type: result.mime_type || result.content_type || cleanMime,
+          size_bytes: result.file_size || result.size_bytes || fileSize || 0,
           size_formatted: result.size_formatted || (fileSize ? this.formatBytes(fileSize) : 'Unknown'),
           file_type: fileType,
-          view_url: result.view_url,
-          download_url: result.download_url,
-          qr_url: result.qr_url || result.view_url,
+          view_url: targetUrl,
+          url: targetUrl,
+          download_url: result.download_url || `${baseUrl}/files/download/${fileId}`,
+          qr_url: targetUrl,
         };
       } catch (err: any) {
         if (err.message && (err.message.includes('Network') || err.message.includes('connection') || err.message.includes('Failed to connect'))) {
@@ -128,16 +133,21 @@ export const FileUploadService = {
       const result = await response.json();
       if (onProgress) onProgress(100);
 
+      const fileId = result.file_id || result.token_id;
+      const targetUrl = result.url || result.view_url || result.qr_url;
+
       return {
-        token_id: result.token_id,
-        filename: result.filename || cleanFileName,
-        content_type: result.content_type || cleanMime,
-        size_bytes: result.size_bytes || fileSize || 0,
+        token_id: fileId,
+        file_id: fileId,
+        filename: result.file_name || result.filename || cleanFileName,
+        content_type: result.mime_type || result.content_type || cleanMime,
+        size_bytes: result.file_size || result.size_bytes || fileSize || 0,
         size_formatted: result.size_formatted || (fileSize ? this.formatBytes(fileSize) : 'Unknown'),
         file_type: fileType,
-        view_url: result.view_url,
-        download_url: result.download_url,
-        qr_url: result.qr_url || result.view_url,
+        view_url: targetUrl,
+        url: targetUrl,
+        download_url: result.download_url || `${baseUrl}/files/download/${fileId}`,
+        qr_url: targetUrl,
       };
     } catch (error: any) {
       if (error.message && error.message.includes('Network request failed')) {

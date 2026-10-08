@@ -22,6 +22,7 @@ export interface QRCustomization {
 
 export interface UploadedFileMeta {
   token_id: string;
+  file_id?: string;
   filename: string;
   content_type: string;
   size_bytes: number;
@@ -30,6 +31,7 @@ export interface UploadedFileMeta {
   view_url: string;
   download_url: string;
   qr_url: string;
+  url?: string;
 }
 
 export interface ScanRecord {

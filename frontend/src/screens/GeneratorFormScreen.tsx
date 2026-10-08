@@ -219,9 +219,9 @@ export const GeneratorFormScreen: React.FC = () => {
       case 'location':
         return locLat.trim() && locLng.trim() ? QRFormatter.formatLocation({ latitude: locLat, longitude: locLng, label: locLabel }) : 'geo:37.7749,-122.4194';
       case 'photo':
-        return selectedPhoto ? `https://qrsmart.app/files/view/P-${selectedPhoto.name}` : 'https://qrsmart.app/files/photo';
+        return selectedPhoto ? `http://qrsmart.local/photo/${encodeURIComponent(selectedPhoto.name)}` : 'https://qrsmart.app';
       case 'file':
-        return selectedFile ? `https://qrsmart.app/files/view/F-${selectedFile.name}` : 'https://qrsmart.app/files/document';
+        return selectedFile ? `http://qrsmart.local/pdf/${encodeURIComponent(selectedFile.name)}` : 'https://qrsmart.app';
       default:
         return 'https://qrsmart.app';
     }
@@ -347,7 +347,7 @@ export const GeneratorFormScreen: React.FC = () => {
             (p) => setUploadProgress(p)
           );
 
-          payload = result.qr_url;
+          payload = result.url || result.view_url || result.qr_url;
           title = `Photo: ${result.filename}`;
           fileMeta = {
             filename: result.filename,
@@ -383,7 +383,7 @@ export const GeneratorFormScreen: React.FC = () => {
             (p) => setUploadProgress(p)
           );
 
-          payload = result.qr_url;
+          payload = result.url || result.view_url || result.qr_url;
           title = `PDF: ${result.filename}`;
           fileMeta = {
             filename: result.filename,
