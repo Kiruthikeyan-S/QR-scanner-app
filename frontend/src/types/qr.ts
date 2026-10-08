@@ -62,6 +62,8 @@ export interface SavedQRRecord {
   data: string;
   created_at: string;
   updated_at: string;
+  fileName?: string;
+  url?: string;
 }
 
 export interface ParsedQRDetails {

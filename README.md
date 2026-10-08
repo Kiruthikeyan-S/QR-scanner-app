@@ -33,19 +33,19 @@
 
 ---
 
-### 📷 2. Photo QR & Cloud Storage
-- Pick any image from your gallery (`JPG`, `JPEG`, `PNG`, `WEBP`).
-- Streamed binary upload to the FastAPI backend with multi-tier SQLite persistence.
-- Generates a unique, short access ID (e.g., `P-RihwLWyh`) and public preview URL (`/files/view/{file_id}`).
-- Scanners on any device can scan the QR code to instantly view or download the high-resolution photo in a sleek mobile web viewer.
+### 📷 2. Photo QR & Supabase Cloud Storage
+- Pick any image from your gallery (`JPG`, `JPEG`, `PNG`, `WEBP`, max 10 MB).
+- Uploads directly to **Supabase Storage** bucket (`qr-files/photos/...`) via server-side service credentials.
+- Generates a random unique ID (e.g., `P-X82KM91P`) and a shareable public HTTPS URL.
+- When scanned from any other phone, the high-resolution photo opens immediately in browser or image viewer (no localhost dependency).
 
 ---
 
-### 📄 3. PDF & Document QR
-- Upload any PDF document from local storage (`expo-document-picker`).
-- Persistent storage with metadata tracking (file size, MIME type, upload timestamp).
-- Generated QR code encodes the secure cloud URL (`/files/view/F-...`).
-- Native web viewer with inline PDF embedding, document header details, and one-tap download.
+### 📄 3. PDF & Document QR (Supabase Storage)
+- Upload any PDF document (`application/pdf`, max 25 MB) from device storage.
+- Uploads to **Supabase Storage** bucket (`qr-files/pdfs/...`) with metadata tracking.
+- Generates a permanent public HTTPS URL encoded into the QR code.
+- Scanners on other phones open and render the PDF document directly.
 
 ---
 

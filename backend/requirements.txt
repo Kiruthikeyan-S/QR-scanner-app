@@ -4,3 +4,5 @@ pydantic>=2.6.0
 pydantic-settings>=2.2.0
 sqlalchemy>=2.0.28
 python-dotenv>=1.0.1
+supabase>=2.3.0
+python-multipart>=0.0.9

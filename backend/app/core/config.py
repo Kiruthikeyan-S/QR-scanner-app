@@ -11,6 +11,12 @@ class Settings(BaseSettings):
     # SQLite by default for development, ready for PostgreSQL in production (e.g. postgresql+psycopg2://user:pass@host/db)
     DATABASE_URL: str = "sqlite:///./qr_smart.db"
     
+    # Supabase Cloud Storage Configuration
+    SUPABASE_URL: str = ""
+    SUPABASE_SERVICE_ROLE_KEY: str = ""
+    SUPABASE_KEY: str = ""
+    SUPABASE_BUCKET: str = "qr-files"
+
     # CORS Origins
     CORS_ORIGINS: Union[List[str], str] = ["*"]
 

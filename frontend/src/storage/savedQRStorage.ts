@@ -20,7 +20,14 @@ export const SavedQRStorage = {
     return list.find((item) => item.id === id) || null;
   },
 
-  async add(record: { name: string; type: QRType; data: string; id?: string }): Promise<SavedQRRecord> {
+  async add(record: {
+    name: string;
+    type: QRType;
+    data: string;
+    id?: string;
+    fileName?: string;
+    url?: string;
+  }): Promise<SavedQRRecord> {
     try {
       const list = await this.getAll();
       const now = new Date().toISOString();
@@ -29,6 +36,8 @@ export const SavedQRStorage = {
         name: record.name,
         type: record.type,
         data: record.data,
+        fileName: record.fileName,
+        url: record.url,
         created_at: now,
         updated_at: now,
       };
@@ -44,6 +53,8 @@ export const SavedQRStorage = {
         name: record.name,
         type: record.type,
         data: record.data,
+        fileName: record.fileName,
+        url: record.url,
         created_at: now,
         updated_at: now,
       };

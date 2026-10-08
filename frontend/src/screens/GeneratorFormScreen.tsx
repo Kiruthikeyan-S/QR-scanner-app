@@ -348,6 +348,21 @@ export const GeneratorFormScreen: React.FC = () => {
           );
 
           payload = result.url || result.view_url || result.qr_url;
+
+          // Validate that the URL is a public shareable HTTPS/HTTP URL
+          if (
+            !payload ||
+            payload.startsWith('file://') ||
+            payload.startsWith('content://') ||
+            payload.startsWith('ph://')
+          ) {
+            Alert.alert(
+              'Public URL Required',
+              'Unable to create a shareable QR. The uploaded file does not have a valid public URL.'
+            );
+            return;
+          }
+
           title = `Photo: ${result.filename}`;
           fileMeta = {
             filename: result.filename,
@@ -384,6 +399,20 @@ export const GeneratorFormScreen: React.FC = () => {
           );
 
           payload = result.url || result.view_url || result.qr_url;
+
+          // Validate that the URL is a public shareable HTTPS/HTTP URL
+          if (
+            !payload ||
+            payload.startsWith('file://') ||
+            payload.startsWith('content://')
+          ) {
+            Alert.alert(
+              'Public URL Required',
+              'Unable to create a shareable QR. The uploaded file does not have a valid public URL.'
+            );
+            return;
+          }
+
           title = `PDF: ${result.filename}`;
           fileMeta = {
             filename: result.filename,

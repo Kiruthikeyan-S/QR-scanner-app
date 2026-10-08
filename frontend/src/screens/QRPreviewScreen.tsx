@@ -74,6 +74,8 @@ export const QRPreviewScreen: React.FC = () => {
       name: saveTitle.trim(),
       type,
       data,
+      fileName: fileMeta?.filename,
+      url: data,
     });
 
     await NotificationStorage.add({

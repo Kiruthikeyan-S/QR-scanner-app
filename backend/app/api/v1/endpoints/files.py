@@ -158,6 +158,8 @@ def resolve_file_record(file_id: str, db: Optional[Session] = None) -> Optional[
     return None
 
 
+from app.services.storage_service import StorageService
+
 @router.post("/upload")
 async def upload_file(
     request: Request,
@@ -165,44 +167,43 @@ async def upload_file(
     file_type: str = Form("file"),  # "photo" or "file"
     db: Session = Depends(get_db)
 ):
-    filename = file.filename or "uploaded_file"
-    ext = filename.split(".")[-1].lower() if "." in filename else ""
-
-    if ext and ext not in ALLOWED_EXTENSIONS:
-        logger.warning(f"[UPLOAD REJECTED] Unsupported format: {ext}")
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported file format '.{ext}'. Allowed formats: {', '.join(sorted(ALLOWED_EXTENSIONS))}"
-        )
+    filename = file.filename or ("photo.jpg" if file_type == "photo" else "document.pdf")
 
     # Read bytes
     contents = await file.read()
-    file_size = len(contents)
-
-    max_allowed = MAX_PHOTO_SIZE if file_type == "photo" else MAX_FILE_SIZE
-    max_label = "10 MB" if file_type == "photo" else "25 MB"
-
-    if file_size > max_allowed:
-        logger.warning(f"[UPLOAD REJECTED] File too large: {file_size} > {max_allowed}")
-        raise HTTPException(
-            status_code=400,
-            detail=f"File is larger than the allowed {max_label} limit (Actual: {format_file_size(file_size)})."
-        )
-
-    if file_size == 0:
+    if len(contents) == 0:
         raise HTTPException(status_code=400, detail="The uploaded file is empty.")
 
-    # Generate unique ID
-    prefix = "P-" if file_type == "photo" else "F-"
-    file_id = generate_random_file_id(prefix)
+    # 1. Process and upload via StorageService (Supabase Storage)
+    try:
+        fallback_base = str(request.base_url).rstrip("/")
+        storage_result = StorageService.process_and_upload(
+            filename=filename,
+            file_bytes=contents,
+            file_type=file_type,
+            content_type=file.content_type,
+            fallback_base_url=fallback_base
+        )
+    except ValueError as e:
+        logger.warning(f"[UPLOAD REJECTED] Validation error: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"[UPLOAD ERROR] Failed processing file: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to upload file: {str(e)}")
+
+    file_id = storage_result["file_id"]
+    file_size = storage_result["file_size"]
+    mime_type = storage_result["mime_type"]
+    public_url = storage_result["url"]
     safe_filename = f"{file_id}_{filename}"
     file_path = UPLOAD_DIR / safe_filename
 
-    # Save to disk
-    with open(file_path, "wb") as f:
-        f.write(contents)
-
-    mime_type = file.content_type or ("image/jpeg" if ext in ("jpg", "jpeg") else "application/pdf" if ext == "pdf" else "application/octet-stream")
+    # Save to local disk for local fallback & offline preservation
+    try:
+        with open(file_path, "wb") as f:
+            f.write(contents)
+    except Exception as e:
+        logger.warning(f"[LOCAL BACKUP] Could not write local cache: {e}")
 
     # Save to SQLite Database
     try:
@@ -218,9 +219,9 @@ async def upload_file(
         db.add(db_file)
         db.commit()
         db.refresh(db_file)
-        logger.info(f"[UPLOAD SUCCESS] Saved to DB: file_id={file_id}, storage_key={safe_filename}")
+        logger.info(f"[UPLOAD SUCCESS] Saved to DB: file_id={file_id}, public_url={public_url}")
     except Exception as e:
-        logger.error(f"[UPLOAD WARNING] DB commit failed, continuing with JSON fallback: {e}")
+        logger.error(f"[UPLOAD WARNING] DB commit failed, continuing with JSON metadata: {e}")
         db.rollback()
 
     # Save to JSON metadata
@@ -234,33 +235,13 @@ async def upload_file(
         "size_formatted": format_file_size(file_size),
         "file_type": file_type,
         "stored_file": safe_filename,
+        "public_url": public_url,
     }
     save_json_metadata(metadata)
 
-    base_url = str(request.base_url).rstrip("/")
-    view_url = f"{base_url}/files/view/{file_id}"
-    download_url = f"{base_url}/files/download/{file_id}"
+    logger.info(f"[UPLOAD COMPLETE] file_id={file_id}, URL={public_url}")
 
-    logger.info(f"[UPLOAD COMPLETE] file_id={file_id}, URL={view_url}")
-
-    return {
-        "success": True,
-        "status": "success",
-        "file_id": file_id,
-        "token_id": file_id,
-        "file_name": filename,
-        "filename": filename,
-        "mime_type": mime_type,
-        "content_type": mime_type,
-        "file_size": file_size,
-        "size_bytes": file_size,
-        "size_formatted": format_file_size(file_size),
-        "file_type": file_type,
-        "url": view_url,
-        "view_url": view_url,
-        "download_url": download_url,
-        "qr_url": view_url,
-    }
+    return storage_result
 
 
 @router.get("/info/{file_id}")
