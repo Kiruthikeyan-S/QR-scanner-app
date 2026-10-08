@@ -174,7 +174,7 @@ export const SettingsScreen: React.FC = () => {
             <View style={{ flex: 1 }}>
               <Text style={[styles.bannerTitle, { color: theme.text }]}>QR Smart</Text>
               <Text style={[styles.bannerSubtitle, { color: theme.textSecondary }]}>
-                Fast & Secure QR Toolkit • Privacy-First
+                Fast & Secure QR Toolkit
               </Text>
             </View>
           </View>
@@ -188,7 +188,6 @@ export const SettingsScreen: React.FC = () => {
           <SettingRow
             icon="pulse-outline"
             title="Vibration Feedback"
-            subtitle="Vibrate on successful scan"
             type="toggle"
             value={settings.vibration}
             onValueChange={(val) => updateSetting('vibration', val)}
@@ -198,7 +197,6 @@ export const SettingsScreen: React.FC = () => {
           <SettingRow
             icon="volume-high-outline"
             title="Sound Feedback"
-            subtitle="Play tone on successful scan"
             type="toggle"
             value={settings.sound}
             onValueChange={(val) => updateSetting('sound', val)}
@@ -208,7 +206,6 @@ export const SettingsScreen: React.FC = () => {
           <SettingRow
             icon="clipboard-outline"
             title="Auto-Copy Scanned Data"
-            subtitle="Copy decoded text to clipboard automatically"
             type="toggle"
             value={settings.autoCopy}
             onValueChange={(val) => updateSetting('autoCopy', val)}
@@ -225,7 +222,6 @@ export const SettingsScreen: React.FC = () => {
             iconColor={isDark ? palette.indigo[400] : palette.amber[500]}
             iconBgColor={isDark ? 'rgba(99, 102, 241, 0.15)' : palette.amber[50]}
             title="Dark Mode"
-            subtitle="High-contrast dark appearance"
             type="toggle"
             value={isDark}
             onValueChange={handleToggleDarkMode}
@@ -235,7 +231,6 @@ export const SettingsScreen: React.FC = () => {
           <SettingRow
             icon="camera-outline"
             title="Camera Permission"
-            subtitle={permission?.granted ? 'Ready for instant scanning' : 'Requires permission to scan'}
             type="badge"
             badgeText={permission?.granted ? 'GRANTED' : 'DENIED'}
             onPress={handleCameraPermissionPress}
@@ -252,7 +247,6 @@ export const SettingsScreen: React.FC = () => {
             iconColor={palette.rose[500]}
             iconBgColor={palette.rose[50]}
             title="Clear Scan History"
-            subtitle="Remove all scan history records"
             type="action"
             isDestructive
             onPress={handleClearAllHistory}
@@ -264,7 +258,6 @@ export const SettingsScreen: React.FC = () => {
             iconColor={palette.amber[600]}
             iconBgColor={palette.amber[50]}
             title="Clear Saved Collection"
-            subtitle="Remove all custom saved QR codes"
             type="action"
             isDestructive
             onPress={handleClearAllSaved}
@@ -276,7 +269,6 @@ export const SettingsScreen: React.FC = () => {
             iconColor={theme.primary}
             iconBgColor={theme.primaryLight}
             title="Network Diagnostics"
-            subtitle="Test network connection latency & status"
             type="navigation"
             onPress={() => navigation.navigate('NetworkChecker')}
           />
@@ -457,8 +449,8 @@ const styles = StyleSheet.create({
   bannerCard: {
     borderRadius: borderRadius.xl,
     borderWidth: 1,
-    padding: spacing.base,
-    marginBottom: spacing.xl,
+    padding: spacing.md,
+    marginBottom: spacing.md,
     elevation: 2,
   },
   bannerTop: {
@@ -466,9 +458,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   bannerIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.lg,
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
@@ -476,24 +468,24 @@ const styles = StyleSheet.create({
   bannerTitle: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.bold,
-    marginBottom: 2,
   },
   bannerSubtitle: {
     fontSize: typography.fontSize.xs,
+    marginTop: 1,
   },
   sectionHeading: {
     fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
-    letterSpacing: 1,
-    marginBottom: spacing.xs,
+    letterSpacing: 0.8,
+    marginBottom: 4,
     marginLeft: spacing.xs,
-    marginTop: spacing.sm,
+    marginTop: spacing.xs,
   },
   cardGroup: {
     borderRadius: borderRadius.xl,
     borderWidth: 1,
     overflow: 'hidden',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   divider: {
     height: 1,
