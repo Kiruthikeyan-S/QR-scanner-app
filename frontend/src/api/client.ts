@@ -39,45 +39,67 @@ export function getAutoDetectedHost(): string {
   return 'http://localhost:8000';
 }
 
-export async function getFastestReachableBaseUrl(): Promise<string> {
+export async function getAllCandidateBaseUrls(): Promise<string[]> {
   const settings = await SettingsStorage.get();
-  // If user explicitly configured a custom URL, use it directly
   if (
     settings.backendUrl &&
     settings.backendUrl !== 'http://localhost:8000' &&
     settings.backendUrl !== 'http://127.0.0.1:8000'
   ) {
-    return settings.backendUrl.replace(/\/+$/, '');
+    return [settings.backendUrl.replace(/\/+$/, '')];
   }
 
   const autoHost = getAutoDetectedHost();
-  const candidates = [
-    'http://localhost:8000',
-    autoHost,
-    'http://192.168.88.4:8000',
-    'http://127.0.0.1:8000',
-  ].filter((v, i, a) => v && a.indexOf(v) === i);
+  const list =
+    Platform.OS === 'web'
+      ? ['http://localhost:8000', autoHost, 'http://127.0.0.1:8000']
+      : [
+          autoHost,
+          'http://192.168.88.4:8000',
+          'http://localhost:8000',
+          'http://10.0.2.2:8000',
+          'http://127.0.0.1:8000',
+        ];
 
-  // Ping candidate URLs in parallel with a fast 2-second timeout
-  try {
-    const winner = await Promise.any(
-      candidates.map(async (url) => {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2000);
-        try {
-          const res = await fetch(`${url}/health`, { signal: controller.signal });
-          clearTimeout(timeoutId);
-          if (res.ok) return url;
-        } catch (e) {
-          clearTimeout(timeoutId);
-        }
-        throw new Error('Unreachable');
-      })
-    );
-    if (winner) return winner;
-  } catch {}
+  return list.filter((v, i, a) => v && a.indexOf(v) === i);
+}
 
-  return candidates[0] || 'http://localhost:8000';
+let cachedReachableUrl: string | null = null;
+let lastCheckTime = 0;
+
+export async function getFastestReachableBaseUrl(): Promise<string> {
+  const now = Date.now();
+  if (cachedReachableUrl && now - lastCheckTime < 15000) {
+    return cachedReachableUrl;
+  }
+
+  const candidates = await getAllCandidateBaseUrls();
+
+  for (const url of candidates) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1200);
+      const res = await fetch(`${url}/health`, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        cachedReachableUrl = url;
+        lastCheckTime = Date.now();
+        return url;
+      }
+    } catch (e) {}
+  }
+
+  // Fallback to first non-localhost candidate on mobile, or localhost on web
+  const fallback =
+    Platform.OS === 'web'
+      ? 'http://localhost:8000'
+      : candidates.find((c) => !c.includes('localhost') && !c.includes('127.0.0.1')) ||
+        candidates[0] ||
+        'http://192.168.88.4:8000';
+
+  cachedReachableUrl = fallback;
+  lastCheckTime = Date.now();
+  return fallback;
 }
 
 export async function getBaseApiUrl(): Promise<string> {
