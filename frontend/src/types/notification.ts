@@ -1,4 +1,4 @@
-export type NotificationType = 'scan' | 'saved' | 'network' | 'system';
+export type NotificationType = 'scan' | 'saved' | 'network' | 'system' | 'alert';
 
 export interface AppNotification {
   id: string;

@@ -18,6 +18,7 @@ import { SecondaryButton } from '../components/SecondaryButton';
 import { useTheme } from '../theme/ThemeContext';
 import { typography, spacing, borderRadius } from '../theme/typography';
 import { detectQRType } from '../utils/qrParser';
+import { checkURLSafety } from '../utils/urlSafety';
 import { HistoryStorage } from '../storage/historyStorage';
 import { SettingsStorage } from '../storage/settingsStorage';
 import { NotificationStorage } from '../storage/notificationStorage';
@@ -67,27 +68,71 @@ export const ScannerScreen: React.FC = () => {
       await ActionHandler.copyToClipboard(rawData);
     }
 
-    // Save locally to history
-    const savedRecord = await HistoryStorage.add({
-      type: qrType,
-      data: rawData,
-    });
+    if (qrType === 'url') {
+      // Run security reputation & heuristic check
+      const safetyResult = await checkURLSafety(rawData);
 
-    // Record in-app notification
-    await NotificationStorage.add({
-      title: 'QR Code Scanned',
-      message: `Scanned ${qrType.toUpperCase()} content: ${rawData.substring(0, 50)}${rawData.length > 50 ? '...' : ''}`,
-      type: 'scan',
-      data: { scanId: savedRecord.id, qrType, data: rawData },
-    });
+      if (safetyResult.status === 'safe') {
+        // Only SAFE URLs are saved to History
+        const savedRecord = await HistoryStorage.add({
+          type: 'url',
+          data: rawData,
+          safetyStatus: 'safe',
+        });
 
-    // Navigate to Scan Result Screen
-    navigation.replace('ScanResult', {
-      data: rawData,
-      type: qrType,
-      scannedAt: savedRecord.scanned_at,
-      fromHistoryId: savedRecord.id,
-    });
+        await NotificationStorage.add({
+          title: 'Safe Link Scanned',
+          message: `Scanned verified link: ${safetyResult.domain}`,
+          type: 'scan',
+          data: { scanId: savedRecord.id, qrType: 'url', data: rawData },
+        });
+
+        navigation.replace('ScanResult', {
+          data: rawData,
+          type: 'url',
+          scannedAt: savedRecord.scanned_at,
+          fromHistoryId: savedRecord.id,
+          safetyResult,
+        });
+      } else {
+        // UNSAFE, SUSPICIOUS, UNKNOWN URLs are NEVER saved to History or Last Scanned
+        if (safetyResult.status === 'unsafe') {
+          await NotificationStorage.add({
+            title: 'Security Alert: Unsafe Link Blocked',
+            message: `Warning: Blocked potential threat from ${safetyResult.domain}`,
+            type: 'alert',
+            data: { qrType: 'url', data: rawData },
+          });
+        }
+
+        navigation.replace('ScanResult', {
+          data: rawData,
+          type: 'url',
+          scannedAt: new Date().toISOString(),
+          safetyResult,
+        });
+      }
+    } else {
+      // Non-URL QR types (Text, Wi-Fi, Contact, Barcode, etc.) save normally
+      const savedRecord = await HistoryStorage.add({
+        type: qrType,
+        data: rawData,
+      });
+
+      await NotificationStorage.add({
+        title: 'QR Code Scanned',
+        message: `Scanned ${qrType.toUpperCase()} content: ${rawData.substring(0, 50)}${rawData.length > 50 ? '...' : ''}`,
+        type: 'scan',
+        data: { scanId: savedRecord.id, qrType, data: rawData },
+      });
+
+      navigation.replace('ScanResult', {
+        data: rawData,
+        type: qrType,
+        scannedAt: savedRecord.scanned_at,
+        fromHistoryId: savedRecord.id,
+      });
+    }
   };
 
   const handlePickImage = async () => {

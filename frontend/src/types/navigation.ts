@@ -17,6 +17,7 @@ export type RootStackParamList = {
     type?: QRType;
     scannedAt?: string;
     fromHistoryId?: string;
+    safetyResult?: import('./qr').URLSafetyDetails;
   };
   GeneratorSelect: undefined;
   GeneratorForm: {

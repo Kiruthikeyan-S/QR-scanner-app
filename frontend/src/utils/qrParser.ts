@@ -43,6 +43,11 @@ export function detectQRType(rawText: string): QRType {
     return 'file';
   }
 
+  // Dangerous / Web URI schemes (intercepted by URL Safety Engine)
+  if (/^(javascript|data|file|content|intent|vbscript|blob):/i.test(text)) {
+    return 'url';
+  }
+
   // URL detection
   if (/^(https?:\/\/|ftp:\/\/|www\.)[^\s/$.?#].[^\s]*$/i.test(text)) {
     return 'url';

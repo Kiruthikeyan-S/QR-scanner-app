@@ -34,11 +34,25 @@ export interface UploadedFileMeta {
   url?: string;
 }
 
+export type URLSafetyStatus = 'safe' | 'suspicious' | 'unsafe' | 'unknown';
+
+export interface URLSafetyDetails {
+  status: URLSafetyStatus;
+  riskScore: number;
+  domain: string;
+  normalizedUrl: string;
+  scheme: string;
+  isHttps: boolean;
+  reasons: string[];
+  checkedAt: string;
+}
+
 export interface ScanRecord {
   id: string;
   type: QRType;
   data: string;
   scanned_at: string;
+  safetyStatus?: URLSafetyStatus;
 }
 
 export interface SavedQRRecord {

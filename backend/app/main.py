@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.database.session import engine, Base
 from app.api.v1.router import api_router
-from app.api.v1.endpoints import health, files
+from app.api.v1.endpoints import health, files, security
 
 # Create database tables automatically
 Base.metadata.create_all(bind=engine)
@@ -33,6 +33,10 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 
 # Top-level direct file access router (/files/{file_id})
 app.include_router(files.router, prefix="/files", tags=["Files"])
+
+# Top-level security router (/security/check-url)
+app.include_router(security.router, prefix="/security", tags=["Security"])
+
 
 @app.get("/")
 def root():

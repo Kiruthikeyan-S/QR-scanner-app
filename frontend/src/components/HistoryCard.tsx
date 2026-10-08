@@ -138,7 +138,15 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
         {/* Content Preview */}
         <View style={styles.titleArea}>
           <View style={styles.typeBadgeRow}>
-            <Text style={[styles.typeBadge, { color: meta.color }]}>{meta.label}</Text>
+            <View style={styles.typeBadgeLeft}>
+              <Text style={[styles.typeBadge, { color: meta.color }]}>{meta.label}</Text>
+              {item.type === 'url' && (
+                <View style={[styles.safeBadge, { backgroundColor: palette.emerald[500] + '18' }]}>
+                  <Ionicons name="shield-checkmark" size={10} color={palette.emerald[500]} />
+                  <Text style={[styles.safeBadgeText, { color: palette.emerald[500] }]}>Safe</Text>
+                </View>
+              )}
+            </View>
             <Text style={[styles.timeText, { color: theme.textSecondary }]}>{formattedTime}</Text>
           </View>
           <Text style={[styles.dataPreview, { color: theme.text }]} numberOfLines={2}>
@@ -240,11 +248,28 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 4,
   },
+  typeBadgeLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
   typeBadge: {
     fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  safeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: borderRadius.full,
+  },
+  safeBadgeText: {
+    fontSize: 9,
+    fontWeight: typography.fontWeight.bold,
   },
   timeText: {
     fontSize: typography.fontSize.xs,
