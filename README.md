@@ -8,7 +8,7 @@
 [![SQLite](https://img.shields.io/badge/SQLite-Persistent-003B57?logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-**QR Smart** is a production-grade, privacy-first mobile application and backend ecosystem engineered for high-performance QR code and barcode scanning, rich multi-format generation, cloud-linked photo and PDF QR creation, and real-time **URL Safety / Malicious Link Protection**.
+**QR Smart** is a production-grade, privacy-first mobile application and backend ecosystem engineered for high-performance QR code and barcode scanning, rich multi-format generation, cloud-linked photo QR creation, and real-time **URL Safety / Malicious Link Protection**.
 
 ---
 
@@ -35,21 +35,13 @@
 
 ### 📷 2. Photo QR & Supabase Cloud Storage
 - Pick any image from your gallery (`JPG`, `JPEG`, `PNG`, `WEBP`, max 10 MB).
-- Uploads directly to **Supabase Storage** bucket (`qr-files/photos/...`) via server-side service credentials.
+- Uploads directly to **Supabase Storage** bucket (`qr-files/photos/...`) or public Cloud CDN with metadata tracking.
 - Generates a random unique ID (e.g., `P-X82KM91P`) and a shareable public HTTPS URL.
 - When scanned from any other phone, the high-resolution photo opens immediately in browser or image viewer (no localhost dependency).
 
 ---
 
-### 📄 3. PDF & Document QR (Supabase Storage)
-- Upload any PDF document (`application/pdf`, max 25 MB) from device storage.
-- Uploads to **Supabase Storage** bucket (`qr-files/pdfs/...`) with metadata tracking.
-- Generates a permanent public HTTPS URL encoded into the QR code.
-- Scanners on other phones open and render the PDF document directly.
-
----
-
-### 📊 4. 1D & 2D Barcode Generator
+### 📊 3. 1D & 2D Barcode Generator
 - Generate standard industrial and retail barcodes:
   - **CODE128** (Universal alphanumeric)
   - **EAN-13** (Global trade items)
@@ -60,20 +52,20 @@
 
 ---
 
-### 🎨 5. Multi-Format QR Generator & Customizer
-- **Supported Formats**: Website URL, Wi-Fi Network (WPA/WEP/Open with hidden SSID support), Contact Card (vCard 3.0), Plain Text, Phone Call, SMS, Email, Geo Location (Maps), Photo QR, and PDF Document QR.
+### 🎨 4. Multi-Format QR Generator & Customizer
+- **Supported Formats**: Website URL, Wi-Fi Network (WPA/WEP/Open with hidden SSID support), Contact Card (vCard 3.0), Plain Text, Phone Call, SMS, Email, Geo Location (Maps), and Photo QR.
 - **Visual Customizer**: Foreground/background color palettes, error correction levels (`L`, `M`, `Q`, `H`), custom size scaling, and center logo embedding.
 
 ---
 
-### 🧭 6. Modern Navigation & WhatsApp-Style Header
+### 🧭 5. Modern Navigation & WhatsApp-Style Header
 - **Center Floating QR Scan Button**: Prominent primary button with smooth touch targets and tactile haptic feedback.
 - **WhatsApp-Style Header**: Clean, standalone Bell notification icon and Plus (`+`) button.
-- **Quick-Create Bottom Sheet Modal**: 1-tap launcher for QR Code, Photo QR, PDF QR, and Barcode.
+- **Quick-Create Bottom Sheet Modal**: 1-tap launcher for QR Code, Photo QR, and Barcode.
 
 ---
 
-### 📜 7. Scan History & Selection Mode
+### 📜 6. Scan History & Selection Mode
 - **Real-Time Search**: Search through scan history by domain, URL, Wi-Fi SSID, contact name, or raw text.
 - **Type Filters**: Filter by `All`, `URL`, `Wi-Fi`, `Text`, `Contact`, `Phone`, `Email`, `SMS`, `Location`, or `Barcode`.
 - **Long-Press Multi-Select**: Enter batch selection mode with single-tap item toggle and batch delete.
@@ -107,7 +99,7 @@ flowchart TD
     Scanner --> SafetyEngine
     SafetyEngine -- "Threat Check" --> SecurityEndpoint
     SecurityEndpoint --> ThreatAnalyzer
-    GenSelect -- "Upload Photo / PDF" --> FileUpload
+    GenSelect -- "Upload Photo" --> FileUpload
     FileUpload --> DB
     FileUpload --> LocalStorage
     FileViewer --> DB

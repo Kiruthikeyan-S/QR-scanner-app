@@ -43,16 +43,6 @@ export function detectQRType(rawText: string): QRType {
     return 'photo';
   }
 
-  // File / PDF QR detection (Supabase storage, tmpfiles cloud CDN, or direct document link)
-  if (
-    /tmpfiles\.org/i.test(text) ||
-    /\/storage\/v1\/object\/public\/.*\/pdfs\//i.test(text) ||
-    /\/files\/(view\/|download\/)?F-[a-zA-Z0-9_-]+/i.test(text) ||
-    /\.(pdf|docx?|xlsx?|txt|csv|zip)(\?.*)?$/i.test(text)
-  ) {
-    return 'file';
-  }
-
   // Dangerous / Web URI schemes (intercepted by URL Safety Engine)
   if (/^(javascript|data|file|content|intent|vbscript|blob):/i.test(text)) {
     return 'url';
@@ -97,27 +87,6 @@ export function parseQRData(rawData: string): ParsedQRDetails {
         primaryAction: {
           label: 'Preview Photo',
           icon: 'image-outline',
-          actionType: 'open_url',
-        },
-      };
-    }
-
-    case 'file': {
-      let fileUrl = raw;
-      if (!/^https?:\/\//i.test(fileUrl)) fileUrl = `https://${fileUrl}`;
-      return {
-        type: 'file',
-        raw: fileUrl,
-        title: 'Document / PDF QR',
-        subtitle: 'Secure Document Cloud Link',
-        fields: [
-          { label: 'File Type', value: 'Document / PDF File' },
-          { label: 'Document URL', value: fileUrl },
-          { label: 'Access', value: 'Download & View Document' },
-        ],
-        primaryAction: {
-          label: 'Open Document',
-          icon: 'document-text-outline',
           actionType: 'open_url',
         },
       };

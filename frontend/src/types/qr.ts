@@ -8,8 +8,7 @@ export type QRType =
   | 'contact'
   | 'location'
   | 'barcode'
-  | 'photo'
-  | 'file';
+  | 'photo';
 
 export interface QRCustomization {
   fgColor: string;
@@ -27,7 +26,7 @@ export interface UploadedFileMeta {
   content_type: string;
   size_bytes: number;
   size_formatted: string;
-  file_type: 'photo' | 'file';
+  file_type: 'photo';
   view_url: string;
   download_url: string;
   qr_url: string;

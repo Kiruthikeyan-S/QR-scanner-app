@@ -251,10 +251,6 @@ export const HomeScreen: React.FC = () => {
               <AppIcon name="image-outline" size={13} color={palette.indigo[500]} />
               <Text style={[styles.pillTagText, { color: theme.textSecondary }]}>Photo</Text>
             </View>
-            <View style={styles.pillTag}>
-              <AppIcon name="document-attach-outline" size={13} color={palette.indigo[500]} />
-              <Text style={[styles.pillTagText, { color: theme.textSecondary }]}>PDF</Text>
-            </View>
           </View>
         </Pressable>
 
@@ -286,11 +282,11 @@ export const HomeScreen: React.FC = () => {
             <Text style={[styles.toolSubtitle, { color: theme.textSecondary }]}>Image to QR</Text>
           </Pressable>
 
-          {/* PDF QR Shortcut */}
+          {/* Wi-Fi QR Shortcut */}
           <Pressable
             onPress={() => {
               triggerLightHaptic();
-              navigation.navigate('GeneratorForm', { type: 'file' });
+              navigation.navigate('GeneratorForm', { type: 'wifi' });
             }}
             style={({ pressed }) => [
               styles.toolCard,
@@ -301,11 +297,11 @@ export const HomeScreen: React.FC = () => {
               },
             ]}
           >
-            <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.18)' : palette.cyan[50] }]}>
-              <AppIcon name="document-text" size={22} color={palette.cyan[500]} />
+            <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(99, 102, 241, 0.18)' : palette.indigo[50] }]}>
+              <AppIcon name="wifi" size={22} color={palette.indigo[500]} />
             </View>
-            <Text style={[styles.toolTitle, { color: theme.text }]}>PDF QR</Text>
-            <Text style={[styles.toolSubtitle, { color: theme.textSecondary }]}>Document QR</Text>
+            <Text style={[styles.toolTitle, { color: theme.text }]}>Wi-Fi QR</Text>
+            <Text style={[styles.toolSubtitle, { color: theme.textSecondary }]}>Share Wi-Fi</Text>
           </Pressable>
 
           {/* Barcode Shortcut */}
@@ -323,8 +319,8 @@ export const HomeScreen: React.FC = () => {
               },
             ]}
           >
-            <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(99, 102, 241, 0.18)' : palette.indigo[50] }]}>
-              <AppIcon name="barcode" size={22} color={palette.indigo[500]} />
+            <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.18)' : palette.cyan[50] }]}>
+              <AppIcon name="barcode" size={22} color={palette.cyan[500]} />
             </View>
             <Text style={[styles.toolTitle, { color: theme.text }]}>Barcode</Text>
             <Text style={[styles.toolSubtitle, { color: theme.textSecondary }]}>Create Barcode</Text>
@@ -612,54 +608,7 @@ export const HomeScreen: React.FC = () => {
                 />
               </Pressable>
 
-              {/* 3. PDF QR */}
-              <Pressable
-                onPress={() =>
-                  handleCreateOption(() =>
-                    navigation.navigate('GeneratorForm', { type: 'file' })
-                  )
-                }
-                style={({ pressed }) => [
-                  styles.createOptionRow,
-                  {
-                    backgroundColor: pressed ? theme.surfaceVariant : 'transparent',
-                    borderColor: theme.border,
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.createOptionIconBox,
-                    { backgroundColor: palette.amber[500] + '18' },
-                  ]}
-                >
-                  <AppIcon
-                    name="document-text"
-                    size={22}
-                    color={palette.amber[500]}
-                  />
-                </View>
-                <View style={styles.createOptionTextWrap}>
-                  <Text style={[styles.createOptionTitle, { color: theme.text }]}>
-                    PDF QR
-                  </Text>
-                  <Text
-                    style={[
-                      styles.createOptionSub,
-                      { color: theme.textSecondary },
-                    ]}
-                  >
-                    Upload and link PDF documents to QR
-                  </Text>
-                </View>
-                <AppIcon
-                  name="chevron-forward"
-                  size={20}
-                  color={theme.textMuted}
-                />
-              </Pressable>
-
-              {/* 4. Barcode */}
+              {/* 3. Barcode */}
               <Pressable
                 onPress={() =>
                   handleCreateOption(() =>

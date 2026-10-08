@@ -17,7 +17,6 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import * as DocumentPicker from 'expo-document-picker';
 import { RootStackParamList } from '../types/navigation';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { PrimaryButton } from '../components/PrimaryButton';
@@ -76,15 +75,8 @@ export const GeneratorFormScreen: React.FC = () => {
   const [locLng, setLocLng] = useState('');
   const [locLabel, setLocLabel] = useState('');
 
-  // Photo & File States
+  // Photo State
   const [selectedPhoto, setSelectedPhoto] = useState<{
-    uri: string;
-    name: string;
-    size: number;
-    mimeType?: string;
-  } | null>(null);
-
-  const [selectedFile, setSelectedFile] = useState<{
     uri: string;
     name: string;
     size: number;
@@ -152,42 +144,6 @@ export const GeneratorFormScreen: React.FC = () => {
     setSelectedPhoto(null);
   };
 
-  // Document Picker Handler
-  const handlePickFile = async () => {
-    try {
-      triggerLightHaptic();
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ['application/pdf', 'application/*', '*/*'],
-        copyToCacheDirectory: true,
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const asset = result.assets[0];
-        const size = asset.size || 0;
-        const name = asset.name || 'document.pdf';
-
-        if (size > 25 * 1024 * 1024) {
-          Alert.alert('File Too Large', 'Files must be 25 MB or smaller.');
-          return;
-        }
-
-        setSelectedFile({
-          uri: asset.uri,
-          name,
-          size,
-          mimeType: asset.mimeType || 'application/pdf',
-        });
-      }
-    } catch (e: any) {
-      Alert.alert('Picker Error', e.message || 'Failed to select document.');
-    }
-  };
-
-  const handleRemoveFile = () => {
-    triggerLightHaptic();
-    setSelectedFile(null);
-  };
-
   // Compute Live Preview Payload
   const getPreviewPayload = (): string => {
     switch (type) {
@@ -220,15 +176,13 @@ export const GeneratorFormScreen: React.FC = () => {
         return locLat.trim() && locLng.trim() ? QRFormatter.formatLocation({ latitude: locLat, longitude: locLng, label: locLabel }) : 'geo:37.7749,-122.4194';
       case 'photo':
         return selectedPhoto ? `http://qrsmart.local/photo/${encodeURIComponent(selectedPhoto.name)}` : 'https://qrsmart.app';
-      case 'file':
-        return selectedFile ? `http://qrsmart.local/pdf/${encodeURIComponent(selectedFile.name)}` : 'https://qrsmart.app';
       default:
         return 'https://qrsmart.app';
     }
   };
 
-  // Check if file is ready (for photo and file types)
-  const isFileSelected = type === 'photo' ? Boolean(selectedPhoto) : type === 'file' ? Boolean(selectedFile) : true;
+  // Check if file is ready (for photo type)
+  const isFileSelected = type === 'photo' ? Boolean(selectedPhoto) : true;
 
   const handleGenerate = async () => {
     let payload = '';
@@ -386,64 +340,6 @@ export const GeneratorFormScreen: React.FC = () => {
         }
         break;
       }
-      case 'file': {
-        if (!selectedFile) {
-          Alert.alert('No File Selected', 'Please choose a PDF or document file to generate a File QR code.');
-          return;
-        }
-
-        try {
-          setIsUploading(true);
-          setUploadProgress(20);
-
-          const result = await FileUploadService.uploadFile(
-            selectedFile.uri,
-            selectedFile.name,
-            'file',
-            selectedFile.mimeType,
-            selectedFile.size,
-            (p) => setUploadProgress(p)
-          );
-
-          // Get the exact public HTTPS URL from Supabase Storage
-          payload = result.url || result.view_url || result.qr_url || '';
-
-          console.log('[QR PAYLOAD PDF]:', payload);
-
-          // Validate that the URL is a public shareable HTTPS URL
-          if (
-            !payload ||
-            payload.includes('localhost') ||
-            payload.includes('127.0.0.1') ||
-            payload.includes('192.168.') ||
-            payload.includes('10.0.') ||
-            payload.startsWith('file://') ||
-            payload.startsWith('content://') ||
-            !payload.startsWith('https://')
-          ) {
-            Alert.alert(
-              'Public HTTPS URL Required',
-              `Cannot create a shareable QR.\n\nThe uploaded file does not have a public HTTPS URL (got: ${payload || 'empty'}). Ensure Supabase Storage is configured in backend/.env.`
-            );
-            return;
-          }
-
-          title = `PDF: ${result.filename}`;
-          fileMeta = {
-            filename: result.filename,
-            size_formatted: result.size_formatted,
-            file_type: 'file' as const,
-            content_type: result.content_type,
-          };
-        } catch (e: any) {
-          setIsUploading(false);
-          Alert.alert('Upload Failed', e.message || 'Could not upload file to server.');
-          return;
-        } finally {
-          setIsUploading(false);
-        }
-        break;
-      }
     }
 
     if (!payload) return;
@@ -467,8 +363,6 @@ export const GeneratorFormScreen: React.FC = () => {
           subtitle={
             type === 'photo'
               ? 'Upload photo and create secure QR'
-              : type === 'file'
-              ? 'Upload PDF and create secure QR'
               : 'Fill in details & customize style'
           }
           showBack
@@ -487,8 +381,6 @@ export const GeneratorFormScreen: React.FC = () => {
           <Text style={[styles.infoBannerText, { color: theme.text }]}>
             {type === 'photo'
               ? 'Uploads photo securely and generates a scannable preview link (Max 10 MB).'
-              : type === 'file'
-              ? 'Uploads PDF/documents securely and generates a download link (Max 25 MB).'
               : meta.description}
           </Text>
         </View>
@@ -880,70 +772,12 @@ export const GeneratorFormScreen: React.FC = () => {
           </View>
         )}
 
-        {/* File / PDF QR Form */}
-        {type === 'file' && (
-          <View style={styles.fieldGroup}>
-            <Text style={[styles.label, { color: theme.text }]}>Upload PDF Document *</Text>
-            {selectedFile ? (
-              <View style={[styles.fileCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-                <View style={[styles.docIconBox, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.18)' : palette.cyan[50] }]}>
-                  <Ionicons name="document-text" size={24} color={palette.cyan[500]} />
-                </View>
-                <View style={styles.fileInfo}>
-                  <Text style={[styles.fileName, { color: theme.text }]} numberOfLines={1}>
-                    {selectedFile.name}
-                  </Text>
-                  <Text style={[styles.fileSize, { color: theme.textSecondary }]}>
-                    {FileUploadService.formatBytes(selectedFile.size)} • PDF Document
-                  </Text>
-                </View>
-                <View style={styles.fileActionBtnsRow}>
-                  <Pressable
-                    onPress={handlePickFile}
-                    style={[styles.smallBtn, { backgroundColor: theme.surfaceVariant }]}
-                  >
-                    <Ionicons name="refresh-outline" size={14} color={theme.text} />
-                    <Text style={[styles.smallBtnText, { color: theme.text }]}>Change</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={handleRemoveFile}
-                    style={[styles.smallBtn, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : palette.rose[50] }]}
-                  >
-                    <Ionicons name="trash-outline" size={14} color={palette.rose[500]} />
-                    <Text style={[styles.smallBtnText, { color: palette.rose[500] }]}>Remove</Text>
-                  </Pressable>
-                </View>
-              </View>
-            ) : (
-              <Pressable
-                onPress={handlePickFile}
-                style={({ pressed }) => [
-                  styles.uploadBox,
-                  { backgroundColor: theme.surfaceVariant, borderColor: theme.border, opacity: pressed ? 0.8 : 1 },
-                ]}
-              >
-                <View style={[styles.uploadIconCircle, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.18)' : palette.cyan[50] }]}>
-                  <Ionicons name="document-attach-outline" size={32} color={palette.cyan[500]} />
-                </View>
-                <Text style={[styles.uploadTitle, { color: theme.text }]}>Select & Upload PDF</Text>
-                <Text style={[styles.uploadSubtitle, { color: theme.textSecondary }]}>
-                  Supported: PDF, Documents • Max 25 MB
-                </Text>
-                <View style={[styles.uploadPillBtn, { backgroundColor: palette.cyan[600] }]}>
-                  <Ionicons name="add" size={16} color="#FFFFFF" style={{ marginRight: 4 }} />
-                  <Text style={styles.uploadPillText}>Choose PDF</Text>
-                </View>
-              </Pressable>
-            )}
-          </View>
-        )}
-
-        {/* Pre-selection Placeholder for Photo & PDF */}
+        {/* Pre-selection Placeholder for Photo */}
         {!isFileSelected && (
           <View style={[styles.placeholderCard, { backgroundColor: theme.surfaceVariant, borderColor: theme.borderLight }]}>
             <Ionicons name="color-palette-outline" size={24} color={theme.textMuted} style={{ marginBottom: 6 }} />
             <Text style={[styles.placeholderTitle, { color: theme.text }]}>
-              {type === 'photo' ? 'Select a photo first' : 'Select a PDF first'}
+              Select a photo first
             </Text>
             <Text style={[styles.placeholderSubtitle, { color: theme.textSecondary }]}>
               Once selected, live QR preview and styling options will appear.
@@ -951,7 +785,7 @@ export const GeneratorFormScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Live QR Preview Box (Shown only when file is selected or for standard text/URL types) */}
+        {/* Live QR Preview Box (Shown only when photo is selected or for standard text/URL types) */}
         {isFileSelected && (
           <View style={[styles.previewSection, { backgroundColor: theme.surface, borderColor: theme.border }]}>
             <Text style={[styles.previewTitle, { color: theme.textSecondary }]}>LIVE QR PREVIEW</Text>
@@ -965,7 +799,7 @@ export const GeneratorFormScreen: React.FC = () => {
           </View>
         )}
 
-        {/* QR Customization Section (Shown only when file is selected or for standard types) */}
+        {/* QR Customization Section (Shown only when photo is selected or for standard types) */}
         {isFileSelected && (
           <QRCustomizer
             customization={customization}
@@ -978,7 +812,7 @@ export const GeneratorFormScreen: React.FC = () => {
           <View style={[styles.uploadingBox, { backgroundColor: theme.surface, borderColor: theme.border }]}>
             <ActivityIndicator size="small" color={theme.primary} style={{ marginRight: spacing.sm }} />
             <Text style={[styles.uploadingText, { color: theme.text }]}>
-              Uploading file to server... {uploadProgress > 0 ? `${uploadProgress}%` : ''}
+              Uploading photo to server... {uploadProgress > 0 ? `${uploadProgress}%` : ''}
             </Text>
           </View>
         )}
@@ -989,12 +823,10 @@ export const GeneratorFormScreen: React.FC = () => {
             isUploading
               ? 'Uploading & Generating...'
               : !isFileSelected
-              ? type === 'photo'
-                ? 'Select Photo to Continue'
-                : 'Select PDF to Continue'
+              ? 'Select Photo to Continue'
               : 'Generate QR Code'
           }
-          onPress={!isFileSelected ? (type === 'photo' ? handlePickPhoto : handlePickFile) : handleGenerate}
+          onPress={!isFileSelected ? handlePickPhoto : handleGenerate}
           size="lg"
           disabled={isUploading}
           style={styles.generateBtn}

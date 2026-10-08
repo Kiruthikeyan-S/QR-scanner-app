@@ -156,7 +156,7 @@ export const QRPreviewScreen: React.FC = () => {
             </Text>
             <Text style={[styles.verifiedSubtitle, { color: theme.textSecondary }]}>
               {fileMeta
-                ? `QR code encodes verified ${fileMeta.file_type === 'photo' ? 'photo' : 'document'} URL`
+                ? 'QR code encodes verified photo URL'
                 : 'QR code data is valid and optimized for camera scanning'}
             </Text>
           </View>
@@ -200,28 +200,23 @@ export const QRPreviewScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* File / Photo Metadata Box if present */}
+        {/* Photo Metadata Box if present */}
         {fileMeta && (
           <View style={[styles.fileMetaCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
             <View
               style={[
                 styles.fileMetaIconBox,
                 {
-                  backgroundColor:
-                    fileMeta.file_type === 'photo'
-                      ? isDark
-                        ? 'rgba(16, 185, 129, 0.18)'
-                        : palette.emerald[50]
-                      : isDark
-                      ? 'rgba(6, 182, 212, 0.18)'
-                      : palette.cyan[50],
+                  backgroundColor: isDark
+                    ? 'rgba(16, 185, 129, 0.18)'
+                    : palette.emerald[50],
                 },
               ]}
             >
               <Ionicons
-                name={fileMeta.file_type === 'photo' ? 'image' : 'document-text'}
+                name="image"
                 size={22}
-                color={fileMeta.file_type === 'photo' ? palette.emerald[500] : palette.cyan[500]}
+                color={palette.emerald[500]}
               />
             </View>
             <View style={{ flex: 1 }}>
@@ -229,7 +224,7 @@ export const QRPreviewScreen: React.FC = () => {
                 {fileMeta.filename}
               </Text>
               <Text style={[styles.fileMetaSize, { color: theme.textSecondary }]}>
-                {fileMeta.size_formatted} • {fileMeta.file_type === 'photo' ? 'Image File' : 'PDF Document'}
+                {fileMeta.size_formatted} • Image File
               </Text>
             </View>
             <Pressable
