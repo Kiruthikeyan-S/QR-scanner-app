@@ -558,17 +558,6 @@ export const GeneratorFormScreen: React.FC = () => {
       <View style={{ paddingTop: insets.top }}>
         <ScreenHeader
           title={`Create ${meta.label}`}
-          subtitle={
-            type === 'photo'
-              ? 'Upload photo and create secure QR'
-              : type === 'file'
-              ? 'Upload PDF document and create QR'
-              : type === 'order_id'
-              ? 'Create QR for order reference'
-              : type === 'json'
-              ? 'Encode structured JSON data'
-              : 'Fill in details & customize style'
-          }
           showBack
           onBack={() => navigation.goBack()}
         />
@@ -579,21 +568,6 @@ export const GeneratorFormScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Info Banner */}
-        <View style={[styles.infoBanner, { backgroundColor: isDark ? meta.badgeBgDark : meta.badgeBgLight }]}>
-          <Ionicons name={meta.iconName as any} size={20} color={meta.color} style={{ marginRight: spacing.sm }} />
-          <Text style={[styles.infoBannerText, { color: theme.text }]}>
-            {type === 'photo'
-              ? 'Uploads photo securely and generates a scannable preview link (Max 10 MB).'
-              : type === 'file'
-              ? 'Uploads PDF document securely and generates a scannable download link (Max 25 MB).'
-              : type === 'order_id'
-              ? 'Generates standard Order QR for commerce tracking, logistics, and receipts.'
-              : type === 'json'
-              ? 'Encodes raw JSON payload into structured high-density QR code.'
-              : meta.description}
-          </Text>
-        </View>
 
         {/* URL Form */}
         {type === 'url' && (

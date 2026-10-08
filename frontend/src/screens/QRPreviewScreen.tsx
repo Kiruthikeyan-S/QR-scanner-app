@@ -149,17 +149,10 @@ export const QRPreviewScreen: React.FC = () => {
             },
           ]}
         >
-          <Ionicons name="shield-checkmark" size={20} color={palette.emerald[500]} style={{ marginRight: 8 }} />
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.verifiedTitle, { color: palette.emerald[600] }]}>
-              QR Verified & Scannable
-            </Text>
-            <Text style={[styles.verifiedSubtitle, { color: theme.textSecondary }]}>
-              {fileMeta
-                ? 'QR code encodes verified photo URL'
-                : 'QR code data is valid and optimized for camera scanning'}
-            </Text>
-          </View>
+          <Ionicons name="shield-checkmark" size={18} color={palette.emerald[500]} style={{ marginRight: 8 }} />
+          <Text style={[styles.verifiedTitle, { color: palette.emerald[600] }]}>
+            QR Verified & Scannable
+          </Text>
         </View>
 
         {/* QR Code Container Card */}

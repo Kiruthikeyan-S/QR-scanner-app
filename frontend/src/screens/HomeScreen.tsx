@@ -159,9 +159,6 @@ export const HomeScreen: React.FC = () => {
           <Text style={[styles.greetingTitle, { color: theme.text }]}>
             Welcome 👋
           </Text>
-          <Text style={[styles.greetingSubtitle, { color: theme.textSecondary }]}>
-            Scan, create and manage your QR codes easily.
-          </Text>
         </View>
 
         {/* Hero Card 1: SCAN QR CODE */}
@@ -191,9 +188,6 @@ export const HomeScreen: React.FC = () => {
           </View>
 
           <Text style={[styles.heroTitle, { color: theme.text }]}>Scan QR Code</Text>
-          <Text style={[styles.heroDescription, { color: theme.textSecondary }]}>
-            Scan instantly from camera feed or pick an image from gallery
-          </Text>
 
           <View style={[styles.pillTagsRow, { borderTopColor: theme.borderLight }]}>
             <View style={styles.pillTag}>
@@ -234,9 +228,6 @@ export const HomeScreen: React.FC = () => {
           </View>
 
           <Text style={[styles.heroTitle, { color: theme.text }]}>Generate QR Code</Text>
-          <Text style={[styles.heroDescription, { color: theme.textSecondary }]}>
-            Create custom QR codes for Website URL, Wi-Fi, Contact, Text & more
-          </Text>
 
           <View style={[styles.pillTagsRow, { borderTopColor: theme.borderLight }]}>
             <View style={styles.pillTag}>
@@ -281,7 +272,6 @@ export const HomeScreen: React.FC = () => {
                 <AppIcon name="image" size={22} color={palette.emerald[500]} />
               </View>
               <Text style={[styles.toolTitle, { color: theme.text }]}>Photo QR</Text>
-              <Text style={[styles.toolSubtitle, { color: theme.textSecondary }]}>Image to QR</Text>
             </Pressable>
 
             {/* PDF QR */}
@@ -303,7 +293,6 @@ export const HomeScreen: React.FC = () => {
                 <AppIcon name="document-text" size={22} color={palette.rose[500]} />
               </View>
               <Text style={[styles.toolTitle, { color: theme.text }]}>PDF QR</Text>
-              <Text style={[styles.toolSubtitle, { color: theme.textSecondary }]}>Document</Text>
             </Pressable>
 
             {/* Barcode */}
@@ -325,7 +314,6 @@ export const HomeScreen: React.FC = () => {
                 <AppIcon name="barcode" size={22} color={palette.cyan[500]} />
               </View>
               <Text style={[styles.toolTitle, { color: theme.text }]}>Barcode</Text>
-              <Text style={[styles.toolSubtitle, { color: theme.textSecondary }]}>Create Barcode</Text>
             </Pressable>
           </View>
 
@@ -350,7 +338,6 @@ export const HomeScreen: React.FC = () => {
                 <AppIcon name="cube-outline" size={22} color={palette.amber[500]} />
               </View>
               <Text style={[styles.toolTitle, { color: theme.text }]}>Order ID</Text>
-              <Text style={[styles.toolSubtitle, { color: theme.textSecondary }]}>Order Reference</Text>
             </Pressable>
 
             {/* JSON */}
@@ -372,7 +359,6 @@ export const HomeScreen: React.FC = () => {
                 <AppIcon name="code-slash-outline" size={22} color={palette.indigo[500]} />
               </View>
               <Text style={[styles.toolTitle, { color: theme.text }]}>JSON</Text>
-              <Text style={[styles.toolSubtitle, { color: theme.textSecondary }]}>Raw Data</Text>
             </Pressable>
           </View>
         </View>
@@ -410,7 +396,6 @@ export const HomeScreen: React.FC = () => {
               <AppIcon name="wifi" size={20} color={palette.indigo[600]} />
             </View>
             <Text style={[styles.quickActionLabel, { color: theme.text }]}>Share Wi-Fi</Text>
-            <Text style={[styles.quickActionSub, { color: theme.textSecondary }]}>Create code</Text>
           </Pressable>
 
           {/* Quick Action 2: Website URL */}
@@ -432,7 +417,6 @@ export const HomeScreen: React.FC = () => {
               <AppIcon name="globe" size={20} color={palette.emerald[600]} />
             </View>
             <Text style={[styles.quickActionLabel, { color: theme.text }]}>Web Link</Text>
-            <Text style={[styles.quickActionSub, { color: theme.textSecondary }]}>URL code</Text>
           </Pressable>
 
           {/* Quick Action 3: Network Checker */}
@@ -454,7 +438,6 @@ export const HomeScreen: React.FC = () => {
               <AppIcon name="shield-checkmark" size={20} color={palette.cyan[600]} />
             </View>
             <Text style={[styles.quickActionLabel, { color: theme.text }]}>Network Check</Text>
-            <Text style={[styles.quickActionSub, { color: theme.textSecondary }]}>Diagnostics</Text>
           </Pressable>
         </View>
 
@@ -595,19 +578,9 @@ export const HomeScreen: React.FC = () => {
                 >
                   <AppIcon name="qr-code" size={22} color={palette.emerald[500]} />
                 </View>
-                <View style={styles.createOptionTextWrap}>
-                  <Text style={[styles.createOptionTitle, { color: theme.text }]}>
-                    QR Code
-                  </Text>
-                  <Text
-                    style={[
-                      styles.createOptionSub,
-                      { color: theme.textSecondary },
-                    ]}
-                  >
-                    URL, Wi-Fi, Text, Contact & more
-                  </Text>
-                </View>
+                <Text style={[styles.createOptionTitle, { color: theme.text, flex: 1 }]}>
+                  QR Code
+                </Text>
                 <AppIcon
                   name="chevron-forward"
                   size={20}
@@ -638,19 +611,9 @@ export const HomeScreen: React.FC = () => {
                 >
                   <AppIcon name="image" size={22} color={palette.cyan[500]} />
                 </View>
-                <View style={styles.createOptionTextWrap}>
-                  <Text style={[styles.createOptionTitle, { color: theme.text }]}>
-                    Photo QR
-                  </Text>
-                  <Text
-                    style={[
-                      styles.createOptionSub,
-                      { color: theme.textSecondary },
-                    ]}
-                  >
-                    Create QR code from photo or gallery
-                  </Text>
-                </View>
+                <Text style={[styles.createOptionTitle, { color: theme.text, flex: 1 }]}>
+                  Photo QR
+                </Text>
                 <AppIcon
                   name="chevron-forward"
                   size={20}
@@ -681,19 +644,9 @@ export const HomeScreen: React.FC = () => {
                 >
                   <AppIcon name="document-text" size={22} color={palette.rose[500]} />
                 </View>
-                <View style={styles.createOptionTextWrap}>
-                  <Text style={[styles.createOptionTitle, { color: theme.text }]}>
-                    PDF QR
-                  </Text>
-                  <Text
-                    style={[
-                      styles.createOptionSub,
-                      { color: theme.textSecondary },
-                    ]}
-                  >
-                    Create QR code from PDF document
-                  </Text>
-                </View>
+                <Text style={[styles.createOptionTitle, { color: theme.text, flex: 1 }]}>
+                  PDF QR
+                </Text>
                 <AppIcon
                   name="chevron-forward"
                   size={20}
@@ -724,19 +677,9 @@ export const HomeScreen: React.FC = () => {
                 >
                   <AppIcon name="cube-outline" size={22} color={palette.amber[500]} />
                 </View>
-                <View style={styles.createOptionTextWrap}>
-                  <Text style={[styles.createOptionTitle, { color: theme.text }]}>
-                    Order ID
-                  </Text>
-                  <Text
-                    style={[
-                      styles.createOptionSub,
-                      { color: theme.textSecondary },
-                    ]}
-                  >
-                    Create QR for order reference & tracking
-                  </Text>
-                </View>
+                <Text style={[styles.createOptionTitle, { color: theme.text, flex: 1 }]}>
+                  Order ID
+                </Text>
                 <AppIcon
                   name="chevron-forward"
                   size={20}
@@ -744,7 +687,7 @@ export const HomeScreen: React.FC = () => {
                 />
               </Pressable>
 
-              {/* 4. JSON */}
+              {/* 5. JSON */}
               <Pressable
                 onPress={() =>
                   handleCreateOption(() =>
@@ -767,19 +710,9 @@ export const HomeScreen: React.FC = () => {
                 >
                   <AppIcon name="code-slash-outline" size={22} color={palette.indigo[500]} />
                 </View>
-                <View style={styles.createOptionTextWrap}>
-                  <Text style={[styles.createOptionTitle, { color: theme.text }]}>
-                    JSON Data
-                  </Text>
-                  <Text
-                    style={[
-                      styles.createOptionSub,
-                      { color: theme.textSecondary },
-                    ]}
-                  >
-                    Encode structured JSON object payload
-                  </Text>
-                </View>
+                <Text style={[styles.createOptionTitle, { color: theme.text, flex: 1 }]}>
+                  JSON
+                </Text>
                 <AppIcon
                   name="chevron-forward"
                   size={20}
@@ -787,7 +720,7 @@ export const HomeScreen: React.FC = () => {
                 />
               </Pressable>
 
-              {/* 5. Barcode */}
+              {/* 6. Barcode */}
               <Pressable
                 onPress={() =>
                   handleCreateOption(() =>
@@ -810,19 +743,9 @@ export const HomeScreen: React.FC = () => {
                 >
                   <AppIcon name="barcode" size={22} color={palette.cyan[500]} />
                 </View>
-                <View style={styles.createOptionTextWrap}>
-                  <Text style={[styles.createOptionTitle, { color: theme.text }]}>
-                    Barcode
-                  </Text>
-                  <Text
-                    style={[
-                      styles.createOptionSub,
-                      { color: theme.textSecondary },
-                    ]}
-                  >
-                    Generate 1D and 2D barcode formats
-                  </Text>
-                </View>
+                <Text style={[styles.createOptionTitle, { color: theme.text, flex: 1 }]}>
+                  Barcode
+                </Text>
                 <AppIcon
                   name="chevron-forward"
                   size={20}
@@ -901,49 +824,40 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   greetingSection: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.md,
     marginTop: spacing.xs,
   },
   greetingTitle: {
     fontSize: typography.fontSize['2xl'],
     fontWeight: typography.fontWeight.bold,
-    marginBottom: 4,
-  },
-  greetingSubtitle: {
-    fontSize: typography.fontSize.sm,
   },
   heroCard: {
-    borderRadius: borderRadius['2xl'],
+    borderRadius: borderRadius.xl,
     borderWidth: 1,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-    elevation: 3,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
+    padding: spacing.base,
+    marginBottom: spacing.md,
+    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
   },
   heroIconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: borderRadius.xl,
+    width: 46,
+    height: 46,
+    borderRadius: borderRadius.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacing.xs + 2,
   },
   heroTitle: {
-    fontSize: typography.fontSize.xl,
+    fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
-    marginBottom: 4,
-  },
-  heroDescription: {
-    fontSize: typography.fontSize.sm,
-    lineHeight: typography.lineHeight.sm,
-    marginBottom: spacing.base,
   },
   pillTagsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: spacing.md,
+    paddingTop: spacing.xs + 4,
+    marginTop: spacing.xs + 2,
     borderTopWidth: 1,
     flexWrap: 'wrap',
     gap: spacing.sm,
@@ -961,15 +875,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: spacing.sm,
-    marginBottom: spacing.md,
+    marginTop: spacing.xs,
+    marginBottom: spacing.sm,
   },
   sectionTitle: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
+    letterSpacing: 0.5,
   },
   sectionLink: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.semibold,
   },
   timestampText: {
@@ -977,7 +892,7 @@ const styles = StyleSheet.create({
   },
   toolsContainer: {
     gap: spacing.sm,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   toolsRow: {
     flexDirection: 'row',
@@ -985,60 +900,52 @@ const styles = StyleSheet.create({
   },
   toolCard: {
     flex: 1,
-    borderRadius: borderRadius.xl,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm + 2,
     paddingHorizontal: spacing.xs,
     alignItems: 'center',
     justifyContent: 'center',
   },
   toolIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.lg,
+    width: 38,
+    height: 38,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.xs,
+    marginBottom: 4,
   },
   toolTitle: {
     fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
+    fontWeight: typography.fontWeight.semibold,
     textAlign: 'center',
-  },
-  toolSubtitle: {
-    fontSize: 10,
-    textAlign: 'center',
-    marginTop: 2,
   },
   quickActionsGrid: {
     flexDirection: 'row',
-    gap: spacing.md,
-    marginBottom: spacing.xl,
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
   },
   quickActionCard: {
     flex: 1,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    padding: spacing.md,
-    alignItems: 'center',
-  },
-  quickIconBox: {
-    width: 40,
-    height: 40,
     borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.xs,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.xs,
+  },
+  quickIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
   },
   quickActionLabel: {
     fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
+    fontWeight: typography.fontWeight.semibold,
     textAlign: 'center',
-  },
-  quickActionSub: {
-    fontSize: 10,
-    textAlign: 'center',
-    marginTop: 2,
   },
   recentSection: {
     marginTop: spacing.xs,

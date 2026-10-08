@@ -123,7 +123,6 @@ export const BarcodeGeneratorScreen: React.FC = () => {
       <View style={{ paddingTop: insets.top }}>
         <ScreenHeader
           title="Create Barcode"
-          subtitle="Generate linear product & inventory barcodes"
           showBack
           onBack={() => navigation.goBack()}
         />

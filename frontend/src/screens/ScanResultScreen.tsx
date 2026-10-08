@@ -182,7 +182,6 @@ export const ScanResultScreen: React.FC = () => {
       <View style={{ paddingTop: insets.top }}>
         <ScreenHeader
           title={isUnsafeURL ? 'Security Warning' : 'Scan Result'}
-          subtitle={isUnsafeURL ? 'Threat detected in link' : 'Decoded data details'}
           showBack
           onBack={() => navigation.navigate('MainTabs', { screen: 'HomeTab' })}
           rightAction={

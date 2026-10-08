@@ -62,7 +62,6 @@ export const NetworkCheckerScreen: React.FC = () => {
       <View style={{ paddingTop: insets.top }}>
         <ScreenHeader
           title="Network Checker"
-          subtitle="Real-time connection diagnostics"
           showBack
           onBack={() => navigation.goBack()}
         />

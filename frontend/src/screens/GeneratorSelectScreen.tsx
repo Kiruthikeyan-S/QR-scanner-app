@@ -31,7 +31,6 @@ export const GeneratorSelectScreen: React.FC = () => {
       <View style={{ paddingTop: insets.top }}>
         <ScreenHeader
           title="Create QR Code"
-          subtitle="Select format to generate"
           showBack
           onBack={() => navigation.goBack()}
         />
@@ -46,14 +45,6 @@ export const GeneratorSelectScreen: React.FC = () => {
           { paddingBottom: insets.bottom + spacing['2xl'] },
         ]}
         showsVerticalScrollIndicator={false}
-        ListHeaderComponent={
-          <View style={styles.headerArea}>
-            <Text style={[styles.headerTitle, { color: theme.text }]}>Choose QR Type</Text>
-            <Text style={[styles.headerDesc, { color: theme.textSecondary }]}>
-              Generate standard offline QR codes readable by any phone camera or scanner app.
-            </Text>
-          </View>
-        }
         renderItem={({ item }) => (
           <QRTypeCard item={item} onPress={() => handleSelectType(item.type)} />
         )}
