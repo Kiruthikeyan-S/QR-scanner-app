@@ -34,12 +34,12 @@ export function detectQRType(rawText: string): QRType {
   }
 
   // Photo QR detection
-  if (/\/files\/view\/P-[a-zA-Z0-9]+/i.test(text) || /\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(text)) {
+  if (/\/files\/(view\/|download\/)?P-[a-zA-Z0-9_-]+/i.test(text) || /\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(text)) {
     return 'photo';
   }
 
   // File / PDF QR detection
-  if (/\/files\/view\/F-[a-zA-Z0-9]+/i.test(text) || /\.(pdf|docx?|xlsx?|txt|csv|zip)(\?.*)?$/i.test(text)) {
+  if (/\/files\/(view\/|download\/)?F-[a-zA-Z0-9_-]+/i.test(text) || /\.(pdf|docx?|xlsx?|txt|csv|zip)(\?.*)?$/i.test(text)) {
     return 'file';
   }
 

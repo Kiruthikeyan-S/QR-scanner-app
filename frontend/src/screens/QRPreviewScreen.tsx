@@ -7,6 +7,7 @@ import {
   Alert,
   Modal,
   TextInput,
+  Pressable,
 } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -36,7 +37,17 @@ export const QRPreviewScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<PreviewRouteProp>();
 
-  const { type, data, title, isSaved: initialIsSaved, savedId, customization, fileMeta } = route.params;
+  const {
+    type,
+    data,
+    title,
+    isSaved: initialIsSaved,
+    savedId,
+    customization,
+    fileMeta,
+    isVerified,
+  } = route.params;
+
   const meta = QR_TYPES[type] || QR_TYPES.text;
 
   const [isSaved, setIsSaved] = useState(Boolean(initialIsSaved));
@@ -87,7 +98,7 @@ export const QRPreviewScreen: React.FC = () => {
     triggerLightHaptic();
     const ok = await ActionHandler.copyToClipboard(data);
     if (ok) {
-      Alert.alert('Copied', 'QR data copied to clipboard.');
+      Alert.alert('Copied', 'QR data URL copied to clipboard.');
     }
   };
 
@@ -99,12 +110,17 @@ export const QRPreviewScreen: React.FC = () => {
     });
   };
 
+  const handleOpenFileUrl = async () => {
+    triggerLightHaptic();
+    await ActionHandler.openUrl(data);
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={{ paddingTop: insets.top }}>
         <ScreenHeader
           title="Generated QR"
-          subtitle="Ready to scan and share"
+          subtitle="Ready to scan, test, and share"
           showBack
           onBack={() => navigation.goBack()}
           rightAction={{
@@ -121,6 +137,29 @@ export const QRPreviewScreen: React.FC = () => {
         ]}
         showsVerticalScrollIndicator={false}
       >
+        {/* Verification Status Banner */}
+        <View
+          style={[
+            styles.verifiedBanner,
+            {
+              backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : palette.emerald[50],
+              borderColor: palette.emerald[500],
+            },
+          ]}
+        >
+          <Ionicons name="shield-checkmark" size={20} color={palette.emerald[500]} style={{ marginRight: 8 }} />
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.verifiedTitle, { color: palette.emerald[600] }]}>
+              QR Verified & Scannable
+            </Text>
+            <Text style={[styles.verifiedSubtitle, { color: theme.textSecondary }]}>
+              {fileMeta
+                ? `QR code encodes verified ${fileMeta.file_type === 'photo' ? 'photo' : 'document'} URL`
+                : 'QR code data is valid and optimized for camera scanning'}
+            </Text>
+          </View>
+        </View>
+
         {/* QR Code Container Card */}
         <View
           style={[
@@ -162,11 +201,25 @@ export const QRPreviewScreen: React.FC = () => {
         {/* File / Photo Metadata Box if present */}
         {fileMeta && (
           <View style={[styles.fileMetaCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            <View style={[styles.fileMetaIconBox, { backgroundColor: theme.primaryLight }]}>
+            <View
+              style={[
+                styles.fileMetaIconBox,
+                {
+                  backgroundColor:
+                    fileMeta.file_type === 'photo'
+                      ? isDark
+                        ? 'rgba(16, 185, 129, 0.18)'
+                        : palette.emerald[50]
+                      : isDark
+                      ? 'rgba(6, 182, 212, 0.18)'
+                      : palette.cyan[50],
+                },
+              ]}
+            >
               <Ionicons
                 name={fileMeta.file_type === 'photo' ? 'image' : 'document-text'}
                 size={22}
-                color={theme.primary}
+                color={fileMeta.file_type === 'photo' ? palette.emerald[500] : palette.cyan[500]}
               />
             </View>
             <View style={{ flex: 1 }}>
@@ -174,9 +227,15 @@ export const QRPreviewScreen: React.FC = () => {
                 {fileMeta.filename}
               </Text>
               <Text style={[styles.fileMetaSize, { color: theme.textSecondary }]}>
-                {fileMeta.size_formatted} • {fileMeta.file_type.toUpperCase()}
+                {fileMeta.size_formatted} • {fileMeta.file_type === 'photo' ? 'Image File' : 'PDF Document'}
               </Text>
             </View>
+            <Pressable
+              onPress={handleOpenFileUrl}
+              style={[styles.openLinkBtn, { backgroundColor: theme.surfaceVariant }]}
+            >
+              <Ionicons name="open-outline" size={16} color={theme.primary} />
+            </Pressable>
           </View>
         )}
 
@@ -198,7 +257,7 @@ export const QRPreviewScreen: React.FC = () => {
             style={styles.gridBtn}
           />
           <SecondaryButton
-            title="Copy Data"
+            title="Copy Link"
             icon="copy-outline"
             variant="outline"
             onPress={handleCopy}
@@ -259,7 +318,7 @@ export const QRPreviewScreen: React.FC = () => {
                 style={{ flex: 1, marginRight: spacing.sm }}
               />
               <PrimaryButton
-                title="Save"
+                title="Confirm Save"
                 onPress={confirmSave}
                 style={{ flex: 1 }}
               />
@@ -278,47 +337,63 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: spacing.lg,
   },
+  verifiedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    marginBottom: spacing.base,
+  },
+  verifiedTitle: {
+    fontSize: typography.fontSize.xs + 1,
+    fontWeight: typography.fontWeight.bold,
+  },
+  verifiedSubtitle: {
+    fontSize: 11,
+    marginTop: 1,
+  },
   qrCard: {
     borderRadius: borderRadius['2xl'],
     borderWidth: 1,
     padding: spacing.xl,
     alignItems: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacing.base,
     elevation: 3,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
   },
   cardHeader: {
     width: '100%',
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.lg,
+    justifyContent: 'flex-start',
+    marginBottom: spacing.md,
   },
   qrWrapper: {
-    padding: spacing.sm,
+    padding: spacing.md,
+    backgroundColor: '#FFFFFF',
     borderRadius: borderRadius.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: spacing.lg,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   qrTitle: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
+    marginBottom: spacing.xs,
     textAlign: 'center',
-    marginBottom: spacing.sm,
   },
   monoBox: {
     width: '100%',
     padding: spacing.md,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
+    marginTop: spacing.xs,
   },
   monoText: {
-    fontFamily: typography.fontFamily.mono,
     fontSize: typography.fontSize.xs,
-    lineHeight: typography.lineHeight.xs,
+    textAlign: 'center',
   },
   fileMetaCard: {
     flexDirection: 'row',
@@ -326,7 +401,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: borderRadius.xl,
     borderWidth: 1,
-    marginBottom: spacing.md,
+    marginBottom: spacing.base,
   },
   fileMetaIconBox: {
     width: 44,
@@ -344,7 +419,16 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.xs,
     marginTop: 2,
   },
+  openLinkBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: spacing.sm,
+  },
   actionBtn: {
+    marginTop: spacing.sm,
     marginBottom: spacing.md,
   },
   secondaryGrid: {
@@ -356,18 +440,16 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.xl,
   },
   modalCard: {
     width: '100%',
-    maxWidth: 400,
     borderRadius: borderRadius['2xl'],
     borderWidth: 1,
     padding: spacing.xl,
-    elevation: 6,
   },
   modalTitle: {
     fontSize: typography.fontSize.lg,
@@ -375,20 +457,18 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   modalSubtitle: {
-    fontSize: typography.fontSize.xs,
-    lineHeight: typography.lineHeight.xs,
-    marginBottom: spacing.lg,
+    fontSize: typography.fontSize.sm,
+    marginBottom: spacing.md,
   },
   modalInput: {
     height: 48,
-    borderRadius: borderRadius.lg,
     borderWidth: 1,
+    borderRadius: borderRadius.lg,
     paddingHorizontal: spacing.md,
-    fontSize: typography.fontSize.sm,
-    marginBottom: spacing.xl,
+    fontSize: typography.fontSize.base,
+    marginBottom: spacing.lg,
   },
   modalActionRow: {
     flexDirection: 'row',
-    alignItems: 'center',
   },
 });

@@ -35,6 +35,7 @@ export type RootStackParamList = {
       file_type: 'photo' | 'file';
       content_type?: string;
     };
+    isVerified?: boolean;
   };
   NetworkChecker: undefined;
   BarcodeGenerator: undefined;

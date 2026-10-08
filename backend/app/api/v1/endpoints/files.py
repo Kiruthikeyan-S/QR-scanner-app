@@ -141,6 +141,7 @@ async def download_file(token_id: str):
     )
 
 @router.get("/view/{token_id}", response_class=HTMLResponse)
+@router.get("/{token_id}", response_class=HTMLResponse)
 async def view_file_page(token_id: str, request: Request):
     metadata = load_metadata()
     if token_id not in metadata:

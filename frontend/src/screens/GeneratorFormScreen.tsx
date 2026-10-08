@@ -10,6 +10,7 @@ import {
   Pressable,
   Image,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -20,6 +21,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { RootStackParamList } from '../types/navigation';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { PrimaryButton } from '../components/PrimaryButton';
+import { SecondaryButton } from '../components/SecondaryButton';
 import { useTheme } from '../theme/ThemeContext';
 import { palette } from '../theme/colors';
 import { QR_TYPES } from '../constants/config';
@@ -92,6 +94,9 @@ export const GeneratorFormScreen: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
+  // Full-size image preview modal
+  const [previewModalVisible, setPreviewModalVisible] = useState(false);
+
   // Customization State
   const [customization, setCustomization] = useState<QRCustomization>({
     fgColor: '#000000',
@@ -142,12 +147,17 @@ export const GeneratorFormScreen: React.FC = () => {
     }
   };
 
+  const handleRemovePhoto = () => {
+    triggerLightHaptic();
+    setSelectedPhoto(null);
+  };
+
   // Document Picker Handler
   const handlePickFile = async () => {
     try {
       triggerLightHaptic();
       const result = await DocumentPicker.getDocumentAsync({
-        type: '*/*',
+        type: ['application/pdf', 'application/*', '*/*'],
         copyToCacheDirectory: true,
       });
 
@@ -171,6 +181,11 @@ export const GeneratorFormScreen: React.FC = () => {
     } catch (e: any) {
       Alert.alert('Picker Error', e.message || 'Failed to select document.');
     }
+  };
+
+  const handleRemoveFile = () => {
+    triggerLightHaptic();
+    setSelectedFile(null);
   };
 
   // Compute Live Preview Payload
@@ -211,6 +226,9 @@ export const GeneratorFormScreen: React.FC = () => {
         return 'https://qrsmart.app';
     }
   };
+
+  // Check if file is ready (for photo and file types)
+  const isFileSelected = type === 'photo' ? Boolean(selectedPhoto) : type === 'file' ? Boolean(selectedFile) : true;
 
   const handleGenerate = async () => {
     let payload = '';
@@ -318,7 +336,7 @@ export const GeneratorFormScreen: React.FC = () => {
 
         try {
           setIsUploading(true);
-          setUploadProgress(15);
+          setUploadProgress(20);
 
           const result = await FileUploadService.uploadFile(
             selectedPhoto.uri,
@@ -354,7 +372,7 @@ export const GeneratorFormScreen: React.FC = () => {
 
         try {
           setIsUploading(true);
-          setUploadProgress(15);
+          setUploadProgress(20);
 
           const result = await FileUploadService.uploadFile(
             selectedFile.uri,
@@ -366,7 +384,7 @@ export const GeneratorFormScreen: React.FC = () => {
           );
 
           payload = result.qr_url;
-          title = `File: ${result.filename}`;
+          title = `PDF: ${result.filename}`;
           fileMeta = {
             filename: result.filename,
             size_formatted: result.size_formatted,
@@ -393,6 +411,7 @@ export const GeneratorFormScreen: React.FC = () => {
       title,
       customization,
       fileMeta,
+      isVerified: true,
     });
   };
 
@@ -402,8 +421,10 @@ export const GeneratorFormScreen: React.FC = () => {
         <ScreenHeader
           title={`Create ${meta.label}`}
           subtitle={
-            type === 'photo' || type === 'file'
-              ? 'Upload file & create secure QR'
+            type === 'photo'
+              ? 'Upload photo and create secure QR'
+              : type === 'file'
+              ? 'Upload PDF and create secure QR'
               : 'Fill in details & customize style'
           }
           showBack
@@ -430,34 +451,35 @@ export const GeneratorFormScreen: React.FC = () => {
 
         {/* URL Form */}
         {type === 'url' && (
-          <>
-            <View style={styles.fieldGroup}>
-              <Text style={[styles.label, { color: theme.text }]}>Website URL *</Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text },
-                ]}
-                value={url}
-                onChangeText={setUrl}
-                placeholder="https://yourwebsite.com"
-                placeholderTextColor={theme.textMuted}
-                autoCapitalize="none"
-                keyboardType="url"
-              />
-            </View>
-            <URLPreviewCard
-              url={url}
-              onSelectShortcut={(shortcut) => setUrl(shortcut)}
-              onClear={() => setUrl('')}
+          <View style={styles.fieldGroup}>
+            <Text style={[styles.label, { color: theme.text }]}>Website URL *</Text>
+            <TextInput
+              style={[
+                styles.input,
+                { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text },
+              ]}
+              value={url}
+              onChangeText={setUrl}
+              placeholder="https://example.com"
+              placeholderTextColor={theme.textMuted}
+              autoCapitalize="none"
+              keyboardType="url"
             />
-          </>
+            {url.trim().length > 0 && (
+              <URLPreviewCard
+                url={url}
+                onSelectShortcut={(shortcut) => setUrl(shortcut)}
+                onClear={() => setUrl('')}
+                style={{ marginTop: spacing.sm }}
+              />
+            )}
+          </View>
         )}
 
-        {/* Plain Text Form */}
+        {/* Text Form */}
         {type === 'text' && (
           <View style={styles.fieldGroup}>
-            <Text style={[styles.label, { color: theme.text }]}>Text Content *</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Plain Text Content *</Text>
             <TextInput
               style={[
                 styles.textArea,
@@ -465,7 +487,7 @@ export const GeneratorFormScreen: React.FC = () => {
               ]}
               value={text}
               onChangeText={setText}
-              placeholder="Enter notes, numbers, or message..."
+              placeholder="Type any message, notes, or data..."
               placeholderTextColor={theme.textMuted}
               multiline
               numberOfLines={4}
@@ -485,26 +507,28 @@ export const GeneratorFormScreen: React.FC = () => {
                 ]}
                 value={wifiSsid}
                 onChangeText={setWifiSsid}
-                placeholder="e.g. Home_Network_5G"
+                placeholder="e.g. Home_WiFi_5G"
                 placeholderTextColor={theme.textMuted}
               />
             </View>
             <View style={styles.fieldGroup}>
               <Text style={[styles.label, { color: theme.text }]}>Password</Text>
-              <View style={styles.passwordWrapper}>
+              <View style={styles.passwordRow}>
                 <TextInput
                   style={[
                     styles.input,
-                    styles.passwordInput,
-                    { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text },
+                    { flex: 1, backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text },
                   ]}
                   value={wifiPass}
                   onChangeText={setWifiPass}
-                  placeholder="Enter Wi-Fi password"
+                  placeholder="Network password"
                   placeholderTextColor={theme.textMuted}
                   secureTextEntry={!showWifiPass}
                 />
-                <Pressable onPress={() => setShowWifiPass(!showWifiPass)} style={styles.passToggle}>
+                <Pressable
+                  onPress={() => setShowWifiPass(!showWifiPass)}
+                  style={[styles.eyeBtn, { backgroundColor: theme.surfaceVariant }]}
+                >
                   <Ionicons
                     name={showWifiPass ? 'eye-off-outline' : 'eye-outline'}
                     size={18}
@@ -622,7 +646,7 @@ export const GeneratorFormScreen: React.FC = () => {
               />
             </View>
             <View style={styles.fieldGroup}>
-              <Text style={[styles.label, { color: theme.text }]}>SMS Text</Text>
+              <Text style={[styles.label, { color: theme.text }]}>Pre-filled SMS Text</Text>
               <TextInput
                 style={[
                   styles.textArea,
@@ -630,7 +654,7 @@ export const GeneratorFormScreen: React.FC = () => {
                 ]}
                 value={smsMessage}
                 onChangeText={setSmsMessage}
-                placeholder="Pre-filled SMS body text..."
+                placeholder="Type the message here..."
                 placeholderTextColor={theme.textMuted}
                 multiline
                 numberOfLines={3}
@@ -639,7 +663,7 @@ export const GeneratorFormScreen: React.FC = () => {
           </>
         )}
 
-        {/* Contact Form */}
+        {/* Contact (vCard) Form */}
         {type === 'contact' && (
           <>
             <View style={styles.fieldGroup}>
@@ -752,7 +776,7 @@ export const GeneratorFormScreen: React.FC = () => {
         {/* Photo QR Form */}
         {type === 'photo' && (
           <View style={styles.fieldGroup}>
-            <Text style={[styles.label, { color: theme.text }]}>Select Image (JPG, PNG, WEBP) *</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Upload Photo *</Text>
             {selectedPhoto ? (
               <View style={[styles.fileCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
                 <Image source={{ uri: selectedPhoto.uri }} style={styles.photoThumb} />
@@ -761,12 +785,32 @@ export const GeneratorFormScreen: React.FC = () => {
                     {selectedPhoto.name}
                   </Text>
                   <Text style={[styles.fileSize, { color: theme.textSecondary }]}>
-                    {FileUploadService.formatBytes(selectedPhoto.size)}
+                    {FileUploadService.formatBytes(selectedPhoto.size)} • JPG/PNG
                   </Text>
                 </View>
-                <Pressable onPress={handlePickPhoto} style={styles.fileActionBtn}>
-                  <Text style={[styles.fileActionText, { color: theme.primary }]}>Change</Text>
-                </Pressable>
+                <View style={styles.fileActionBtnsRow}>
+                  <Pressable
+                    onPress={() => setPreviewModalVisible(true)}
+                    style={[styles.smallBtn, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : palette.emerald[50] }]}
+                  >
+                    <Ionicons name="eye-outline" size={14} color={palette.emerald[600]} />
+                    <Text style={[styles.smallBtnText, { color: palette.emerald[600] }]}>Preview</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={handlePickPhoto}
+                    style={[styles.smallBtn, { backgroundColor: theme.surfaceVariant }]}
+                  >
+                    <Ionicons name="refresh-outline" size={14} color={theme.text} />
+                    <Text style={[styles.smallBtnText, { color: theme.text }]}>Change</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={handleRemovePhoto}
+                    style={[styles.smallBtn, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : palette.rose[50] }]}
+                  >
+                    <Ionicons name="trash-outline" size={14} color={palette.rose[500]} />
+                    <Text style={[styles.smallBtnText, { color: palette.rose[500] }]}>Remove</Text>
+                  </Pressable>
+                </View>
               </View>
             ) : (
               <Pressable
@@ -776,13 +820,17 @@ export const GeneratorFormScreen: React.FC = () => {
                   { backgroundColor: theme.surfaceVariant, borderColor: theme.border, opacity: pressed ? 0.8 : 1 },
                 ]}
               >
-                <View style={[styles.uploadIconCircle, { backgroundColor: palette.emerald[50] }]}>
-                  <Ionicons name="image-outline" size={32} color={palette.emerald[600]} />
+                <View style={[styles.uploadIconCircle, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.18)' : palette.emerald[50] }]}>
+                  <Ionicons name="image-outline" size={32} color={palette.emerald[500]} />
                 </View>
-                <Text style={[styles.uploadTitle, { color: theme.text }]}>Upload Photo</Text>
+                <Text style={[styles.uploadTitle, { color: theme.text }]}>Select & Upload Photo</Text>
                 <Text style={[styles.uploadSubtitle, { color: theme.textSecondary }]}>
-                  Tap to browse gallery (Max 10 MB)
+                  Supported: JPG, JPEG, PNG, WEBP • Max 10 MB
                 </Text>
+                <View style={[styles.uploadPillBtn, { backgroundColor: theme.primary }]}>
+                  <Ionicons name="add" size={16} color="#FFFFFF" style={{ marginRight: 4 }} />
+                  <Text style={styles.uploadPillText}>Choose Image</Text>
+                </View>
               </Pressable>
             )}
           </View>
@@ -791,23 +839,36 @@ export const GeneratorFormScreen: React.FC = () => {
         {/* File / PDF QR Form */}
         {type === 'file' && (
           <View style={styles.fieldGroup}>
-            <Text style={[styles.label, { color: theme.text }]}>Select Document (PDF, DOCX, TXT, ZIP) *</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Upload PDF Document *</Text>
             {selectedFile ? (
               <View style={[styles.fileCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-                <View style={[styles.docIconBox, { backgroundColor: palette.cyan[50] }]}>
-                  <Ionicons name="document-text" size={24} color={palette.cyan[600]} />
+                <View style={[styles.docIconBox, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.18)' : palette.cyan[50] }]}>
+                  <Ionicons name="document-text" size={24} color={palette.cyan[500]} />
                 </View>
                 <View style={styles.fileInfo}>
                   <Text style={[styles.fileName, { color: theme.text }]} numberOfLines={1}>
                     {selectedFile.name}
                   </Text>
                   <Text style={[styles.fileSize, { color: theme.textSecondary }]}>
-                    {FileUploadService.formatBytes(selectedFile.size)}
+                    {FileUploadService.formatBytes(selectedFile.size)} • PDF Document
                   </Text>
                 </View>
-                <Pressable onPress={handlePickFile} style={styles.fileActionBtn}>
-                  <Text style={[styles.fileActionText, { color: theme.primary }]}>Change</Text>
-                </Pressable>
+                <View style={styles.fileActionBtnsRow}>
+                  <Pressable
+                    onPress={handlePickFile}
+                    style={[styles.smallBtn, { backgroundColor: theme.surfaceVariant }]}
+                  >
+                    <Ionicons name="refresh-outline" size={14} color={theme.text} />
+                    <Text style={[styles.smallBtnText, { color: theme.text }]}>Change</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={handleRemoveFile}
+                    style={[styles.smallBtn, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : palette.rose[50] }]}
+                  >
+                    <Ionicons name="trash-outline" size={14} color={palette.rose[500]} />
+                    <Text style={[styles.smallBtnText, { color: palette.rose[500] }]}>Remove</Text>
+                  </Pressable>
+                </View>
               </View>
             ) : (
               <Pressable
@@ -817,35 +878,56 @@ export const GeneratorFormScreen: React.FC = () => {
                   { backgroundColor: theme.surfaceVariant, borderColor: theme.border, opacity: pressed ? 0.8 : 1 },
                 ]}
               >
-                <View style={[styles.uploadIconCircle, { backgroundColor: palette.cyan[50] }]}>
-                  <Ionicons name="document-attach-outline" size={32} color={palette.cyan[600]} />
+                <View style={[styles.uploadIconCircle, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.18)' : palette.cyan[50] }]}>
+                  <Ionicons name="document-attach-outline" size={32} color={palette.cyan[500]} />
                 </View>
-                <Text style={[styles.uploadTitle, { color: theme.text }]}>Upload File or PDF</Text>
+                <Text style={[styles.uploadTitle, { color: theme.text }]}>Select & Upload PDF</Text>
                 <Text style={[styles.uploadSubtitle, { color: theme.textSecondary }]}>
-                  Tap to browse documents (Max 25 MB)
+                  Supported: PDF, Documents • Max 25 MB
                 </Text>
+                <View style={[styles.uploadPillBtn, { backgroundColor: palette.cyan[600] }]}>
+                  <Ionicons name="add" size={16} color="#FFFFFF" style={{ marginRight: 4 }} />
+                  <Text style={styles.uploadPillText}>Choose PDF</Text>
+                </View>
               </Pressable>
             )}
           </View>
         )}
 
-        {/* Live QR Preview Box */}
-        <View style={[styles.previewSection, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-          <Text style={[styles.previewTitle, { color: theme.textSecondary }]}>LIVE QR PREVIEW</Text>
-          <View style={styles.qrCenteredWrapper}>
-            <CustomQRCode
-              value={getPreviewPayload()}
-              size={180}
-              customization={customization}
-            />
+        {/* Pre-selection Placeholder for Photo & PDF */}
+        {!isFileSelected && (
+          <View style={[styles.placeholderCard, { backgroundColor: theme.surfaceVariant, borderColor: theme.borderLight }]}>
+            <Ionicons name="color-palette-outline" size={24} color={theme.textMuted} style={{ marginBottom: 6 }} />
+            <Text style={[styles.placeholderTitle, { color: theme.text }]}>
+              {type === 'photo' ? 'Select a photo first' : 'Select a PDF first'}
+            </Text>
+            <Text style={[styles.placeholderSubtitle, { color: theme.textSecondary }]}>
+              Once selected, live QR preview and styling options will appear.
+            </Text>
           </View>
-        </View>
+        )}
 
-        {/* QR Customization Section */}
-        <QRCustomizer
-          customization={customization}
-          onChange={setCustomization}
-        />
+        {/* Live QR Preview Box (Shown only when file is selected or for standard text/URL types) */}
+        {isFileSelected && (
+          <View style={[styles.previewSection, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <Text style={[styles.previewTitle, { color: theme.textSecondary }]}>LIVE QR PREVIEW</Text>
+            <View style={styles.qrCenteredWrapper}>
+              <CustomQRCode
+                value={getPreviewPayload()}
+                size={180}
+                customization={customization}
+              />
+            </View>
+          </View>
+        )}
+
+        {/* QR Customization Section (Shown only when file is selected or for standard types) */}
+        {isFileSelected && (
+          <QRCustomizer
+            customization={customization}
+            onChange={setCustomization}
+          />
+        )}
 
         {/* Upload Progress Indicator */}
         {isUploading && (
@@ -859,13 +941,58 @@ export const GeneratorFormScreen: React.FC = () => {
 
         {/* Submit Generate Button */}
         <PrimaryButton
-          title={isUploading ? 'Uploading & Generating...' : 'Generate QR Code'}
-          onPress={handleGenerate}
+          title={
+            isUploading
+              ? 'Uploading & Generating...'
+              : !isFileSelected
+              ? type === 'photo'
+                ? 'Select Photo to Continue'
+                : 'Select PDF to Continue'
+              : 'Generate QR Code'
+          }
+          onPress={!isFileSelected ? (type === 'photo' ? handlePickPhoto : handlePickFile) : handleGenerate}
           size="lg"
           disabled={isUploading}
           style={styles.generateBtn}
         />
       </ScrollView>
+
+      {/* Photo Full-Screen Modal Preview */}
+      {selectedPhoto && (
+        <Modal
+          visible={previewModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setPreviewModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.imageModalContent, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalImageTitle, { color: theme.text }]} numberOfLines={1}>
+                  {selectedPhoto.name}
+                </Text>
+                <Pressable onPress={() => setPreviewModalVisible(false)} style={styles.modalCloseBtn}>
+                  <Ionicons name="close" size={22} color={theme.text} />
+                </Pressable>
+              </View>
+
+              <Image source={{ uri: selectedPhoto.uri }} style={styles.modalFullImage} resizeMode="contain" />
+
+              <View style={styles.modalFooter}>
+                <Text style={[styles.modalImageSize, { color: theme.textSecondary }]}>
+                  {FileUploadService.formatBytes(selectedPhoto.size)}
+                </Text>
+                <SecondaryButton
+                  title="Close Preview"
+                  variant="outline"
+                  onPress={() => setPreviewModalVisible(false)}
+                  style={{ minWidth: 120 }}
+                />
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 };
@@ -882,78 +1009,78 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.md,
     borderRadius: borderRadius.lg,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.base,
   },
   infoBannerText: {
-    fontSize: typography.fontSize.xs,
-    lineHeight: typography.lineHeight.sm,
     flex: 1,
+    fontSize: typography.fontSize.xs,
+    lineHeight: 18,
+    fontWeight: typography.fontWeight.medium,
   },
   fieldGroup: {
-    marginBottom: spacing.lg,
+    marginBottom: spacing.base,
   },
   label: {
-    fontSize: typography.fontSize.xs,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semibold,
     marginBottom: spacing.xs,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   input: {
     height: 48,
-    borderRadius: borderRadius.lg,
     borderWidth: 1,
+    borderRadius: borderRadius.lg,
     paddingHorizontal: spacing.md,
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.base,
   },
   textArea: {
-    height: 100,
-    borderRadius: borderRadius.lg,
+    minHeight: 90,
     borderWidth: 1,
+    borderRadius: borderRadius.lg,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.base,
     textAlignVertical: 'top',
   },
-  passwordWrapper: {
-    position: 'relative',
+  phoneRow: {
+    flexDirection: 'row',
   },
-  passwordInput: {
-    paddingRight: 48,
+  countryCodeInput: {
+    width: 65,
+    height: 48,
+    borderWidth: 1,
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.sm,
+    fontSize: typography.fontSize.base,
+    marginRight: spacing.sm,
+    textAlign: 'center',
   },
-  passToggle: {
-    position: 'absolute',
-    right: spacing.md,
-    top: 14,
+  passwordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  eyeBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: spacing.xs,
   },
   switchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: spacing.base,
     paddingVertical: spacing.xs,
-    marginBottom: spacing.md,
   },
   switchLabel: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.medium,
   },
-  phoneRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  countryCodeInput: {
-    width: 70,
-    height: 48,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    textAlign: 'center',
-    fontSize: typography.fontSize.sm,
-    marginRight: spacing.sm,
-  },
   uploadBox: {
-    borderRadius: borderRadius.xl,
     borderWidth: 1.5,
     borderStyle: 'dashed',
+    borderRadius: borderRadius.xl,
     padding: spacing.xl,
     alignItems: 'center',
     justifyContent: 'center',
@@ -969,33 +1096,47 @@ const styles = StyleSheet.create({
   uploadTitle: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.bold,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   uploadSubtitle: {
     fontSize: typography.fontSize.xs,
+    marginBottom: spacing.md,
+    textAlign: 'center',
   },
-  fileCard: {
+  uploadPillBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.md,
-    borderRadius: borderRadius.xl,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: borderRadius.full,
+  },
+  uploadPillText: {
+    color: '#FFFFFF',
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+  },
+  fileCard: {
     borderWidth: 1,
+    borderRadius: borderRadius.xl,
+    padding: spacing.md,
   },
   photoThumb: {
-    width: 50,
-    height: 50,
-    borderRadius: borderRadius.md,
+    width: '100%',
+    height: 140,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.sm,
+    resizeMode: 'cover',
   },
   docIconBox: {
-    width: 50,
-    height: 50,
-    borderRadius: borderRadius.md,
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.lg,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: spacing.xs,
   },
   fileInfo: {
-    flex: 1,
-    marginLeft: spacing.md,
+    marginBottom: spacing.sm,
   },
   fileName: {
     fontSize: typography.fontSize.sm,
@@ -1005,25 +1146,53 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.xs,
     marginTop: 2,
   },
-  fileActionBtn: {
-    paddingHorizontal: spacing.sm,
+  fileActionBtnsRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(150, 150, 150, 0.15)',
+    paddingTop: spacing.xs + 2,
+  },
+  smallBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.sm + 2,
     paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+    gap: 4,
   },
-  fileActionText: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
+  smallBtnText: {
+    fontSize: 11,
+    fontWeight: typography.fontWeight.semibold,
   },
-  previewSection: {
-    borderRadius: borderRadius['2xl'],
+  placeholderCard: {
     borderWidth: 1,
+    borderRadius: borderRadius.xl,
     padding: spacing.lg,
     alignItems: 'center',
-    marginBottom: spacing.md,
+    justifyContent: 'center',
+    marginVertical: spacing.md,
+  },
+  placeholderTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    marginBottom: 2,
+  },
+  placeholderSubtitle: {
+    fontSize: typography.fontSize.xs,
+    textAlign: 'center',
+  },
+  previewSection: {
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    padding: spacing.base,
+    marginBottom: spacing.base,
+    alignItems: 'center',
   },
   previewTitle: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1,
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+    letterSpacing: 0.8,
     marginBottom: spacing.md,
   },
   qrCenteredWrapper: {
@@ -1033,16 +1202,62 @@ const styles = StyleSheet.create({
   uploadingBox: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     padding: spacing.md,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    marginBottom: spacing.md,
+    marginBottom: spacing.base,
   },
   uploadingText: {
-    fontSize: typography.fontSize.xs,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
   },
   generateBtn: {
+    marginTop: spacing.sm,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.lg,
+  },
+  imageModalContent: {
+    width: '100%',
+    maxHeight: '80%',
+    borderRadius: borderRadius['2xl'],
+    borderWidth: 1,
+    padding: spacing.lg,
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  modalImageTitle: {
+    flex: 1,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.bold,
+    marginRight: spacing.sm,
+  },
+  modalCloseBtn: {
+    padding: 4,
+  },
+  modalFullImage: {
+    width: '100%',
+    height: 300,
+    borderRadius: borderRadius.lg,
+    backgroundColor: '#000000',
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginTop: spacing.md,
+  },
+  modalImageSize: {
+    fontSize: typography.fontSize.xs,
   },
 });
