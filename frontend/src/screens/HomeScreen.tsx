@@ -6,6 +6,7 @@ import {
   ScrollView,
   Pressable,
   RefreshControl,
+  Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -34,6 +35,7 @@ export const HomeScreen: React.FC = () => {
   const [recentScan, setRecentScan] = useState<ScanRecord | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [notificationModalVisible, setNotificationModalVisible] = useState(false);
+  const [createMenuVisible, setCreateMenuVisible] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   const loadData = async () => {
@@ -69,6 +71,14 @@ export const HomeScreen: React.FC = () => {
 
   const recentMeta = recentScan ? QR_TYPES[recentScan.type] || QR_TYPES.text : null;
 
+  const handleCreateOption = (action: () => void) => {
+    triggerLightHaptic();
+    setCreateMenuVisible(false);
+    setTimeout(() => {
+      action();
+    }, 150);
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Top App Header */}
@@ -98,10 +108,11 @@ export const HomeScreen: React.FC = () => {
             }}
             style={({ pressed }) => [
               styles.headerIconBtn,
-              { backgroundColor: theme.surfaceVariant, opacity: pressed ? 0.7 : 1 },
+              { opacity: pressed ? 0.6 : 1 },
             ]}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <AppIcon name="notifications-outline" size={20} color={theme.text} />
+            <AppIcon name="notifications-outline" size={24} color={theme.text} />
             {unreadNotifications > 0 && (
               <View style={[styles.notifBadge, { backgroundColor: palette.rose[500] }]}>
                 <Text style={styles.notifBadgeText}>
@@ -111,18 +122,19 @@ export const HomeScreen: React.FC = () => {
             )}
           </Pressable>
 
-          {/* New QR Button */}
+          {/* WhatsApp-style Standalone Plus Button */}
           <Pressable
             onPress={() => {
               triggerLightHaptic();
-              navigation.navigate('GeneratorSelect');
+              setCreateMenuVisible(true);
             }}
             style={({ pressed }) => [
               styles.headerIconBtn,
-              { backgroundColor: theme.surfaceVariant, opacity: pressed ? 0.7 : 1 },
+              { opacity: pressed ? 0.6 : 1 },
             ]}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <AppIcon name="add" size={22} color={theme.text} />
+            <AppIcon name="add" size={28} color={theme.text} />
           </Pressable>
         </View>
       </View>
@@ -474,6 +486,225 @@ export const HomeScreen: React.FC = () => {
           loadData();
         }}
       />
+
+      {/* Create Action Menu / Bottom Sheet Modal */}
+      <Modal
+        visible={createMenuVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setCreateMenuVisible(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setCreateMenuVisible(false)}
+        >
+          <Pressable
+            style={[
+              styles.createSheet,
+              {
+                backgroundColor: theme.surface,
+                paddingBottom: insets.bottom + spacing.lg,
+                borderTopColor: theme.border,
+              },
+            ]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            {/* Handle bar */}
+            <View style={styles.sheetHandleContainer}>
+              <View style={[styles.sheetHandle, { backgroundColor: theme.border }]} />
+            </View>
+
+            {/* Sheet Header */}
+            <View style={styles.sheetHeader}>
+              <Text style={[styles.sheetTitle, { color: theme.text }]}>Create</Text>
+              <Pressable
+                onPress={() => setCreateMenuVisible(false)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={[styles.sheetCloseBtn, { backgroundColor: theme.surfaceVariant }]}
+              >
+                <AppIcon name="close" size={18} color={theme.textSecondary} />
+              </Pressable>
+            </View>
+
+            {/* Options List */}
+            <View style={styles.createOptionsList}>
+              {/* 1. QR Code */}
+              <Pressable
+                onPress={() =>
+                  handleCreateOption(() => navigation.navigate('GeneratorSelect'))
+                }
+                style={({ pressed }) => [
+                  styles.createOptionRow,
+                  {
+                    backgroundColor: pressed ? theme.surfaceVariant : 'transparent',
+                    borderColor: theme.border,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.createOptionIconBox,
+                    { backgroundColor: palette.emerald[500] + '18' },
+                  ]}
+                >
+                  <AppIcon name="qr-code" size={22} color={palette.emerald[500]} />
+                </View>
+                <View style={styles.createOptionTextWrap}>
+                  <Text style={[styles.createOptionTitle, { color: theme.text }]}>
+                    QR Code
+                  </Text>
+                  <Text
+                    style={[
+                      styles.createOptionSub,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
+                    URL, Wi-Fi, Text, Contact & more
+                  </Text>
+                </View>
+                <AppIcon
+                  name="chevron-forward"
+                  size={20}
+                  color={theme.textMuted}
+                />
+              </Pressable>
+
+              {/* 2. Photo QR */}
+              <Pressable
+                onPress={() =>
+                  handleCreateOption(() =>
+                    navigation.navigate('GeneratorForm', { type: 'photo' })
+                  )
+                }
+                style={({ pressed }) => [
+                  styles.createOptionRow,
+                  {
+                    backgroundColor: pressed ? theme.surfaceVariant : 'transparent',
+                    borderColor: theme.border,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.createOptionIconBox,
+                    { backgroundColor: palette.cyan[500] + '18' },
+                  ]}
+                >
+                  <AppIcon name="image" size={22} color={palette.cyan[500]} />
+                </View>
+                <View style={styles.createOptionTextWrap}>
+                  <Text style={[styles.createOptionTitle, { color: theme.text }]}>
+                    Photo QR
+                  </Text>
+                  <Text
+                    style={[
+                      styles.createOptionSub,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
+                    Create QR code from photo or gallery
+                  </Text>
+                </View>
+                <AppIcon
+                  name="chevron-forward"
+                  size={20}
+                  color={theme.textMuted}
+                />
+              </Pressable>
+
+              {/* 3. PDF QR */}
+              <Pressable
+                onPress={() =>
+                  handleCreateOption(() =>
+                    navigation.navigate('GeneratorForm', { type: 'file' })
+                  )
+                }
+                style={({ pressed }) => [
+                  styles.createOptionRow,
+                  {
+                    backgroundColor: pressed ? theme.surfaceVariant : 'transparent',
+                    borderColor: theme.border,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.createOptionIconBox,
+                    { backgroundColor: palette.amber[500] + '18' },
+                  ]}
+                >
+                  <AppIcon
+                    name="document-text"
+                    size={22}
+                    color={palette.amber[500]}
+                  />
+                </View>
+                <View style={styles.createOptionTextWrap}>
+                  <Text style={[styles.createOptionTitle, { color: theme.text }]}>
+                    PDF QR
+                  </Text>
+                  <Text
+                    style={[
+                      styles.createOptionSub,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
+                    Upload and link PDF documents to QR
+                  </Text>
+                </View>
+                <AppIcon
+                  name="chevron-forward"
+                  size={20}
+                  color={theme.textMuted}
+                />
+              </Pressable>
+
+              {/* 4. Barcode */}
+              <Pressable
+                onPress={() =>
+                  handleCreateOption(() =>
+                    navigation.navigate('BarcodeGenerator')
+                  )
+                }
+                style={({ pressed }) => [
+                  styles.createOptionRow,
+                  {
+                    backgroundColor: pressed ? theme.surfaceVariant : 'transparent',
+                    borderColor: theme.border,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.createOptionIconBox,
+                    { backgroundColor: palette.indigo[500] + '18' },
+                  ]}
+                >
+                  <AppIcon name="barcode" size={22} color={palette.indigo[500]} />
+                </View>
+                <View style={styles.createOptionTextWrap}>
+                  <Text style={[styles.createOptionTitle, { color: theme.text }]}>
+                    Barcode
+                  </Text>
+                  <Text
+                    style={[
+                      styles.createOptionSub,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
+                    Generate 1D and 2D barcode formats
+                  </Text>
+                </View>
+                <AppIcon
+                  name="chevron-forward"
+                  size={20}
+                  color={theme.textMuted}
+                />
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 };
@@ -512,17 +743,17 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.bold,
   },
   headerIconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.md,
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
   },
   notifBadge: {
     position: 'absolute',
-    top: -3,
-    right: -3,
+    top: 4,
+    right: 4,
     minWidth: 16,
     height: 16,
     borderRadius: 8,
@@ -720,5 +951,79 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: spacing.sm,
+  },
+  /* Modal / Bottom Sheet Styles */
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'flex-end',
+  },
+  createSheet: {
+    borderTopLeftRadius: borderRadius['2xl'] || 24,
+    borderTopRightRadius: borderRadius['2xl'] || 24,
+    borderTopWidth: 1,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    elevation: 20,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+  },
+  sheetHandleContainer: {
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  sheetTitle: {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+  },
+  sheetCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: borderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  createOptionsList: {
+    marginTop: spacing.xs,
+    gap: spacing.sm,
+  },
+  createOptionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+  },
+  createOptionIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  createOptionTextWrap: {
+    flex: 1,
+  },
+  createOptionTitle: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.bold,
+    marginBottom: 2,
+  },
+  createOptionSub: {
+    fontSize: typography.fontSize.xs,
   },
 });
