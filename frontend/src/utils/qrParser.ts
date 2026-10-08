@@ -33,8 +33,9 @@ export function detectQRType(rawText: string): QRType {
     return 'email';
   }
 
-  // Photo QR detection (Supabase storage or direct image link)
+  // Photo QR detection (Supabase storage, cloud CDN, or direct image link)
   if (
+    /iili\.io/i.test(text) ||
     /\/storage\/v1\/object\/public\/.*\/photos\//i.test(text) ||
     /\/files\/(view\/|download\/)?P-[a-zA-Z0-9_-]+/i.test(text) ||
     /\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(text)
@@ -42,8 +43,9 @@ export function detectQRType(rawText: string): QRType {
     return 'photo';
   }
 
-  // File / PDF QR detection (Supabase storage or direct document link)
+  // File / PDF QR detection (Supabase storage, tmpfiles cloud CDN, or direct document link)
   if (
+    /tmpfiles\.org/i.test(text) ||
     /\/storage\/v1\/object\/public\/.*\/pdfs\//i.test(text) ||
     /\/files\/(view\/|download\/)?F-[a-zA-Z0-9_-]+/i.test(text) ||
     /\.(pdf|docx?|xlsx?|txt|csv|zip)(\?.*)?$/i.test(text)
