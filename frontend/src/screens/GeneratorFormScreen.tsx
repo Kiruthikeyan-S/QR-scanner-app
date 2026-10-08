@@ -347,18 +347,25 @@ export const GeneratorFormScreen: React.FC = () => {
             (p) => setUploadProgress(p)
           );
 
-          payload = result.url || result.view_url || result.qr_url;
+          // Get the exact public HTTPS URL from Supabase Storage
+          payload = result.url || result.view_url || result.qr_url || '';
 
-          // Validate that the URL is a public shareable HTTPS/HTTP URL
+          console.log('[QR PAYLOAD PHOTO]:', payload);
+
+          // Validate that the URL is a public shareable HTTPS URL (NOT localhost, 127.0.0.1, LAN IP, or local URI)
           if (
             !payload ||
+            payload.includes('localhost') ||
+            payload.includes('127.0.0.1') ||
+            payload.includes('192.168.') ||
+            payload.includes('10.0.') ||
             payload.startsWith('file://') ||
             payload.startsWith('content://') ||
-            payload.startsWith('ph://')
+            !payload.startsWith('https://')
           ) {
             Alert.alert(
-              'Public URL Required',
-              'Unable to create a shareable QR. The uploaded file does not have a valid public URL.'
+              'Public HTTPS URL Required',
+              `Cannot create a shareable QR.\n\nThe uploaded file does not have a public HTTPS URL (got: ${payload || 'empty'}). Ensure Supabase Storage is configured in backend/.env.`
             );
             return;
           }
@@ -372,7 +379,7 @@ export const GeneratorFormScreen: React.FC = () => {
           };
         } catch (e: any) {
           setIsUploading(false);
-          Alert.alert('Upload Failed', e.message || 'Could not upload photo to server. Check network.');
+          Alert.alert('Upload Failed', e.message || 'Could not upload photo to server.');
           return;
         } finally {
           setIsUploading(false);
@@ -398,17 +405,25 @@ export const GeneratorFormScreen: React.FC = () => {
             (p) => setUploadProgress(p)
           );
 
-          payload = result.url || result.view_url || result.qr_url;
+          // Get the exact public HTTPS URL from Supabase Storage
+          payload = result.url || result.view_url || result.qr_url || '';
 
-          // Validate that the URL is a public shareable HTTPS/HTTP URL
+          console.log('[QR PAYLOAD PDF]:', payload);
+
+          // Validate that the URL is a public shareable HTTPS URL
           if (
             !payload ||
+            payload.includes('localhost') ||
+            payload.includes('127.0.0.1') ||
+            payload.includes('192.168.') ||
+            payload.includes('10.0.') ||
             payload.startsWith('file://') ||
-            payload.startsWith('content://')
+            payload.startsWith('content://') ||
+            !payload.startsWith('https://')
           ) {
             Alert.alert(
-              'Public URL Required',
-              'Unable to create a shareable QR. The uploaded file does not have a valid public URL.'
+              'Public HTTPS URL Required',
+              `Cannot create a shareable QR.\n\nThe uploaded file does not have a public HTTPS URL (got: ${payload || 'empty'}). Ensure Supabase Storage is configured in backend/.env.`
             );
             return;
           }
@@ -422,7 +437,7 @@ export const GeneratorFormScreen: React.FC = () => {
           };
         } catch (e: any) {
           setIsUploading(false);
-          Alert.alert('Upload Failed', e.message || 'Could not upload file to server. Check network.');
+          Alert.alert('Upload Failed', e.message || 'Could not upload file to server.');
           return;
         } finally {
           setIsUploading(false);

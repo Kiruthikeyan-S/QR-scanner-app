@@ -33,13 +33,21 @@ export function detectQRType(rawText: string): QRType {
     return 'email';
   }
 
-  // Photo QR detection
-  if (/\/files\/(view\/|download\/)?P-[a-zA-Z0-9_-]+/i.test(text) || /\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(text)) {
+  // Photo QR detection (Supabase storage or direct image link)
+  if (
+    /\/storage\/v1\/object\/public\/.*\/photos\//i.test(text) ||
+    /\/files\/(view\/|download\/)?P-[a-zA-Z0-9_-]+/i.test(text) ||
+    /\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(text)
+  ) {
     return 'photo';
   }
 
-  // File / PDF QR detection
-  if (/\/files\/(view\/|download\/)?F-[a-zA-Z0-9_-]+/i.test(text) || /\.(pdf|docx?|xlsx?|txt|csv|zip)(\?.*)?$/i.test(text)) {
+  // File / PDF QR detection (Supabase storage or direct document link)
+  if (
+    /\/storage\/v1\/object\/public\/.*\/pdfs\//i.test(text) ||
+    /\/files\/(view\/|download\/)?F-[a-zA-Z0-9_-]+/i.test(text) ||
+    /\.(pdf|docx?|xlsx?|txt|csv|zip)(\?.*)?$/i.test(text)
+  ) {
     return 'file';
   }
 

@@ -215,11 +215,20 @@ class StorageService:
 
         is_supabase = bool(public_url and "supabase.co" in public_url)
 
-        # 2. If Supabase is not configured or failed, construct clean public/fallback URL
+        # 2. Check if Supabase URL was generated or construct from SUPABASE_URL setting
         if not public_url:
-            logger.warning("[STORAGE] Supabase URL unavailable, using server fallback.")
-            base = (fallback_base_url or "http://localhost:8000").rstrip("/")
-            public_url = f"{base}/files/view/{file_id}"
+            supabase_url = (settings.SUPABASE_URL or os.getenv("SUPABASE_URL", "")).strip().rstrip("/")
+            bucket = settings.SUPABASE_BUCKET or "qr-files"
+            if supabase_url and "supabase.co" in supabase_url:
+                public_url = f"{supabase_url}/storage/v1/object/public/{bucket}/{storage_path}"
+                is_supabase = True
+            else:
+                logger.error("[STORAGE ERROR] Supabase credentials missing. Rejecting localhost fallback for QR creation.")
+                raise ValueError(
+                    "Supabase Cloud Storage is not configured on the backend. "
+                    "Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in backend/.env "
+                    "so that Photo/PDF QR codes receive a real public HTTPS URL."
+                )
 
         return {
             "success": True,
