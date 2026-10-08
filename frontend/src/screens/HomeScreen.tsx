@@ -157,10 +157,10 @@ export const HomeScreen: React.FC = () => {
         {/* Hero Greeting */}
         <View style={styles.greetingSection}>
           <Text style={[styles.greetingTitle, { color: theme.text }]}>
-            What would you like to do?
+            Welcome 👋
           </Text>
           <Text style={[styles.greetingSubtitle, { color: theme.textSecondary }]}>
-            Scan or generate high-accuracy QR codes instantly
+            Scan, create and manage your QR codes easily.
           </Text>
         </View>
 
@@ -259,72 +259,122 @@ export const HomeScreen: React.FC = () => {
           <Text style={[styles.sectionTitle, { color: theme.text }]}>CREATE TOOLS</Text>
         </View>
 
-        <View style={styles.toolsGrid}>
-          {/* Photo QR Shortcut */}
-          <Pressable
-            onPress={() => {
-              triggerLightHaptic();
-              navigation.navigate('GeneratorForm', { type: 'photo' });
-            }}
-            style={({ pressed }) => [
-              styles.toolCard,
-              {
-                backgroundColor: theme.surface,
-                borderColor: theme.border,
-                opacity: pressed ? 0.8 : 1,
-              },
-            ]}
-          >
-            <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.18)' : palette.emerald[50] }]}>
-              <AppIcon name="image" size={22} color={palette.emerald[500]} />
-            </View>
-            <Text style={[styles.toolTitle, { color: theme.text }]}>Photo QR</Text>
-            <Text style={[styles.toolSubtitle, { color: theme.textSecondary }]}>Image to QR</Text>
-          </Pressable>
+        <View style={styles.toolsContainer}>
+          {/* Row 1: 3 cards */}
+          <View style={styles.toolsRow}>
+            {/* Photo QR */}
+            <Pressable
+              onPress={() => {
+                triggerLightHaptic();
+                navigation.navigate('GeneratorForm', { type: 'photo' });
+              }}
+              style={({ pressed }) => [
+                styles.toolCard,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                  opacity: pressed ? 0.8 : 1,
+                },
+              ]}
+            >
+              <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.18)' : palette.emerald[50] }]}>
+                <AppIcon name="image" size={22} color={palette.emerald[500]} />
+              </View>
+              <Text style={[styles.toolTitle, { color: theme.text }]}>Photo QR</Text>
+              <Text style={[styles.toolSubtitle, { color: theme.textSecondary }]}>Image to QR</Text>
+            </Pressable>
 
-          {/* Wi-Fi QR Shortcut */}
-          <Pressable
-            onPress={() => {
-              triggerLightHaptic();
-              navigation.navigate('GeneratorForm', { type: 'wifi' });
-            }}
-            style={({ pressed }) => [
-              styles.toolCard,
-              {
-                backgroundColor: theme.surface,
-                borderColor: theme.border,
-                opacity: pressed ? 0.8 : 1,
-              },
-            ]}
-          >
-            <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(99, 102, 241, 0.18)' : palette.indigo[50] }]}>
-              <AppIcon name="wifi" size={22} color={palette.indigo[500]} />
-            </View>
-            <Text style={[styles.toolTitle, { color: theme.text }]}>Wi-Fi QR</Text>
-            <Text style={[styles.toolSubtitle, { color: theme.textSecondary }]}>Share Wi-Fi</Text>
-          </Pressable>
+            {/* PDF QR */}
+            <Pressable
+              onPress={() => {
+                triggerLightHaptic();
+                navigation.navigate('GeneratorForm', { type: 'file' });
+              }}
+              style={({ pressed }) => [
+                styles.toolCard,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                  opacity: pressed ? 0.8 : 1,
+                },
+              ]}
+            >
+              <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.18)' : palette.rose[50] }]}>
+                <AppIcon name="document-text" size={22} color={palette.rose[500]} />
+              </View>
+              <Text style={[styles.toolTitle, { color: theme.text }]}>PDF QR</Text>
+              <Text style={[styles.toolSubtitle, { color: theme.textSecondary }]}>Document</Text>
+            </Pressable>
 
-          {/* Barcode Shortcut */}
-          <Pressable
-            onPress={() => {
-              triggerLightHaptic();
-              navigation.navigate('BarcodeGenerator');
-            }}
-            style={({ pressed }) => [
-              styles.toolCard,
-              {
-                backgroundColor: theme.surface,
-                borderColor: theme.border,
-                opacity: pressed ? 0.8 : 1,
-              },
-            ]}
-          >
-            <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.18)' : palette.cyan[50] }]}>
-              <AppIcon name="barcode" size={22} color={palette.cyan[500]} />
-            </View>
-            <Text style={[styles.toolTitle, { color: theme.text }]}>Barcode</Text>
-            <Text style={[styles.toolSubtitle, { color: theme.textSecondary }]}>Create Barcode</Text>
-          </Pressable>
+            {/* Barcode */}
+            <Pressable
+              onPress={() => {
+                triggerLightHaptic();
+                navigation.navigate('BarcodeGenerator');
+              }}
+              style={({ pressed }) => [
+                styles.toolCard,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                  opacity: pressed ? 0.8 : 1,
+                },
+              ]}
+            >
+              <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.18)' : palette.cyan[50] }]}>
+                <AppIcon name="barcode" size={22} color={palette.cyan[500]} />
+              </View>
+              <Text style={[styles.toolTitle, { color: theme.text }]}>Barcode</Text>
+              <Text style={[styles.toolSubtitle, { color: theme.textSecondary }]}>Create Barcode</Text>
+            </Pressable>
+          </View>
+
+          {/* Row 2: 2 cards */}
+          <View style={styles.toolsRow}>
+            {/* Order ID */}
+            <Pressable
+              onPress={() => {
+                triggerLightHaptic();
+                navigation.navigate('GeneratorForm', { type: 'order_id' });
+              }}
+              style={({ pressed }) => [
+                styles.toolCard,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                  opacity: pressed ? 0.8 : 1,
+                },
+              ]}
+            >
+              <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.18)' : palette.amber[50] }]}>
+                <AppIcon name="cube-outline" size={22} color={palette.amber[500]} />
+              </View>
+              <Text style={[styles.toolTitle, { color: theme.text }]}>Order ID</Text>
+              <Text style={[styles.toolSubtitle, { color: theme.textSecondary }]}>Order Reference</Text>
+            </Pressable>
+
+            {/* JSON */}
+            <Pressable
+              onPress={() => {
+                triggerLightHaptic();
+                navigation.navigate('GeneratorForm', { type: 'json' });
+              }}
+              style={({ pressed }) => [
+                styles.toolCard,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                  opacity: pressed ? 0.8 : 1,
+                },
+              ]}
+            >
+              <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(99, 102, 241, 0.18)' : palette.indigo[50] }]}>
+                <AppIcon name="code-slash-outline" size={22} color={palette.indigo[500]} />
+              </View>
+              <Text style={[styles.toolTitle, { color: theme.text }]}>JSON</Text>
+              <Text style={[styles.toolSubtitle, { color: theme.textSecondary }]}>Raw Data</Text>
+            </Pressable>
+          </View>
         </View>
 
         {/* Quick Actions Shortcuts */}
@@ -608,7 +658,50 @@ export const HomeScreen: React.FC = () => {
                 />
               </Pressable>
 
-              {/* 3. Order ID */}
+              {/* 3. PDF QR */}
+              <Pressable
+                onPress={() =>
+                  handleCreateOption(() =>
+                    navigation.navigate('GeneratorForm', { type: 'file' })
+                  )
+                }
+                style={({ pressed }) => [
+                  styles.createOptionRow,
+                  {
+                    backgroundColor: pressed ? theme.surfaceVariant : 'transparent',
+                    borderColor: theme.border,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.createOptionIconBox,
+                    { backgroundColor: palette.rose[500] + '18' },
+                  ]}
+                >
+                  <AppIcon name="document-text" size={22} color={palette.rose[500]} />
+                </View>
+                <View style={styles.createOptionTextWrap}>
+                  <Text style={[styles.createOptionTitle, { color: theme.text }]}>
+                    PDF QR
+                  </Text>
+                  <Text
+                    style={[
+                      styles.createOptionSub,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
+                    Create QR code from PDF document
+                  </Text>
+                </View>
+                <AppIcon
+                  name="chevron-forward"
+                  size={20}
+                  color={theme.textMuted}
+                />
+              </Pressable>
+
+              {/* 4. Order ID */}
               <Pressable
                 onPress={() =>
                   handleCreateOption(() =>
@@ -882,17 +975,22 @@ const styles = StyleSheet.create({
   timestampText: {
     fontSize: typography.fontSize.xs,
   },
-  toolsGrid: {
+  toolsContainer: {
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  toolsRow: {
     flexDirection: 'row',
     gap: spacing.sm,
-    marginBottom: spacing.base,
   },
   toolCard: {
     flex: 1,
     borderRadius: borderRadius.xl,
     borderWidth: 1,
-    padding: spacing.sm + 2,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xs,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   toolIconBox: {
     width: 44,
