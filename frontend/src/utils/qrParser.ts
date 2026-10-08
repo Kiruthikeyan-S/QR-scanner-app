@@ -33,6 +33,34 @@ export function detectQRType(rawText: string): QRType {
     return 'email';
   }
 
+  // JSON / Structured Order ID detection
+  if ((text.startsWith('{') && text.endsWith('}')) || (text.startsWith('[') && text.endsWith(']'))) {
+    try {
+      const parsed = JSON.parse(text);
+      if (typeof parsed === 'object' && parsed !== null) {
+        if (
+          parsed.type === 'order_id' ||
+          parsed.type === 'order' ||
+          parsed.order_id ||
+          parsed.orderId
+        ) {
+          return 'order_id';
+        }
+        return 'json';
+      }
+    } catch {
+      // Not valid JSON, continue checks
+    }
+  }
+
+  // Standalone Order ID detection pattern e.g. ORD-2026-000123, ORDER_1001, INV/ORD/1008
+  if (
+    /^(ORD|ORDER|INV|TRACK)[-_/][a-zA-Z0-9_\-\/]+$/i.test(text) ||
+    /^ORDER:\s*[a-zA-Z0-9_\-\/]+/i.test(text)
+  ) {
+    return 'order_id';
+  }
+
   // Photo QR detection (Supabase storage, cloud CDN, or direct image link)
   if (
     /iili\.io/i.test(text) ||
@@ -41,6 +69,16 @@ export function detectQRType(rawText: string): QRType {
     /\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(text)
   ) {
     return 'photo';
+  }
+
+  // File / PDF QR detection (Supabase storage, tmpfiles cloud CDN, or direct document link)
+  if (
+    /tmpfiles\.org/i.test(text) ||
+    /\/storage\/v1\/object\/public\/.*\/pdfs\//i.test(text) ||
+    /\/files\/(view\/|download\/)?F-[a-zA-Z0-9_-]+/i.test(text) ||
+    /\.(pdf|docx?|xlsx?|txt|csv|zip)(\?.*)?$/i.test(text)
+  ) {
+    return 'file';
   }
 
   // Dangerous / Web URI schemes (intercepted by URL Safety Engine)
@@ -71,6 +109,78 @@ export function parseQRData(rawData: string): ParsedQRDetails {
   const type = detectQRType(raw);
 
   switch (type) {
+    case 'order_id': {
+      let orderId = raw.replace(/^ORDER:\s*/i, '').trim();
+      let customer = '';
+      let reference = '';
+      let note = '';
+      let status = '';
+
+      if (raw.startsWith('{')) {
+        try {
+          const parsed = JSON.parse(raw);
+          orderId = parsed.order_id || parsed.orderId || parsed.id || orderId;
+          customer = parsed.customer || parsed.customer_name || parsed.customerName || '';
+          reference = parsed.reference || parsed.ref || '';
+          note = parsed.note || parsed.notes || '';
+          status = parsed.status || '';
+        } catch {}
+      }
+
+      return {
+        type: 'order_id',
+        raw,
+        title: `Order: ${orderId}`,
+        subtitle: 'Order Reference & Tracking',
+        fields: [
+          { label: 'Order ID', value: orderId },
+          ...(customer ? [{ label: 'Customer', value: customer }] : []),
+          ...(status ? [{ label: 'Status', value: status }] : []),
+          ...(reference ? [{ label: 'Reference', value: reference }] : []),
+          ...(note ? [{ label: 'Note', value: note }] : []),
+        ],
+        primaryAction: {
+          label: 'Copy Order ID',
+          icon: 'copy-outline',
+          actionType: 'copy',
+        },
+      };
+    }
+
+    case 'json': {
+      let formatted = raw;
+      const fields: { label: string; value: string }[] = [];
+      try {
+        const obj = JSON.parse(raw);
+        formatted = JSON.stringify(obj, null, 2);
+        if (typeof obj === 'object' && !Array.isArray(obj) && obj !== null) {
+          const keys = Object.keys(obj);
+          keys.slice(0, 6).forEach((k) => {
+            const val = typeof obj[k] === 'object' ? JSON.stringify(obj[k]) : String(obj[k]);
+            fields.push({ label: k, value: val });
+          });
+          if (keys.length > 6) {
+            fields.push({ label: 'More Fields', value: `+${keys.length - 6} other properties` });
+          }
+        } else if (Array.isArray(obj)) {
+          fields.push({ label: 'Array Items', value: `${obj.length} items` });
+        }
+      } catch {}
+
+      return {
+        type: 'json',
+        raw: formatted,
+        title: 'JSON Payload',
+        subtitle: 'Structured Data',
+        fields: fields.length > 0 ? fields : [{ label: 'JSON Size', value: `${raw.length} bytes` }],
+        primaryAction: {
+          label: 'Copy JSON',
+          icon: 'copy-outline',
+          actionType: 'copy',
+        },
+      };
+    }
+
     case 'photo': {
       let photoUrl = raw;
       if (!/^https?:\/\//i.test(photoUrl)) photoUrl = `https://${photoUrl}`;
@@ -87,6 +197,27 @@ export function parseQRData(rawData: string): ParsedQRDetails {
         primaryAction: {
           label: 'Preview Photo',
           icon: 'image-outline',
+          actionType: 'open_url',
+        },
+      };
+    }
+
+    case 'file': {
+      let fileUrl = raw;
+      if (!/^https?:\/\//i.test(fileUrl)) fileUrl = `https://${fileUrl}`;
+      return {
+        type: 'file',
+        raw: fileUrl,
+        title: 'Document / PDF QR',
+        subtitle: 'Secure Document Cloud Link',
+        fields: [
+          { label: 'File Type', value: 'Document / PDF File' },
+          { label: 'Document URL', value: fileUrl },
+          { label: 'Access', value: 'Download & View Document' },
+        ],
+        primaryAction: {
+          label: 'Open Document',
+          icon: 'document-text-outline',
           actionType: 'open_url',
         },
       };

@@ -53,7 +53,7 @@
 ---
 
 ### 🎨 4. Multi-Format QR Generator & Customizer
-- **Supported Formats**: Website URL, Wi-Fi Network (WPA/WEP/Open with hidden SSID support), Contact Card (vCard 3.0), Plain Text, Phone Call, SMS, Email, Geo Location (Maps), and Photo QR.
+- **Supported Formats**: Plain Text, Website URL, Wi-Fi Network, Phone Number, Email Address, SMS Message, Contact Card (vCard 3.0), Geo Location (Maps), Photo QR, PDF Document, **Order ID**, and **Structured JSON**.
 - **Visual Customizer**: Foreground/background color palettes, error correction levels (`L`, `M`, `Q`, `H`), custom size scaling, and center logo embedding.
 
 ---
@@ -61,13 +61,13 @@
 ### 🧭 5. Modern Navigation & WhatsApp-Style Header
 - **Center Floating QR Scan Button**: Prominent primary button with smooth touch targets and tactile haptic feedback.
 - **WhatsApp-Style Header**: Clean, standalone Bell notification icon and Plus (`+`) button.
-- **Quick-Create Bottom Sheet Modal**: 1-tap launcher for QR Code, Photo QR, and Barcode.
+- **Quick-Create Bottom Sheet Modal**: 1-tap launcher for QR Code, Photo QR, Order ID, JSON, and Barcode.
 
 ---
 
 ### 📜 6. Scan History & Selection Mode
-- **Real-Time Search**: Search through scan history by domain, URL, Wi-Fi SSID, contact name, or raw text.
-- **Type Filters**: Filter by `All`, `URL`, `Wi-Fi`, `Text`, `Contact`, `Phone`, `Email`, `SMS`, `Location`, or `Barcode`.
+- **Real-Time Search**: Search through scan history by domain, URL, Wi-Fi SSID, contact name, order ID, or raw text.
+- **Type Filters**: Filter by `All`, `URL`, `Order ID`, `JSON`, `Photo`, `Wi-Fi`, `Text`, `Contact`, `Phone`, `Email`, `SMS`, `Location`, or `Barcode`.
 - **Long-Press Multi-Select**: Enter batch selection mode with single-tap item toggle and batch delete.
 - **Verified Safe Badges**: Displays a verified shield badge on clean URL scans.
 

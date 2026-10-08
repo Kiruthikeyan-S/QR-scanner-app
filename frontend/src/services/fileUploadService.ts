@@ -22,20 +22,22 @@ export const FileUploadService = {
   async uploadFile(
     fileUri: string,
     fileName: string,
-    fileType: 'photo' = 'photo',
+    fileType: 'photo' | 'file' = 'photo',
     mimeType?: string,
     fileSize?: number,
     onProgress?: (progress: number) => void
   ): Promise<UploadedFileMeta> {
-    // 1. Validate Photo Size (10 MB max)
+    // 1. Validate File Size
     const maxPhotoSize = 10 * 1024 * 1024; // 10 MB
+    const maxPdfSize = 25 * 1024 * 1024;   // 25 MB
+    const maxAllowed = fileType === 'photo' ? maxPhotoSize : maxPdfSize;
 
-    if (fileSize && fileSize > maxPhotoSize) {
-      throw new Error(`Photo is larger than the allowed 10 MB limit (${this.formatBytes(fileSize)}).`);
+    if (fileSize && fileSize > maxAllowed) {
+      throw new Error(`File is larger than the allowed limit (${this.formatBytes(fileSize)}).`);
     }
 
-    const cleanFileName = fileName || 'photo.jpg';
-    const cleanMime = mimeType || 'image/jpeg';
+    const cleanFileName = fileName || (fileType === 'photo' ? 'photo.jpg' : 'document.pdf');
+    const cleanMime = mimeType || (fileType === 'photo' ? 'image/jpeg' : 'application/pdf');
 
     const candidates = await getAllCandidateBaseUrls();
     let lastError: any = null;

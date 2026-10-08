@@ -17,6 +17,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 import { RootStackParamList } from '../types/navigation';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { PrimaryButton } from '../components/PrimaryButton';
@@ -75,8 +76,27 @@ export const GeneratorFormScreen: React.FC = () => {
   const [locLng, setLocLng] = useState('');
   const [locLabel, setLocLabel] = useState('');
 
-  // Photo State
+  // Order ID States
+  const [orderId, setOrderId] = useState('');
+  const [orderCustomer, setOrderCustomer] = useState('');
+  const [orderReference, setOrderReference] = useState('');
+  const [orderNote, setOrderNote] = useState('');
+
+  // JSON States
+  const [jsonText, setJsonText] = useState(
+    '{\n  "name": "Kiruthikeyan",\n  "id": "12345",\n  "status": "active"\n}'
+  );
+  const [jsonError, setJsonError] = useState<string | null>(null);
+
+  // Photo & PDF States
   const [selectedPhoto, setSelectedPhoto] = useState<{
+    uri: string;
+    name: string;
+    size: number;
+    mimeType?: string;
+  } | null>(null);
+
+  const [selectedPdf, setSelectedPdf] = useState<{
     uri: string;
     name: string;
     size: number;
@@ -144,6 +164,62 @@ export const GeneratorFormScreen: React.FC = () => {
     setSelectedPhoto(null);
   };
 
+  // PDF Document Picker Handler
+  const handlePickPdf = async () => {
+    try {
+      triggerLightHaptic();
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'application/*', '*/*'],
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        const size = asset.size || 0;
+        const name = asset.name || 'document.pdf';
+
+        if (size > 25 * 1024 * 1024) {
+          Alert.alert('File Too Large', 'PDF files must be 25 MB or smaller.');
+          return;
+        }
+
+        setSelectedPdf({
+          uri: asset.uri,
+          name,
+          size,
+          mimeType: asset.mimeType || 'application/pdf',
+        });
+      }
+    } catch (e: any) {
+      Alert.alert('Picker Error', e.message || 'Failed to select PDF document.');
+    }
+  };
+
+  const handleRemovePdf = () => {
+    triggerLightHaptic();
+    setSelectedPdf(null);
+  };
+
+  // Format JSON Action Handler
+  const handleFormatJson = () => {
+    triggerLightHaptic();
+    try {
+      const parsed = JSON.parse(jsonText.trim());
+      const pretty = JSON.stringify(parsed, null, 2);
+      setJsonText(pretty);
+      setJsonError(null);
+    } catch (e: any) {
+      setJsonError('Invalid JSON: ' + (e.message || 'Syntax error'));
+      Alert.alert('Invalid JSON Format', 'Please enter valid JSON before formatting.');
+    }
+  };
+
+  const handleClearJson = () => {
+    triggerLightHaptic();
+    setJsonText('');
+    setJsonError(null);
+  };
+
   // Compute Live Preview Payload
   const getPreviewPayload = (): string => {
     switch (type) {
@@ -176,13 +252,33 @@ export const GeneratorFormScreen: React.FC = () => {
         return locLat.trim() && locLng.trim() ? QRFormatter.formatLocation({ latitude: locLat, longitude: locLng, label: locLabel }) : 'geo:37.7749,-122.4194';
       case 'photo':
         return selectedPhoto ? `http://qrsmart.local/photo/${encodeURIComponent(selectedPhoto.name)}` : 'https://qrsmart.app';
+      case 'file':
+        return selectedPdf ? `http://qrsmart.local/pdf/${encodeURIComponent(selectedPdf.name)}` : 'https://qrsmart.app';
+      case 'order_id':
+        return orderId.trim()
+          ? QRFormatter.formatOrderId({
+              orderId,
+              customerName: orderCustomer,
+              reference: orderReference,
+              note: orderNote,
+            })
+          : 'ORD-2026-000123';
+      case 'json': {
+        try {
+          const parsed = JSON.parse(jsonText.trim());
+          return JSON.stringify(parsed);
+        } catch {
+          return jsonText.trim() || '{"status":"active"}';
+        }
+      }
       default:
         return 'https://qrsmart.app';
     }
   };
 
-  // Check if file is ready (for photo type)
-  const isFileSelected = type === 'photo' ? Boolean(selectedPhoto) : true;
+  // Check if file is ready (for photo and file types)
+  const isFileSelected =
+    type === 'photo' ? Boolean(selectedPhoto) : type === 'file' ? Boolean(selectedPdf) : true;
 
   const handleGenerate = async () => {
     let payload = '';
@@ -282,6 +378,58 @@ export const GeneratorFormScreen: React.FC = () => {
         title = locLabel.trim() || `Location: ${locLat}, ${locLng}`;
         break;
       }
+      case 'order_id': {
+        const cleanOrderId = orderId.trim();
+        if (!cleanOrderId) {
+          Alert.alert('Validation Error', 'Enter a valid Order ID.');
+          return;
+        }
+
+        // Allow letters, numbers, -, _, /
+        const validOrderRegex = /^[a-zA-Z0-9_\-\/]+$/;
+        if (!validOrderRegex.test(cleanOrderId)) {
+          Alert.alert(
+            'Invalid Order ID',
+            'Order ID may only contain letters, numbers, hyphens (-), underscores (_), and slashes (/).'
+          );
+          return;
+        }
+
+        payload = QRFormatter.formatOrderId({
+          orderId: cleanOrderId,
+          customerName: orderCustomer.trim(),
+          reference: orderReference.trim(),
+          note: orderNote.trim(),
+        });
+        title = `Order: ${cleanOrderId}`;
+        break;
+      }
+      case 'json': {
+        const rawJson = jsonText.trim();
+        if (!rawJson) {
+          Alert.alert('Validation Error', 'Please enter JSON data.');
+          return;
+        }
+
+        try {
+          const parsed = JSON.parse(rawJson);
+          // Check size limit (~2200 chars for standard high-readability QR codes)
+          if (rawJson.length > 2200) {
+            Alert.alert(
+              'JSON Data Too Large',
+              'JSON data is too large for a standard QR code. Please reduce JSON size, remove unnecessary fields, or use a URL reference instead.'
+            );
+            return;
+          }
+          payload = JSON.stringify(parsed, null, 2);
+          title = `JSON: ${Object.keys(parsed).slice(0, 2).join(', ') || 'Payload'}`;
+        } catch (e: any) {
+          setJsonError('Invalid JSON: ' + (e.message || 'Syntax error'));
+          Alert.alert('Invalid JSON format', 'Please check your JSON syntax before generating QR.');
+          return;
+        }
+        break;
+      }
       case 'photo': {
         if (!selectedPhoto) {
           Alert.alert('No Photo Selected', 'Please choose a photo to generate a Photo QR code.');
@@ -301,12 +449,8 @@ export const GeneratorFormScreen: React.FC = () => {
             (p) => setUploadProgress(p)
           );
 
-          // Get the exact public HTTPS URL from Supabase Storage
           payload = result.url || result.view_url || result.qr_url || '';
 
-          console.log('[QR PAYLOAD PHOTO]:', payload);
-
-          // Validate that the URL is a public shareable HTTPS URL (NOT localhost, 127.0.0.1, LAN IP, or local URI)
           if (
             !payload ||
             payload.includes('localhost') ||
@@ -340,6 +484,60 @@ export const GeneratorFormScreen: React.FC = () => {
         }
         break;
       }
+      case 'file': {
+        if (!selectedPdf) {
+          Alert.alert('No PDF Selected', 'Please choose a PDF document to generate a PDF QR code.');
+          return;
+        }
+
+        try {
+          setIsUploading(true);
+          setUploadProgress(20);
+
+          const result = await FileUploadService.uploadFile(
+            selectedPdf.uri,
+            selectedPdf.name,
+            'file',
+            selectedPdf.mimeType,
+            selectedPdf.size,
+            (p) => setUploadProgress(p)
+          );
+
+          payload = result.url || result.view_url || result.qr_url || '';
+
+          if (
+            !payload ||
+            payload.includes('localhost') ||
+            payload.includes('127.0.0.1') ||
+            payload.includes('192.168.') ||
+            payload.includes('10.0.') ||
+            payload.startsWith('file://') ||
+            payload.startsWith('content://') ||
+            !payload.startsWith('https://')
+          ) {
+            Alert.alert(
+              'Public HTTPS URL Required',
+              `Cannot create a shareable QR.\n\nThe uploaded PDF does not have a public HTTPS URL (got: ${payload || 'empty'}). Ensure Supabase Storage is configured in backend/.env.`
+            );
+            return;
+          }
+
+          title = `PDF: ${result.filename}`;
+          fileMeta = {
+            filename: result.filename,
+            size_formatted: result.size_formatted,
+            file_type: 'file' as const,
+            content_type: result.content_type,
+          };
+        } catch (e: any) {
+          setIsUploading(false);
+          Alert.alert('Upload Failed', e.message || 'Could not upload PDF document to server.');
+          return;
+        } finally {
+          setIsUploading(false);
+        }
+        break;
+      }
     }
 
     if (!payload) return;
@@ -363,6 +561,12 @@ export const GeneratorFormScreen: React.FC = () => {
           subtitle={
             type === 'photo'
               ? 'Upload photo and create secure QR'
+              : type === 'file'
+              ? 'Upload PDF document and create QR'
+              : type === 'order_id'
+              ? 'Create QR for order reference'
+              : type === 'json'
+              ? 'Encode structured JSON data'
               : 'Fill in details & customize style'
           }
           showBack
@@ -381,6 +585,12 @@ export const GeneratorFormScreen: React.FC = () => {
           <Text style={[styles.infoBannerText, { color: theme.text }]}>
             {type === 'photo'
               ? 'Uploads photo securely and generates a scannable preview link (Max 10 MB).'
+              : type === 'file'
+              ? 'Uploads PDF document securely and generates a scannable download link (Max 25 MB).'
+              : type === 'order_id'
+              ? 'Generates standard Order QR for commerce tracking, logistics, and receipts.'
+              : type === 'json'
+              ? 'Encodes raw JSON payload into structured high-density QR code.'
               : meta.description}
           </Text>
         </View>
@@ -398,24 +608,23 @@ export const GeneratorFormScreen: React.FC = () => {
               onChangeText={setUrl}
               placeholder="https://example.com"
               placeholderTextColor={theme.textMuted}
-              autoCapitalize="none"
               keyboardType="url"
+              autoCapitalize="none"
             />
             {url.trim().length > 0 && (
               <URLPreviewCard
                 url={url}
-                onSelectShortcut={(shortcut) => setUrl(shortcut)}
+                onSelectShortcut={(shortcut) => setUrl((prev) => `${prev}${shortcut}`)}
                 onClear={() => setUrl('')}
-                style={{ marginTop: spacing.sm }}
               />
             )}
           </View>
         )}
 
-        {/* Text Form */}
+        {/* Plain Text Form */}
         {type === 'text' && (
           <View style={styles.fieldGroup}>
-            <Text style={[styles.label, { color: theme.text }]}>Plain Text Content *</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Text Content *</Text>
             <TextInput
               style={[
                 styles.textArea,
@@ -423,7 +632,7 @@ export const GeneratorFormScreen: React.FC = () => {
               ]}
               value={text}
               onChangeText={setText}
-              placeholder="Type any message, notes, or data..."
+              placeholder="Type your message, notes, serial number, or code..."
               placeholderTextColor={theme.textMuted}
               multiline
               numberOfLines={4}
@@ -443,42 +652,92 @@ export const GeneratorFormScreen: React.FC = () => {
                 ]}
                 value={wifiSsid}
                 onChangeText={setWifiSsid}
-                placeholder="e.g. Home_WiFi_5G"
+                placeholder="e.g. MyHome_5G"
                 placeholderTextColor={theme.textMuted}
+                autoCapitalize="none"
               />
             </View>
+
             <View style={styles.fieldGroup}>
-              <Text style={[styles.label, { color: theme.text }]}>Password</Text>
-              <View style={styles.passwordRow}>
-                <TextInput
-                  style={[
-                    styles.input,
-                    { flex: 1, backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text },
-                  ]}
-                  value={wifiPass}
-                  onChangeText={setWifiPass}
-                  placeholder="Network password"
-                  placeholderTextColor={theme.textMuted}
-                  secureTextEntry={!showWifiPass}
-                />
-                <Pressable
-                  onPress={() => setShowWifiPass(!showWifiPass)}
-                  style={[styles.eyeBtn, { backgroundColor: theme.surfaceVariant }]}
-                >
-                  <Ionicons
-                    name={showWifiPass ? 'eye-off-outline' : 'eye-outline'}
-                    size={18}
-                    color={theme.textMuted}
-                  />
-                </Pressable>
+              <Text style={[styles.label, { color: theme.text }]}>Security Type</Text>
+              <View style={styles.securitySelector}>
+                {(['WPA', 'WEP', 'nopass'] as const).map((sec) => (
+                  <Pressable
+                    key={sec}
+                    onPress={() => setWifiSecurity(sec)}
+                    style={[
+                      styles.secBtn,
+                      {
+                        backgroundColor:
+                          wifiSecurity === sec
+                            ? theme.primary
+                            : theme.surfaceVariant,
+                        borderColor:
+                          wifiSecurity === sec
+                            ? theme.primary
+                            : theme.border,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.secBtnText,
+                        {
+                          color:
+                            wifiSecurity === sec
+                              ? '#FFFFFF'
+                              : theme.textSecondary,
+                        },
+                      ]}
+                    >
+                      {sec === 'WPA' ? 'WPA/WPA2' : sec === 'WEP' ? 'WEP' : 'Open (No Pass)'}
+                    </Text>
+                  </Pressable>
+                ))}
               </View>
             </View>
-            <View style={styles.switchRow}>
-              <Text style={[styles.switchLabel, { color: theme.text }]}>Hidden Network</Text>
+
+            {wifiSecurity !== 'nopass' && (
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.label, { color: theme.text }]}>Password</Text>
+                <View style={styles.passwordWrapper}>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      styles.passwordInput,
+                      { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text },
+                    ]}
+                    value={wifiPass}
+                    onChangeText={setWifiPass}
+                    placeholder="Enter network password"
+                    placeholderTextColor={theme.textMuted}
+                    secureTextEntry={!showWifiPass}
+                    autoCapitalize="none"
+                  />
+                  <Pressable
+                    onPress={() => setShowWifiPass(!showWifiPass)}
+                    style={styles.eyeBtn}
+                  >
+                    <Ionicons
+                      name={showWifiPass ? 'eye-off-outline' : 'eye-outline'}
+                      size={20}
+                      color={theme.textMuted}
+                    />
+                  </Pressable>
+                </View>
+              </View>
+            )}
+
+            <View style={[styles.switchRow, { borderColor: theme.borderLight }]}>
+              <View>
+                <Text style={[styles.switchLabel, { color: theme.text }]}>Hidden Network</Text>
+                <Text style={[styles.switchSub, { color: theme.textMuted }]}>SSID is not broadcast publicly</Text>
+              </View>
               <Switch
                 value={wifiHidden}
                 onValueChange={setWifiHidden}
-                trackColor={{ false: theme.border, true: theme.primary }}
+                trackColor={{ false: theme.border, true: theme.primaryLight }}
+                thumbColor={wifiHidden ? theme.primary : '#FFFFFF'}
               />
             </View>
           </>
@@ -507,7 +766,7 @@ export const GeneratorFormScreen: React.FC = () => {
                 ]}
                 value={phoneNumber}
                 onChangeText={setPhoneNumber}
-                placeholder="555 123 4567"
+                placeholder="(555) 000-0000"
                 placeholderTextColor={theme.textMuted}
                 keyboardType="phone-pad"
               />
@@ -519,7 +778,7 @@ export const GeneratorFormScreen: React.FC = () => {
         {type === 'email' && (
           <>
             <View style={styles.fieldGroup}>
-              <Text style={[styles.label, { color: theme.text }]}>Recipient Email *</Text>
+              <Text style={[styles.label, { color: theme.text }]}>Recipient Email Address *</Text>
               <TextInput
                 style={[
                   styles.input,
@@ -527,14 +786,14 @@ export const GeneratorFormScreen: React.FC = () => {
                 ]}
                 value={emailTo}
                 onChangeText={setEmailTo}
-                placeholder="contact@company.com"
+                placeholder="name@example.com"
                 placeholderTextColor={theme.textMuted}
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
             </View>
             <View style={styles.fieldGroup}>
-              <Text style={[styles.label, { color: theme.text }]}>Subject</Text>
+              <Text style={[styles.label, { color: theme.text }]}>Subject Line (Optional)</Text>
               <TextInput
                 style={[
                   styles.input,
@@ -542,12 +801,12 @@ export const GeneratorFormScreen: React.FC = () => {
                 ]}
                 value={emailSubject}
                 onChangeText={setEmailSubject}
-                placeholder="Inquiry about services"
+                placeholder="Inquiry / Feedback"
                 placeholderTextColor={theme.textMuted}
               />
             </View>
             <View style={styles.fieldGroup}>
-              <Text style={[styles.label, { color: theme.text }]}>Message</Text>
+              <Text style={[styles.label, { color: theme.text }]}>Message Body (Optional)</Text>
               <TextInput
                 style={[
                   styles.textArea,
@@ -555,7 +814,7 @@ export const GeneratorFormScreen: React.FC = () => {
                 ]}
                 value={emailBody}
                 onChangeText={setEmailBody}
-                placeholder="Hello, I would like to..."
+                placeholder="Pre-filled email message body..."
                 placeholderTextColor={theme.textMuted}
                 multiline
                 numberOfLines={3}
@@ -568,7 +827,7 @@ export const GeneratorFormScreen: React.FC = () => {
         {type === 'sms' && (
           <>
             <View style={styles.fieldGroup}>
-              <Text style={[styles.label, { color: theme.text }]}>Recipient Phone *</Text>
+              <Text style={[styles.label, { color: theme.text }]}>Recipient Phone Number *</Text>
               <TextInput
                 style={[
                   styles.input,
@@ -576,13 +835,13 @@ export const GeneratorFormScreen: React.FC = () => {
                 ]}
                 value={smsPhone}
                 onChangeText={setSmsPhone}
-                placeholder="+1 555 0199"
+                placeholder="+1 555 123 4567"
                 placeholderTextColor={theme.textMuted}
                 keyboardType="phone-pad"
               />
             </View>
             <View style={styles.fieldGroup}>
-              <Text style={[styles.label, { color: theme.text }]}>Pre-filled SMS Text</Text>
+              <Text style={[styles.label, { color: theme.text }]}>SMS Text (Optional)</Text>
               <TextInput
                 style={[
                   styles.textArea,
@@ -590,7 +849,7 @@ export const GeneratorFormScreen: React.FC = () => {
                 ]}
                 value={smsMessage}
                 onChangeText={setSmsMessage}
-                placeholder="Type the message here..."
+                placeholder="Pre-filled text message..."
                 placeholderTextColor={theme.textMuted}
                 multiline
                 numberOfLines={3}
@@ -599,7 +858,7 @@ export const GeneratorFormScreen: React.FC = () => {
           </>
         )}
 
-        {/* Contact (vCard) Form */}
+        {/* Contact Form */}
         {type === 'contact' && (
           <>
             <View style={styles.fieldGroup}>
@@ -611,7 +870,7 @@ export const GeneratorFormScreen: React.FC = () => {
                 ]}
                 value={contactName}
                 onChangeText={setContactName}
-                placeholder="Sarah Connor"
+                placeholder="Jane Doe"
                 placeholderTextColor={theme.textMuted}
               />
             </View>
@@ -624,7 +883,7 @@ export const GeneratorFormScreen: React.FC = () => {
                 ]}
                 value={contactPhone}
                 onChangeText={setContactPhone}
-                placeholder="+1 555 0144"
+                placeholder="+1 (555) 123-4567"
                 placeholderTextColor={theme.textMuted}
                 keyboardType="phone-pad"
               />
@@ -638,7 +897,7 @@ export const GeneratorFormScreen: React.FC = () => {
                 ]}
                 value={contactEmail}
                 onChangeText={setContactEmail}
-                placeholder="sarah@example.com"
+                placeholder="jane@company.com"
                 placeholderTextColor={theme.textMuted}
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -653,7 +912,35 @@ export const GeneratorFormScreen: React.FC = () => {
                 ]}
                 value={contactCompany}
                 onChangeText={setContactCompany}
-                placeholder="Cyberdyne Systems"
+                placeholder="Acme Corporation"
+                placeholderTextColor={theme.textMuted}
+              />
+            </View>
+            <View style={styles.fieldGroup}>
+              <Text style={[styles.label, { color: theme.text }]}>Website</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text },
+                ]}
+                value={contactWebsite}
+                onChangeText={setContactWebsite}
+                placeholder="https://company.com"
+                placeholderTextColor={theme.textMuted}
+                keyboardType="url"
+                autoCapitalize="none"
+              />
+            </View>
+            <View style={styles.fieldGroup}>
+              <Text style={[styles.label, { color: theme.text }]}>Address</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text },
+                ]}
+                value={contactAddress}
+                onChangeText={setContactAddress}
+                placeholder="123 Market St, San Francisco, CA"
                 placeholderTextColor={theme.textMuted}
               />
             </View>
@@ -663,8 +950,8 @@ export const GeneratorFormScreen: React.FC = () => {
         {/* Location Form */}
         {type === 'location' && (
           <>
-            <View style={styles.phoneRow}>
-              <View style={{ flex: 1, marginRight: spacing.sm }}>
+            <View style={styles.geoRow}>
+              <View style={[styles.fieldGroup, { flex: 1, marginRight: spacing.sm }]}>
                 <Text style={[styles.label, { color: theme.text }]}>Latitude *</Text>
                 <TextInput
                   style={[
@@ -678,7 +965,7 @@ export const GeneratorFormScreen: React.FC = () => {
                   keyboardType="numeric"
                 />
               </View>
-              <View style={{ flex: 1 }}>
+              <View style={[styles.fieldGroup, { flex: 1 }]}>
                 <Text style={[styles.label, { color: theme.text }]}>Longitude *</Text>
                 <TextInput
                   style={[
@@ -705,6 +992,130 @@ export const GeneratorFormScreen: React.FC = () => {
                 placeholder="Headquarters Office"
                 placeholderTextColor={theme.textMuted}
               />
+            </View>
+          </>
+        )}
+
+        {/* Order ID Form */}
+        {type === 'order_id' && (
+          <>
+            <View style={styles.fieldGroup}>
+              <Text style={[styles.label, { color: theme.text }]}>Order ID *</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text },
+                ]}
+                value={orderId}
+                onChangeText={setOrderId}
+                placeholder="e.g. ORD-2026-000123, ORDER_1001"
+                placeholderTextColor={theme.textMuted}
+                autoCapitalize="characters"
+              />
+              <Text style={[styles.fieldHint, { color: theme.textMuted }]}>
+                Allowed: letters, numbers, hyphens (-), underscores (_), and slashes (/)
+              </Text>
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <Text style={[styles.label, { color: theme.text }]}>Customer Name (Optional)</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text },
+                ]}
+                value={orderCustomer}
+                onChangeText={setOrderCustomer}
+                placeholder="e.g. Kiruthikeyan S"
+                placeholderTextColor={theme.textMuted}
+              />
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <Text style={[styles.label, { color: theme.text }]}>Order Reference (Optional)</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text },
+                ]}
+                value={orderReference}
+                onChangeText={setOrderReference}
+                placeholder="e.g. REF-INVOICE-88"
+                placeholderTextColor={theme.textMuted}
+              />
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <Text style={[styles.label, { color: theme.text }]}>Note (Optional)</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text },
+                ]}
+                value={orderNote}
+                onChangeText={setOrderNote}
+                placeholder="e.g. Priority Express Shipping"
+                placeholderTextColor={theme.textMuted}
+              />
+            </View>
+          </>
+        )}
+
+        {/* JSON Form */}
+        {type === 'json' && (
+          <>
+            <View style={styles.fieldGroup}>
+              <View style={styles.jsonHeaderRow}>
+                <Text style={[styles.label, { color: theme.text, marginBottom: 0 }]}>
+                  JSON Data Content *
+                </Text>
+                <View style={styles.jsonActionsRow}>
+                  <Pressable
+                    onPress={handleFormatJson}
+                    style={[styles.smallJsonBtn, { backgroundColor: theme.surfaceVariant }]}
+                  >
+                    <Ionicons name="code-working-outline" size={14} color={theme.primary} />
+                    <Text style={[styles.smallJsonBtnText, { color: theme.primary }]}>Format JSON</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={handleClearJson}
+                    style={[styles.smallJsonBtn, { backgroundColor: theme.surfaceVariant, marginLeft: 6 }]}
+                  >
+                    <Ionicons name="trash-outline" size={14} color={palette.rose[500]} />
+                    <Text style={[styles.smallJsonBtnText, { color: palette.rose[500] }]}>Clear</Text>
+                  </Pressable>
+                </View>
+              </View>
+
+              <TextInput
+                style={[
+                  styles.jsonTextArea,
+                  {
+                    backgroundColor: isDark ? '#0f172a' : '#f8fafc',
+                    borderColor: jsonError ? palette.rose[500] : theme.inputBorder,
+                    color: isDark ? '#38bdf8' : '#0f172a',
+                  },
+                ]}
+                value={jsonText}
+                onChangeText={(val) => {
+                  setJsonText(val);
+                  if (jsonError) setJsonError(null);
+                }}
+                placeholder='{\n  "key": "value"\n}'
+                placeholderTextColor={theme.textMuted}
+                multiline
+                numberOfLines={8}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+
+              {jsonError ? (
+                <Text style={[styles.errorText, { color: palette.rose[500] }]}>{jsonError}</Text>
+              ) : (
+                <Text style={[styles.fieldHint, { color: theme.textMuted }]}>
+                  Character count: {jsonText.trim().length} / 2200 max recommended
+                </Text>
+              )}
             </View>
           </>
         )}
@@ -772,12 +1183,70 @@ export const GeneratorFormScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Pre-selection Placeholder for Photo */}
+        {/* PDF / File QR Form */}
+        {type === 'file' && (
+          <View style={styles.fieldGroup}>
+            <Text style={[styles.label, { color: theme.text }]}>Upload PDF Document *</Text>
+            {selectedPdf ? (
+              <View style={[styles.fileCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                <View style={[styles.docIconBox, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.18)' : palette.cyan[50] }]}>
+                  <Ionicons name="document-text" size={24} color={palette.cyan[500]} />
+                </View>
+                <View style={styles.fileInfo}>
+                  <Text style={[styles.fileName, { color: theme.text }]} numberOfLines={1}>
+                    {selectedPdf.name}
+                  </Text>
+                  <Text style={[styles.fileSize, { color: theme.textSecondary }]}>
+                    {FileUploadService.formatBytes(selectedPdf.size)} • PDF Document
+                  </Text>
+                </View>
+                <View style={styles.fileActionBtnsRow}>
+                  <Pressable
+                    onPress={handlePickPdf}
+                    style={[styles.smallBtn, { backgroundColor: theme.surfaceVariant }]}
+                  >
+                    <Ionicons name="refresh-outline" size={14} color={theme.text} />
+                    <Text style={[styles.smallBtnText, { color: theme.text }]}>Change</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={handleRemovePdf}
+                    style={[styles.smallBtn, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : palette.rose[50] }]}
+                  >
+                    <Ionicons name="trash-outline" size={14} color={palette.rose[500]} />
+                    <Text style={[styles.smallBtnText, { color: palette.rose[500] }]}>Remove</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : (
+              <Pressable
+                onPress={handlePickPdf}
+                style={({ pressed }) => [
+                  styles.uploadBox,
+                  { backgroundColor: theme.surfaceVariant, borderColor: theme.border, opacity: pressed ? 0.8 : 1 },
+                ]}
+              >
+                <View style={[styles.uploadIconCircle, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.18)' : palette.cyan[50] }]}>
+                  <Ionicons name="document-attach-outline" size={32} color={palette.cyan[500]} />
+                </View>
+                <Text style={[styles.uploadTitle, { color: theme.text }]}>Select & Upload PDF</Text>
+                <Text style={[styles.uploadSubtitle, { color: theme.textSecondary }]}>
+                  Supported: PDF, Documents • Max 25 MB
+                </Text>
+                <View style={[styles.uploadPillBtn, { backgroundColor: palette.cyan[600] }]}>
+                  <Ionicons name="add" size={16} color="#FFFFFF" style={{ marginRight: 4 }} />
+                  <Text style={styles.uploadPillText}>Choose PDF</Text>
+                </View>
+              </Pressable>
+            )}
+          </View>
+        )}
+
+        {/* Pre-selection Placeholder for Photo & PDF */}
         {!isFileSelected && (
           <View style={[styles.placeholderCard, { backgroundColor: theme.surfaceVariant, borderColor: theme.borderLight }]}>
             <Ionicons name="color-palette-outline" size={24} color={theme.textMuted} style={{ marginBottom: 6 }} />
             <Text style={[styles.placeholderTitle, { color: theme.text }]}>
-              Select a photo first
+              {type === 'photo' ? 'Select a photo first' : 'Select a PDF first'}
             </Text>
             <Text style={[styles.placeholderSubtitle, { color: theme.textSecondary }]}>
               Once selected, live QR preview and styling options will appear.
@@ -785,7 +1254,7 @@ export const GeneratorFormScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Live QR Preview Box (Shown only when photo is selected or for standard text/URL types) */}
+        {/* Live QR Preview Box (Shown only when file is selected or for standard text/URL types) */}
         {isFileSelected && (
           <View style={[styles.previewSection, { backgroundColor: theme.surface, borderColor: theme.border }]}>
             <Text style={[styles.previewTitle, { color: theme.textSecondary }]}>LIVE QR PREVIEW</Text>
@@ -799,7 +1268,7 @@ export const GeneratorFormScreen: React.FC = () => {
           </View>
         )}
 
-        {/* QR Customization Section (Shown only when photo is selected or for standard types) */}
+        {/* QR Customization Section */}
         {isFileSelected && (
           <QRCustomizer
             customization={customization}
@@ -812,7 +1281,7 @@ export const GeneratorFormScreen: React.FC = () => {
           <View style={[styles.uploadingBox, { backgroundColor: theme.surface, borderColor: theme.border }]}>
             <ActivityIndicator size="small" color={theme.primary} style={{ marginRight: spacing.sm }} />
             <Text style={[styles.uploadingText, { color: theme.text }]}>
-              Uploading photo to server... {uploadProgress > 0 ? `${uploadProgress}%` : ''}
+              Uploading to server... {uploadProgress > 0 ? `${uploadProgress}%` : ''}
             </Text>
           </View>
         )}
@@ -823,10 +1292,12 @@ export const GeneratorFormScreen: React.FC = () => {
             isUploading
               ? 'Uploading & Generating...'
               : !isFileSelected
-              ? 'Select Photo to Continue'
+              ? type === 'photo'
+                ? 'Select Photo to Continue'
+                : 'Select PDF to Continue'
               : 'Generate QR Code'
           }
-          onPress={!isFileSelected ? handlePickPhoto : handleGenerate}
+          onPress={!isFileSelected ? (type === 'photo' ? handlePickPhoto : handlePickPdf) : handleGenerate}
           size="lg"
           disabled={isUploading}
           style={styles.generateBtn}
@@ -901,6 +1372,15 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.semibold,
     marginBottom: spacing.xs,
   },
+  fieldHint: {
+    fontSize: typography.fontSize.xs,
+    marginTop: 4,
+  },
+  errorText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: '600',
+    marginTop: 4,
+  },
   input: {
     height: 48,
     borderWidth: 1,
@@ -917,6 +1397,39 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.base,
     textAlignVertical: 'top',
   },
+  jsonHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.xs,
+  },
+  jsonActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  smallJsonBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: borderRadius.md,
+  },
+  smallJsonBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  jsonTextArea: {
+    minHeight: 140,
+    borderWidth: 1,
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    fontFamily: 'monospace',
+    fontSize: typography.fontSize.sm,
+    lineHeight: 20,
+    textAlignVertical: 'top',
+  },
   phoneRow: {
     flexDirection: 'row',
   },
@@ -930,28 +1443,55 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
     textAlign: 'center',
   },
-  passwordRow: {
+  geoRow: {
     flexDirection: 'row',
-    alignItems: 'center',
   },
-  eyeBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.lg,
+  securitySelector: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  secBtn: {
+    flex: 1,
+    height: 42,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: spacing.xs,
+  },
+  secBtnText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+  },
+  passwordWrapper: {
+    position: 'relative',
+    justifyContent: 'center',
+  },
+  passwordInput: {
+    paddingRight: 45,
+  },
+  eyeBtn: {
+    position: 'absolute',
+    right: 12,
+    height: '100%',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
   },
   switchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingVertical: spacing.sm,
+    borderTopWidth: 1,
+    marginTop: spacing.xs,
     marginBottom: spacing.base,
-    paddingVertical: spacing.xs,
   },
   switchLabel: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+  },
+  switchSub: {
+    fontSize: typography.fontSize.xs,
+    marginTop: 2,
   },
   uploadBox: {
     borderWidth: 1.5,
@@ -962,12 +1502,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   uploadIconCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
   uploadTitle: {
     fontSize: typography.fontSize.base,
@@ -982,14 +1522,14 @@ const styles = StyleSheet.create({
   uploadPillBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.xs + 2,
+    paddingVertical: 10,
+    paddingHorizontal: spacing.lg,
     borderRadius: borderRadius.full,
   },
   uploadPillText: {
     color: '#FFFFFF',
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
   },
   fileCard: {
     borderWidth: 1,
@@ -998,9 +1538,9 @@ const styles = StyleSheet.create({
   },
   photoThumb: {
     width: '100%',
-    height: 140,
+    height: 160,
     borderRadius: borderRadius.lg,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
     resizeMode: 'cover',
   },
   docIconBox: {
@@ -1009,40 +1549,40 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
   },
   fileInfo: {
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
   fileName: {
     fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
+    fontWeight: typography.fontWeight.semibold,
+    marginBottom: 2,
   },
   fileSize: {
     fontSize: typography.fontSize.xs,
-    marginTop: 2,
   },
   fileActionBtnsRow: {
     flexDirection: 'row',
-    gap: spacing.xs,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(150, 150, 150, 0.15)',
-    paddingTop: spacing.xs + 2,
+    gap: spacing.sm,
   },
   smallBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: spacing.xs,
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: spacing.sm,
     borderRadius: borderRadius.md,
-    gap: 4,
   },
   smallBtnText: {
-    fontSize: 11,
+    fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.semibold,
+    marginLeft: 4,
   },
   placeholderCard: {
     borderWidth: 1,
+    borderStyle: 'dashed',
     borderRadius: borderRadius.xl,
     padding: spacing.lg,
     alignItems: 'center',
@@ -1061,19 +1601,25 @@ const styles = StyleSheet.create({
   previewSection: {
     borderRadius: borderRadius.xl,
     borderWidth: 1,
-    padding: spacing.base,
-    marginBottom: spacing.base,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
     alignItems: 'center',
   },
   previewTitle: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    letterSpacing: 0.8,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
     marginBottom: spacing.md,
   },
   qrCenteredWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: spacing.md,
+    backgroundColor: '#FFFFFF',
+    borderRadius: borderRadius.xl,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   uploadingBox: {
     flexDirection: 'row',
@@ -1082,40 +1628,39 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    marginBottom: spacing.base,
+    marginBottom: spacing.md,
   },
   uploadingText: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
   },
   generateBtn: {
-    marginTop: spacing.sm,
+    marginTop: spacing.md,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
     justifyContent: 'center',
-    alignItems: 'center',
     padding: spacing.lg,
   },
   imageModalContent: {
-    width: '100%',
-    maxHeight: '80%',
     borderRadius: borderRadius['2xl'],
     borderWidth: 1,
-    padding: spacing.lg,
     overflow: 'hidden',
+    maxHeight: '85%',
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.md,
+    padding: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#334155',
   },
   modalImageTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
     flex: 1,
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.bold,
     marginRight: spacing.sm,
   },
   modalCloseBtn: {
@@ -1123,15 +1668,16 @@ const styles = StyleSheet.create({
   },
   modalFullImage: {
     width: '100%',
-    height: 300,
-    borderRadius: borderRadius.lg,
-    backgroundColor: '#000000',
+    height: 380,
+    backgroundColor: '#0f172a',
   },
   modalFooter: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: spacing.md,
+    padding: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#334155',
   },
   modalImageSize: {
     fontSize: typography.fontSize.xs,

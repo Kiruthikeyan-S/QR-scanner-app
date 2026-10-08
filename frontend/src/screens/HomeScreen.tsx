@@ -608,7 +608,93 @@ export const HomeScreen: React.FC = () => {
                 />
               </Pressable>
 
-              {/* 3. Barcode */}
+              {/* 3. Order ID */}
+              <Pressable
+                onPress={() =>
+                  handleCreateOption(() =>
+                    navigation.navigate('GeneratorForm', { type: 'order_id' })
+                  )
+                }
+                style={({ pressed }) => [
+                  styles.createOptionRow,
+                  {
+                    backgroundColor: pressed ? theme.surfaceVariant : 'transparent',
+                    borderColor: theme.border,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.createOptionIconBox,
+                    { backgroundColor: palette.amber[500] + '18' },
+                  ]}
+                >
+                  <AppIcon name="cube-outline" size={22} color={palette.amber[500]} />
+                </View>
+                <View style={styles.createOptionTextWrap}>
+                  <Text style={[styles.createOptionTitle, { color: theme.text }]}>
+                    Order ID
+                  </Text>
+                  <Text
+                    style={[
+                      styles.createOptionSub,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
+                    Create QR for order reference & tracking
+                  </Text>
+                </View>
+                <AppIcon
+                  name="chevron-forward"
+                  size={20}
+                  color={theme.textMuted}
+                />
+              </Pressable>
+
+              {/* 4. JSON */}
+              <Pressable
+                onPress={() =>
+                  handleCreateOption(() =>
+                    navigation.navigate('GeneratorForm', { type: 'json' })
+                  )
+                }
+                style={({ pressed }) => [
+                  styles.createOptionRow,
+                  {
+                    backgroundColor: pressed ? theme.surfaceVariant : 'transparent',
+                    borderColor: theme.border,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.createOptionIconBox,
+                    { backgroundColor: palette.indigo[500] + '18' },
+                  ]}
+                >
+                  <AppIcon name="code-slash-outline" size={22} color={palette.indigo[500]} />
+                </View>
+                <View style={styles.createOptionTextWrap}>
+                  <Text style={[styles.createOptionTitle, { color: theme.text }]}>
+                    JSON Data
+                  </Text>
+                  <Text
+                    style={[
+                      styles.createOptionSub,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
+                    Encode structured JSON object payload
+                  </Text>
+                </View>
+                <AppIcon
+                  name="chevron-forward"
+                  size={20}
+                  color={theme.textMuted}
+                />
+              </Pressable>
+
+              {/* 5. Barcode */}
               <Pressable
                 onPress={() =>
                   handleCreateOption(() =>
@@ -626,10 +712,10 @@ export const HomeScreen: React.FC = () => {
                 <View
                   style={[
                     styles.createOptionIconBox,
-                    { backgroundColor: palette.indigo[500] + '18' },
+                    { backgroundColor: palette.cyan[500] + '18' },
                   ]}
                 >
-                  <AppIcon name="barcode" size={22} color={palette.indigo[500]} />
+                  <AppIcon name="barcode" size={22} color={palette.cyan[500]} />
                 </View>
                 <View style={styles.createOptionTextWrap}>
                   <Text style={[styles.createOptionTitle, { color: theme.text }]}>

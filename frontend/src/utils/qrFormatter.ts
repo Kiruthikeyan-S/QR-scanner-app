@@ -7,6 +7,8 @@ import {
   SMSFormData,
   TextFormData,
   URLFormData,
+  OrderFormData,
+  JSONFormData,
 } from '../types/qr';
 
 export const QRFormatter = {
@@ -99,5 +101,37 @@ export const QRFormatter = {
       return `geo:${lat},${lng}?q=${encodeURIComponent(data.label.trim())}`;
     }
     return `geo:${lat},${lng}`;
+  },
+
+  formatOrderId(data: OrderFormData): string {
+    const orderId = data.orderId.trim();
+    const hasExtras = Boolean(
+      (data.customerName && data.customerName.trim()) ||
+      (data.reference && data.reference.trim()) ||
+      (data.note && data.note.trim())
+    );
+
+    if (hasExtras) {
+      const payload: Record<string, string> = {
+        type: 'order_id',
+        order_id: orderId,
+      };
+      if (data.customerName?.trim()) payload.customer = data.customerName.trim();
+      if (data.reference?.trim()) payload.reference = data.reference.trim();
+      if (data.note?.trim()) payload.note = data.note.trim();
+      return JSON.stringify(payload, null, 2);
+    }
+
+    return orderId;
+  },
+
+  formatJSON(data: JSONFormData): string {
+    const trimmed = data.jsonString.trim();
+    try {
+      const parsed = JSON.parse(trimmed);
+      return JSON.stringify(parsed, null, 2);
+    } catch {
+      return trimmed;
+    }
   },
 };

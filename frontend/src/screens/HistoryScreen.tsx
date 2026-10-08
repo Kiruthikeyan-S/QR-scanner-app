@@ -28,6 +28,9 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 const FILTER_OPTIONS: { label: string; value: 'all' | QRType }[] = [
   { label: 'All', value: 'all' },
   { label: 'URL', value: 'url' },
+  { label: 'Order ID', value: 'order_id' },
+  { label: 'JSON', value: 'json' },
+  { label: 'Photo', value: 'photo' },
   { label: 'Wi-Fi', value: 'wifi' },
   { label: 'Text', value: 'text' },
   { label: 'Contact', value: 'contact' },

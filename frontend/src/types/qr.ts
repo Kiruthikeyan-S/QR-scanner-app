@@ -1,14 +1,17 @@
 export type QRType =
-  | 'url'
   | 'text'
+  | 'url'
   | 'wifi'
   | 'phone'
   | 'email'
   | 'sms'
   | 'contact'
   | 'location'
-  | 'barcode'
-  | 'photo';
+  | 'photo'
+  | 'file'
+  | 'order_id'
+  | 'json'
+  | 'barcode';
 
 export interface QRCustomization {
   fgColor: string;
@@ -26,7 +29,7 @@ export interface UploadedFileMeta {
   content_type: string;
   size_bytes: number;
   size_formatted: string;
-  file_type: 'photo';
+  file_type: 'photo' | 'file';
   view_url: string;
   download_url: string;
   qr_url: string;
@@ -122,4 +125,15 @@ export interface TextFormData {
 
 export interface URLFormData {
   url: string;
+}
+
+export interface OrderFormData {
+  orderId: string;
+  customerName?: string;
+  reference?: string;
+  note?: string;
+}
+
+export interface JSONFormData {
+  jsonString: string;
 }

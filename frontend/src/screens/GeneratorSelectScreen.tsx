@@ -18,7 +18,9 @@ export const GeneratorSelectScreen: React.FC = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
 
-  const typeList: QRTypeMetadata[] = Object.values(QR_TYPES);
+  const typeList: QRTypeMetadata[] = Object.values(QR_TYPES).filter(
+    (item) => item.type !== 'barcode'
+  );
 
   const handleSelectType = (type: QRType) => {
     navigation.navigate('GeneratorForm', { type });
