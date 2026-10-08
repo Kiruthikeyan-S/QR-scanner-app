@@ -1,19 +1,41 @@
+import { NativeModules, Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { SettingsStorage } from '../storage/settingsStorage';
 
 export function getAutoDetectedHost(): string {
-  // Try to find host IP from Expo Metro bundler
+  // 1. Check EXPO_PUBLIC_API_URL
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL.replace(/\/+$/, '');
+  }
+
+  // 2. Extract host from React Native SourceCode.scriptURL (Works in Android & iOS dev builds)
+  const scriptURL = NativeModules?.SourceCode?.scriptURL;
+  if (scriptURL && typeof scriptURL === 'string') {
+    const match = scriptURL.match(/^https?:\/\/([^:/]+)/);
+    if (match && match[1] && match[1] !== 'localhost' && match[1] !== '127.0.0.1') {
+      return `http://${match[1]}:8000`;
+    }
+  }
+
+  // 3. Extract host from Expo constants
   const hostUri =
     Constants.expoConfig?.hostUri ||
     (Constants as any).manifest2?.extra?.expoGo?.debuggerHost ||
-    (Constants as any).manifest?.debuggerHost;
+    (Constants as any).manifest?.debuggerHost ||
+    (Constants as any).experienceUrl;
 
-  if (hostUri) {
-    const ip = hostUri.split(':')[0];
-    if (ip && ip !== 'localhost' && ip !== '127.0.0.1') {
-      return `http://${ip}:8000`;
+  if (hostUri && typeof hostUri === 'string') {
+    const match = hostUri.match(/^https?:\/\/([^:/]+)/) || hostUri.match(/^([^:/]+)/);
+    if (match && match[1] && match[1] !== 'localhost' && match[1] !== '127.0.0.1') {
+      return `http://${match[1]}:8000`;
     }
   }
+
+  // 4. Default fallback on native Android & iOS mobile devices
+  if (Platform.OS !== 'web') {
+    return 'http://192.168.88.4:8000';
+  }
+
   return 'http://localhost:8000';
 }
 
@@ -25,12 +47,16 @@ export async function getBaseApiUrl(): Promise<string> {
   }
 
   const settings = await SettingsStorage.get();
-  // If user explicitly configured a non-localhost URL, use it
-  if (settings.backendUrl && settings.backendUrl !== 'http://localhost:8000') {
+  // If user explicitly configured a custom (non-localhost) URL, use it
+  if (
+    settings.backendUrl &&
+    settings.backendUrl !== 'http://localhost:8000' &&
+    settings.backendUrl !== 'http://127.0.0.1:8000'
+  ) {
     return settings.backendUrl.replace(/\/+$/, '');
   }
 
-  // Auto-detect host machine IP for mobile Expo Go / physical device
+  // On physical mobile device / dev build, auto-resolve to host PC Wi-Fi IP
   return getAutoDetectedHost();
 }
 
