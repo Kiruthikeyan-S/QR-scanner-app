@@ -9,6 +9,7 @@ import {
   Modal,
   Pressable,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -18,7 +19,7 @@ import { RootStackParamList } from '../types/navigation';
 import { useTheme } from '../theme/ThemeContext';
 import { typography, borderRadius, spacing } from '../theme/typography';
 import { SavedQRStorage } from '../storage/savedQRStorage';
-import { SavedQRRecord, QRType } from '../types/qr';
+import { SavedQRRecord } from '../types/qr';
 import { QRCard } from '../components/QRCard';
 import { EmptyState } from '../components/EmptyState';
 import { PrimaryButton } from '../components/PrimaryButton';
@@ -29,7 +30,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const SavedQRsScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const navigation = useNavigation<NavigationProp>();
 
   const [savedList, setSavedList] = useState<SavedQRRecord[]>([]);
@@ -115,26 +116,7 @@ export const SavedQRsScreen: React.FC = () => {
           },
         ]}
       >
-        <View style={styles.headerLeft}>
-          <Text style={[styles.headerTitle, { color: theme.text }]}>Saved QR Codes</Text>
-          <Text style={[styles.headerCount, { color: theme.textSecondary }]}>
-            ({savedList.length})
-          </Text>
-        </View>
-
-        <Pressable
-          onPress={() => {
-            triggerLightHaptic();
-            navigation.navigate('GeneratorSelect');
-          }}
-          style={({ pressed }) => [
-            styles.addBtn,
-            { backgroundColor: theme.primary, opacity: pressed ? 0.85 : 1 },
-          ]}
-        >
-          <Ionicons name="add" size={18} color="#FFFFFF" style={{ marginRight: 4 }} />
-          <Text style={styles.addBtnText}>Create QR</Text>
-        </Pressable>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>Saved QR Codes</Text>
       </View>
 
       {/* Search Input */}
@@ -168,7 +150,7 @@ export const SavedQRsScreen: React.FC = () => {
         keyExtractor={(item) => item.id}
         contentContainerStyle={[
           styles.listContent,
-          { paddingBottom: insets.bottom + 80 },
+          { paddingBottom: insets.bottom + 90 },
         ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -208,6 +190,27 @@ export const SavedQRsScreen: React.FC = () => {
           />
         )}
       />
+
+      {/* WhatsApp-Style Floating Action Button */}
+      <Pressable
+        onPress={() => {
+          triggerLightHaptic();
+          navigation.navigate('GeneratorSelect');
+        }}
+        style={({ pressed }) => [
+          styles.fab,
+          {
+            backgroundColor: theme.primary,
+            bottom: insets.bottom + 84,
+            transform: [{ scale: pressed ? 0.92 : 1 }],
+            shadowColor: isDark ? '#000000' : theme.primary,
+          },
+        ]}
+        accessibilityLabel="Create QR Code"
+        accessibilityRole="button"
+      >
+        <Ionicons name="add" size={28} color="#FFFFFF" />
+      </Pressable>
 
       {/* Rename Modal */}
       <Modal
@@ -266,34 +269,13 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.md,
     borderBottomWidth: 1,
   },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
   headerTitle: {
     fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
-  },
-  headerCount: {
-    fontSize: typography.fontSize.sm,
-    marginLeft: spacing.xs,
-  },
-  addBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
-    borderRadius: borderRadius.md,
-  },
-  addBtnText: {
-    color: '#FFFFFF',
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.semibold,
   },
   searchContainer: {
     paddingVertical: spacing.sm,
@@ -314,6 +296,20 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: spacing.lg,
+  },
+  fab: {
+    position: 'absolute',
+    right: spacing.lg,
+    width: 58,
+    height: 58,
+    borderRadius: 18, // WhatsApp-style squircle / rounded-square
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 6,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    zIndex: 99,
   },
   modalBackdrop: {
     flex: 1,

@@ -154,7 +154,7 @@ export const QRPreviewScreen: React.FC = () => {
           </Text>
         </View>
 
-        {/* QR Code Container Card */}
+        {/* Clean, Premium QR Code Container Card */}
         <View
           style={[
             styles.qrCard,
@@ -165,9 +165,23 @@ export const QRPreviewScreen: React.FC = () => {
             },
           ]}
         >
-          {/* Type Badge */}
+          {/* Top Row: Type Badge */}
           <View style={styles.cardHeader}>
-            <Badge label={meta.label} variant="primary" size="sm" />
+            <Badge
+              label={
+                fileMeta?.file_type === 'photo'
+                  ? 'PHOTO QR'
+                  : fileMeta?.file_type === 'file' || fileMeta?.filename?.toLowerCase().endsWith('.pdf')
+                  ? 'PDF QR'
+                  : meta.label.toUpperCase()
+              }
+              variant="primary"
+              size="sm"
+            />
+            <View style={styles.cardHeaderRight}>
+              <Ionicons name="sparkles" size={14} color={palette.emerald[500]} style={{ marginRight: 4 }} />
+              <Text style={[styles.cardHeaderStatus, { color: palette.emerald[600] }]}>Ready</Text>
+            </View>
           </View>
 
           {/* High Contrast QR Code with Quiet-Zone & Custom Styling */}
@@ -180,75 +194,62 @@ export const QRPreviewScreen: React.FC = () => {
             />
           </View>
 
-          {/* Title and Raw Data */}
-          <Text style={[styles.qrTitle, { color: theme.text }]} numberOfLines={1}>
-            {saveTitle}
-          </Text>
-
-          <View style={[styles.monoBox, { backgroundColor: theme.surfaceVariant, borderColor: theme.borderLight }]}>
-            <Text style={[styles.monoText, { color: theme.textSecondary }]} numberOfLines={3} selectable>
-              {data}
+          {/* Clean Title & Formatted Metadata (No Raw Technical URL text) */}
+          <View style={styles.cardMetaSection}>
+            <Text style={[styles.qrTitle, { color: theme.text }]} numberOfLines={1}>
+              {fileMeta?.filename || saveTitle}
             </Text>
+
+            {fileMeta ? (
+              <View style={styles.metaChipsRow}>
+                <View style={[styles.metaPill, { backgroundColor: theme.surfaceVariant }]}>
+                  <Ionicons
+                    name={
+                      fileMeta.file_category === 'image' || fileMeta.file_type === 'photo'
+                        ? 'image-outline'
+                        : 'document-text-outline'
+                    }
+                    size={13}
+                    color={theme.primary}
+                    style={{ marginRight: 4 }}
+                  />
+                  <Text style={[styles.metaPillText, { color: theme.textSecondary }]}>
+                    {fileMeta.size_formatted} • {fileMeta.file_type_label || (fileMeta.file_type === 'photo' ? 'Image File' : 'PDF Document')}
+                  </Text>
+                </View>
+
+                <Pressable
+                  onPress={handleOpenFileUrl}
+                  style={({ pressed }) => [
+                    styles.openFilePill,
+                    {
+                      backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : palette.emerald[50],
+                      opacity: pressed ? 0.7 : 1,
+                    },
+                  ]}
+                >
+                  <Ionicons name="open-outline" size={13} color={palette.emerald[600]} style={{ marginRight: 4 }} />
+                  <Text style={[styles.openFilePillText, { color: palette.emerald[600] }]}>Open File</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <Text style={[styles.qrSubText, { color: theme.textSecondary }]} numberOfLines={1}>
+                {type === 'url' ? data.replace(/^https?:\/\//i, '') : meta.label}
+              </Text>
+            )}
           </View>
         </View>
 
-        {/* File / Photo Metadata Box if present */}
-        {fileMeta && (
-          <View style={[styles.fileMetaCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            <View
-              style={[
-                styles.fileMetaIconBox,
-                {
-                  backgroundColor: isDark
-                    ? 'rgba(16, 185, 129, 0.18)'
-                    : palette.emerald[50],
-                },
-              ]}
-            >
-              <Ionicons
-                name={
-                  fileMeta.file_category === 'image' || fileMeta.file_type === 'photo'
-                    ? 'image'
-                    : fileMeta.file_category === 'pdf' || fileMeta.filename?.toLowerCase().endsWith('.pdf')
-                    ? 'document-text'
-                    : fileMeta.file_category === 'spreadsheet'
-                    ? 'grid-outline'
-                    : fileMeta.file_category === 'document'
-                    ? 'document-outline'
-                    : fileMeta.file_category === 'json'
-                    ? 'code-slash-outline'
-                    : 'document-attach'
-                }
-                size={22}
-                color={palette.emerald[500]}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.fileMetaName, { color: theme.text }]} numberOfLines={1}>
-                {fileMeta.filename}
-              </Text>
-              <Text style={[styles.fileMetaSize, { color: theme.textSecondary }]}>
-                {fileMeta.size_formatted} • {fileMeta.file_type_label || (fileMeta.file_type === 'photo' ? 'Image File' : fileMeta.filename?.toLowerCase().endsWith('.pdf') ? 'PDF Document' : 'Document')}
-              </Text>
-            </View>
-            <Pressable
-              onPress={handleOpenFileUrl}
-              style={[styles.openLinkBtn, { backgroundColor: theme.surfaceVariant }]}
-            >
-              <Ionicons name="open-outline" size={16} color={theme.primary} />
-            </Pressable>
-          </View>
-        )}
-
-        {/* Primary Actions */}
+        {/* Primary Action Button: Save to My QR Codes */}
         <PrimaryButton
           title={isSaved ? 'Saved in Collection' : 'Save to My QR Codes'}
           icon={isSaved ? 'checkmark-circle' : 'bookmark'}
           variant="emerald"
           onPress={handleSave}
-          style={styles.actionBtn}
+          style={styles.primaryActionBtn}
         />
 
+        {/* Secondary Action Grid: Share & Copy */}
         <View style={styles.secondaryGrid}>
           <SecondaryButton
             title="Share Code"
@@ -266,13 +267,14 @@ export const QRPreviewScreen: React.FC = () => {
           />
         </View>
 
+        {/* Tertiary Actions */}
         <SecondaryButton
           title="Test Scan This QR"
           icon="scan-outline"
           variant="tinted"
           color="secondary"
           onPress={handleTestScan}
-          style={{ marginTop: spacing.md }}
+          style={styles.testScanBtn}
         />
 
         <SecondaryButton
@@ -280,7 +282,7 @@ export const QRPreviewScreen: React.FC = () => {
           icon="add-circle-outline"
           variant="ghost"
           onPress={() => navigation.navigate('GeneratorSelect')}
-          style={{ marginTop: spacing.xs }}
+          style={styles.anotherBtn}
         />
       </ScrollView>
 
@@ -305,7 +307,7 @@ export const QRPreviewScreen: React.FC = () => {
               ]}
               value={saveTitle}
               onChangeText={setSaveTitle}
-              placeholder="e.g. My Website QR"
+              placeholder="e.g. My Photo QR"
               placeholderTextColor={theme.textMuted}
               autoFocus
               selectTextOnFocus
@@ -350,86 +352,89 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.xs + 1,
     fontWeight: typography.fontWeight.bold,
   },
-  verifiedSubtitle: {
-    fontSize: 11,
-    marginTop: 1,
-  },
   qrCard: {
     borderRadius: borderRadius['2xl'],
     borderWidth: 1,
-    padding: spacing.xl,
+    padding: spacing.lg,
     alignItems: 'center',
     marginBottom: spacing.base,
-    elevation: 3,
+    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
   },
   cardHeader: {
     width: '100%',
     flexDirection: 'row',
-    justifyContent: 'flex-start',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: spacing.md,
+  },
+  cardHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  cardHeaderStatus: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   qrWrapper: {
     padding: spacing.md,
     backgroundColor: '#FFFFFF',
     borderRadius: borderRadius.xl,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
     elevation: 2,
   },
-  qrTitle: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    marginBottom: spacing.xs,
-    textAlign: 'center',
-  },
-  monoBox: {
+  cardMetaSection: {
     width: '100%',
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    marginTop: spacing.xs,
+    alignItems: 'center',
   },
-  monoText: {
-    fontSize: typography.fontSize.xs,
+  qrTitle: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.bold,
+    marginBottom: 4,
     textAlign: 'center',
   },
-  fileMetaCard: {
+  qrSubText: {
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  metaChipsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.md,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    marginBottom: spacing.base,
-  },
-  fileMetaIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.lg,
-    alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  fileMetaName: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-  },
-  fileMetaSize: {
-    fontSize: typography.fontSize.xs,
+    flexWrap: 'wrap',
+    gap: 8,
     marginTop: 2,
   },
-  openLinkBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.md,
+  metaPill: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: spacing.sm,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: borderRadius.full,
   },
-  actionBtn: {
-    marginTop: spacing.sm,
+  metaPillText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  openFilePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: borderRadius.full,
+  },
+  openFilePillText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  primaryActionBtn: {
+    marginTop: spacing.xs,
     marginBottom: spacing.md,
   },
   secondaryGrid: {
@@ -438,6 +443,12 @@ const styles = StyleSheet.create({
   },
   gridBtn: {
     flex: 1,
+  },
+  testScanBtn: {
+    marginTop: spacing.md,
+  },
+  anotherBtn: {
+    marginTop: spacing.xs,
   },
   modalOverlay: {
     flex: 1,

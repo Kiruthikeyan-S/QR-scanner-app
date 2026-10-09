@@ -21,6 +21,7 @@ import { ScanRecord } from '../types/qr';
 import { QR_TYPES } from '../constants/config';
 import { triggerLightHaptic } from '../utils/feedback';
 import { ActionHandler } from '../utils/actionHandler';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { NotificationModal } from '../components/NotificationModal';
 import { NotificationStorage } from '../storage/notificationStorage';
@@ -37,6 +38,25 @@ export const HomeScreen: React.FC = () => {
   const [notificationModalVisible, setNotificationModalVisible] = useState(false);
   const [createMenuVisible, setCreateMenuVisible] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [isFirstVisit, setIsFirstVisit] = useState(false);
+
+  const getGreeting = () => {
+    if (isFirstVisit) {
+      return 'Welcome 👋';
+    }
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return 'Good Morning ☀️';
+    if (hour >= 12 && hour < 17) return 'Good Afternoon 🌤️';
+    if (hour >= 17 && hour < 22) return 'Good Evening 🌙';
+    return 'Hello 👋';
+  };
+
+  const getGreetingSubtitle = () => {
+    if (isFirstVisit) {
+      return 'Scan, create and manage your QR codes easily';
+    }
+    return 'Scan or create QR codes anytime';
+  };
 
   const loadData = async () => {
     const [history, unread] = await Promise.all([
@@ -49,6 +69,16 @@ export const HomeScreen: React.FC = () => {
       setRecentScan(null);
     }
     setUnreadNotifications(unread);
+
+    try {
+      const hasVisited = await AsyncStorage.getItem('qr_smart_has_visited_home');
+      if (!hasVisited) {
+        setIsFirstVisit(true);
+        await AsyncStorage.setItem('qr_smart_has_visited_home', 'true');
+      } else {
+        setIsFirstVisit(false);
+      }
+    } catch {}
   };
 
   useFocusEffect(
@@ -157,7 +187,10 @@ export const HomeScreen: React.FC = () => {
         {/* Hero Greeting */}
         <View style={styles.greetingSection}>
           <Text style={[styles.greetingTitle, { color: theme.text }]}>
-            Welcome 👋
+            {getGreeting()}
+          </Text>
+          <Text style={[styles.greetingSubtitle, { color: theme.textSecondary }]}>
+            {getGreetingSubtitle()}
           </Text>
         </View>
 
@@ -830,6 +863,11 @@ const styles = StyleSheet.create({
   greetingTitle: {
     fontSize: typography.fontSize['2xl'],
     fontWeight: typography.fontWeight.bold,
+  },
+  greetingSubtitle: {
+    fontSize: typography.fontSize.xs,
+    marginTop: 2,
+    fontWeight: typography.fontWeight.medium,
   },
   heroCard: {
     borderRadius: borderRadius.xl,

@@ -16,6 +16,8 @@ interface SettingRowProps {
   onValueChange?: (val: boolean) => void;
   onPress?: () => void;
   badgeText?: string;
+  badgeColor?: string;
+  badgeBgColor?: string;
   isDestructive?: boolean;
   disabled?: boolean;
 }
@@ -31,6 +33,8 @@ export const SettingRow: React.FC<SettingRowProps> = ({
   onValueChange,
   onPress,
   badgeText,
+  badgeColor,
+  badgeBgColor,
   isDestructive = false,
   disabled = false,
 }) => {
@@ -108,8 +112,18 @@ export const SettingRow: React.FC<SettingRowProps> = ({
         )}
 
         {type === 'badge' && badgeText && (
-          <View style={[styles.badge, { backgroundColor: theme.surfaceVariant }]}>
-            <Text style={[styles.badgeText, { color: theme.textSecondary }]}>
+          <View
+            style={[
+              styles.badge,
+              { backgroundColor: badgeBgColor || theme.surfaceVariant },
+            ]}
+          >
+            <Text
+              style={[
+                styles.badgeText,
+                { color: badgeColor || theme.textSecondary },
+              ]}
+            >
               {badgeText}
             </Text>
           </View>

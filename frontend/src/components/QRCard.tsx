@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import QRCode from 'react-native-qrcode-svg';
+import { CustomQRCode } from './CustomQRCode';
 import { SavedQRRecord } from '../types/qr';
 import { useTheme } from '../theme/ThemeContext';
 import { QR_TYPES } from '../constants/config';
@@ -42,13 +42,12 @@ export const QRCard: React.FC<QRCardProps> = ({ item, onPress, onDelete, onRenam
       ]}
     >
       <View style={styles.contentRow}>
-        {/* QR Thumbnail Preview */}
+        {/* QR Thumbnail Preview powered by qrcodegen */}
         <View style={[styles.qrThumbBox, { backgroundColor: '#FFFFFF', borderColor: theme.borderLight }]}>
-          <QRCode
+          <CustomQRCode
             value={item.data || 'https://qrsmart.app'}
-            size={56}
-            color="#0F172A"
-            backgroundColor="#FFFFFF"
+            size={52}
+            showContrastWarning={false}
           />
         </View>
 
@@ -139,10 +138,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   qrThumbBox: {
-    padding: 6,
+    padding: 2,
     borderRadius: borderRadius.md,
     borderWidth: 1,
     marginRight: spacing.md,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   detailsCol: {
     flex: 1,

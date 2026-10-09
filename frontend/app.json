@@ -19,7 +19,7 @@
       }
     },
     "android": {
-      "package": "com.qrsmart.scanner",
+      "package": "com.kiruthikeyan.scanner",
       "adaptiveIcon": {
         "backgroundColor": "#059669",
         "foregroundImage": "./assets/android-icon-foreground.png",

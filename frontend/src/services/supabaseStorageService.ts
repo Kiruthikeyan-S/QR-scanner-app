@@ -23,13 +23,12 @@ export const SupabaseStorageService = {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
   },
 
-  generateRandomId(prefix = 'F-'): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let token = '';
-    for (let i = 0; i < 8; i++) {
-      token += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return `${prefix}${token}`;
+  generateUUID(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
   },
 
   sanitizeExt(filename: string, defaultExt = 'bin'): string {
@@ -45,7 +44,7 @@ export const SupabaseStorageService = {
     const ext = this.sanitizeExt(filename);
     const mime = rawMime || '';
 
-    // Photos / Images
+    // Photos / Images -> qr-files/photos/
     if (
       declaredType === 'photo' ||
       ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'].includes(ext) ||
@@ -70,7 +69,7 @@ export const SupabaseStorageService = {
       };
     }
 
-    // PDF Documents
+    // PDF Documents -> qr-files/pdfs/
     if (ext === 'pdf' || mime === 'application/pdf') {
       return {
         folder: 'pdfs',
@@ -80,7 +79,7 @@ export const SupabaseStorageService = {
       };
     }
 
-    // Excel Spreadsheets
+    // Excel Spreadsheets -> qr-files/files/
     if (['xlsx', 'xls'].includes(ext)) {
       return {
         folder: 'files',
@@ -93,7 +92,7 @@ export const SupabaseStorageService = {
       };
     }
 
-    // CSV Spreadsheets
+    // CSV Spreadsheets -> qr-files/files/
     if (ext === 'csv' || mime === 'text/csv') {
       return {
         folder: 'files',
@@ -103,7 +102,7 @@ export const SupabaseStorageService = {
       };
     }
 
-    // Word Documents
+    // Word Documents -> qr-files/files/
     if (['docx', 'doc'].includes(ext)) {
       return {
         folder: 'files',
@@ -116,7 +115,7 @@ export const SupabaseStorageService = {
       };
     }
 
-    // JSON Files
+    // JSON Files -> qr-files/files/
     if (ext === 'json' || mime === 'application/json') {
       return {
         folder: 'files',
@@ -126,7 +125,7 @@ export const SupabaseStorageService = {
       };
     }
 
-    // Text Files
+    // Text Files -> qr-files/files/
     if (['txt', 'text', 'md', 'log'].includes(ext) || mime.startsWith('text/plain')) {
       return {
         folder: 'files',
@@ -136,7 +135,7 @@ export const SupabaseStorageService = {
       };
     }
 
-    // ZIP / Archives
+    // ZIP / Archives -> qr-files/files/
     if (['zip', 'tar', 'gz', 'rar', '7z'].includes(ext)) {
       return {
         folder: 'files',
@@ -146,7 +145,7 @@ export const SupabaseStorageService = {
       };
     }
 
-    // Generic Document
+    // Generic Document -> qr-files/files/
     return {
       folder: 'files',
       category: 'file',
@@ -158,7 +157,7 @@ export const SupabaseStorageService = {
   /**
    * Direct Upload to Supabase Storage:
    * Uploads file directly from the mobile app to the Supabase qr-files bucket,
-   * completely bypassing localhost / 127.0.0.1.
+   * saving to photos/, pdfs/, or files/ with UUID names.
    */
   async uploadFile(
     fileUri: string,
@@ -184,18 +183,19 @@ export const SupabaseStorageService = {
     const config = await getSupabaseConfig();
     if (!config.isConfigured) {
       throw new Error(
-        'Supabase Storage is not configured. Please add your Supabase Project URL and Publishable Key in frontend/.env or under App Settings.'
+        'Supabase Storage is not configured. Please add your Supabase Project URL and Publishable Key in frontend/.env.'
       );
     }
 
     const ext = this.sanitizeExt(cleanFileName, classification.category === 'image' ? 'jpg' : 'pdf');
-    const prefix = classification.category === 'image' ? 'P-' : classification.category === 'pdf' ? 'F-PDF-' : 'F-';
-    const fileId = this.generateRandomId(prefix);
-
-    // Storage path: photos/<random-id>.jpg or pdfs/<random-id>.pdf or files/<random-id>.xlsx
-    const randomHex = Math.random().toString(36).substring(2, 10);
-    const storagePath = `${classification.folder}/${randomHex}.${ext}`;
-    const bucket = config.bucket || 'qr-files';
+    const uuid = this.generateUUID();
+    
+    // Strict Storage paths:
+    // photos/<uuid>.<ext>
+    // pdfs/<uuid>.pdf
+    // files/<uuid>.<ext>
+    const storagePath = `${classification.folder}/${uuid}.${ext}`;
+    const bucket = 'qr-files';
     const supabaseUrl = config.url.replace(/\/+$/, '');
     const supabaseKey = config.key;
 
@@ -215,7 +215,6 @@ export const SupabaseStorageService = {
             apikey: supabaseKey,
             Authorization: `Bearer ${supabaseKey}`,
             'Content-Type': classification.mimeType,
-            'x-upsert': 'true',
           },
         });
 
@@ -230,10 +229,10 @@ export const SupabaseStorageService = {
           );
 
           return {
-            token_id: fileId,
-            file_id: fileId,
+            token_id: uuid,
+            file_id: uuid,
             original_name: cleanFileName,
-            filename: cleanFileName,
+            filename: `${uuid}.${ext}`,
             content_type: classification.mimeType,
             file_category: classification.category,
             file_type_label: classification.label,
@@ -254,13 +253,40 @@ export const SupabaseStorageService = {
             const errBody = JSON.parse(response.body);
             errDetail = errBody.message || errBody.error || response.body;
           } catch {}
+
+          const lower = errDetail.toLowerCase();
+          if (
+            lower.includes('row-level security') ||
+            lower.includes('violates') ||
+            lower.includes('policy')
+          ) {
+            throw new Error('Storage upload permission is not configured.');
+          }
+
+          if (response.status === 404 || lower.includes('bucket') || lower.includes('not found')) {
+            throw new Error('Storage bucket or upload path is invalid.');
+          }
+
           throw new Error(`Supabase Storage upload error: ${errDetail}`);
         }
       } catch (err: any) {
         console.error('[SUPABASE DIRECT UPLOAD FAILED]', err);
-        throw new Error(
-          err.message || 'Direct upload to Supabase Storage failed. Please check network and Storage bucket RLS policies.'
-        );
+        const lowerMsg = (err.message || '').toLowerCase();
+        if (
+          lowerMsg.includes('network') ||
+          lowerMsg.includes('connection') ||
+          lowerMsg.includes('failed to connect') ||
+          lowerMsg.includes('timeout')
+        ) {
+          throw new Error('Upload failed. Check your internet connection.');
+        }
+        if (lowerMsg.includes('storage upload permission is not configured')) {
+          throw err;
+        }
+        if (lowerMsg.includes('storage bucket or upload path is invalid')) {
+          throw err;
+        }
+        throw new Error(err.message || 'Storage upload permission is not configured.');
       }
     }
 
@@ -280,10 +306,22 @@ export const SupabaseStorageService = {
 
       const { error } = await client.storage.from(bucket).upload(storagePath, blob, {
         contentType: classification.mimeType,
-        upsert: true,
+        upsert: false,
       });
 
       if (error) {
+        const msg = error.message || '';
+        const lower = msg.toLowerCase();
+        if (
+          lower.includes('row-level security') ||
+          lower.includes('violates') ||
+          lower.includes('policy')
+        ) {
+          throw new Error('Storage upload permission is not configured.');
+        }
+        if (lower.includes('bucket') || lower.includes('not found')) {
+          throw new Error('Storage bucket or upload path is invalid.');
+        }
         throw new Error(`Supabase upload failed: ${error.message}`);
       }
 
@@ -295,10 +333,10 @@ export const SupabaseStorageService = {
       console.log(`[SUPABASE UPLOAD OK] Direct Web -> ${publicUrl} (${totalDuration}ms)`);
 
       return {
-        token_id: fileId,
-        file_id: fileId,
+        token_id: uuid,
+        file_id: uuid,
         original_name: cleanFileName,
-        filename: cleanFileName,
+        filename: `${uuid}.${ext}`,
         content_type: classification.mimeType,
         file_category: classification.category,
         file_type_label: classification.label,
@@ -315,7 +353,15 @@ export const SupabaseStorageService = {
       };
     } catch (err: any) {
       console.error('[SUPABASE WEB UPLOAD FAILED]', err);
-      throw new Error(err.message || 'Failed to upload file to Supabase Storage.');
+      const lowerMsg = (err.message || '').toLowerCase();
+      if (
+        lowerMsg.includes('network') ||
+        lowerMsg.includes('connection') ||
+        lowerMsg.includes('failed to fetch')
+      ) {
+        throw new Error('Upload failed. Check your internet connection.');
+      }
+      throw new Error(err.message || 'Storage upload permission is not configured.');
     }
   },
 };

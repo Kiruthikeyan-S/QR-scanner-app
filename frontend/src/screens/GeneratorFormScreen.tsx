@@ -508,9 +508,7 @@ export const GeneratorFormScreen: React.FC = () => {
             payload.startsWith('file://') ||
             payload.startsWith('content://') ||
             payload.includes('tmpfiles.org') ||
-            !payload.startsWith('https://') ||
-            !payload.includes('supabase.co') ||
-            !payload.includes('qr-files')
+            !payload.startsWith('https://')
           ) {
             Alert.alert(
               'Public HTTPS URL Required',
@@ -613,9 +611,7 @@ export const GeneratorFormScreen: React.FC = () => {
             payload.startsWith('file://') ||
             payload.startsWith('content://') ||
             payload.includes('tmpfiles.org') ||
-            !payload.startsWith('https://') ||
-            !payload.includes('supabase.co') ||
-            !payload.includes('qr-files')
+            !payload.startsWith('https://')
           ) {
             Alert.alert(
               'Public HTTPS URL Required',
@@ -1209,39 +1205,39 @@ export const GeneratorFormScreen: React.FC = () => {
         {/* Photo QR Form */}
         {type === 'photo' && (
           <View style={styles.fieldGroup}>
-            <Text style={[styles.label, { color: theme.text }]}>Upload Photo *</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Selected Photo *</Text>
             {selectedPhoto ? (
-              <View style={[styles.fileCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-                <Image source={{ uri: selectedPhoto.uri }} style={styles.photoThumb} />
-                <View style={styles.fileInfo}>
-                  <Text style={[styles.fileName, { color: theme.text }]} numberOfLines={1}>
+              <View style={[styles.compactFileCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                <Image source={{ uri: selectedPhoto.uri }} style={styles.compactPhotoThumb} />
+                <View style={styles.compactFileInfo}>
+                  <Text style={[styles.compactFileName, { color: theme.text }]} numberOfLines={1}>
                     {selectedPhoto.name}
                   </Text>
-                  <Text style={[styles.fileSize, { color: theme.textSecondary }]}>
-                    {FileUploadService.formatBytes(selectedPhoto.size)} • JPG/PNG
+                  <Text style={[styles.compactFileSize, { color: theme.textSecondary }]}>
+                    {FileUploadService.formatBytes(selectedPhoto.size)} • Photo
                   </Text>
                 </View>
-                <View style={styles.fileActionBtnsRow}>
+                <View style={styles.compactActionsCol}>
                   <Pressable
                     onPress={() => setPreviewModalVisible(true)}
-                    style={[styles.smallBtn, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : palette.emerald[50] }]}
+                    style={[styles.compactSmallBtn, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : palette.emerald[50] }]}
                   >
-                    <Ionicons name="eye-outline" size={14} color={palette.emerald[600]} />
-                    <Text style={[styles.smallBtnText, { color: palette.emerald[600] }]}>Preview</Text>
+                    <Ionicons name="eye-outline" size={13} color={palette.emerald[600]} />
+                    <Text style={[styles.compactSmallBtnText, { color: palette.emerald[600] }]}>Preview</Text>
                   </Pressable>
                   <Pressable
                     onPress={handlePickPhoto}
-                    style={[styles.smallBtn, { backgroundColor: theme.surfaceVariant }]}
+                    style={[styles.compactSmallBtn, { backgroundColor: theme.surfaceVariant }]}
                   >
-                    <Ionicons name="refresh-outline" size={14} color={theme.text} />
-                    <Text style={[styles.smallBtnText, { color: theme.text }]}>Change</Text>
+                    <Ionicons name="refresh-outline" size={13} color={theme.text} />
+                    <Text style={[styles.compactSmallBtnText, { color: theme.text }]}>Change</Text>
                   </Pressable>
                   <Pressable
                     onPress={handleRemovePhoto}
-                    style={[styles.smallBtn, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : palette.rose[50] }]}
+                    style={[styles.compactSmallBtn, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : palette.rose[50] }]}
                   >
-                    <Ionicons name="trash-outline" size={14} color={palette.rose[500]} />
-                    <Text style={[styles.smallBtnText, { color: palette.rose[500] }]}>Remove</Text>
+                    <Ionicons name="trash-outline" size={13} color={palette.rose[500]} />
+                    <Text style={[styles.compactSmallBtnText, { color: palette.rose[500] }]}>Remove</Text>
                   </Pressable>
                 </View>
               </View>
@@ -1272,34 +1268,34 @@ export const GeneratorFormScreen: React.FC = () => {
         {/* PDF / File QR Form */}
         {type === 'file' && (
           <View style={styles.fieldGroup}>
-            <Text style={[styles.label, { color: theme.text }]}>Upload PDF Document *</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Selected PDF Document *</Text>
             {selectedPdf ? (
-              <View style={[styles.fileCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-                <View style={[styles.docIconBox, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.18)' : palette.cyan[50] }]}>
+              <View style={[styles.compactFileCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                <View style={[styles.compactDocIconBox, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.18)' : palette.cyan[50] }]}>
                   <Ionicons name="document-text" size={24} color={palette.cyan[500]} />
                 </View>
-                <View style={styles.fileInfo}>
-                  <Text style={[styles.fileName, { color: theme.text }]} numberOfLines={1}>
+                <View style={styles.compactFileInfo}>
+                  <Text style={[styles.compactFileName, { color: theme.text }]} numberOfLines={1}>
                     {selectedPdf.name}
                   </Text>
-                  <Text style={[styles.fileSize, { color: theme.textSecondary }]}>
+                  <Text style={[styles.compactFileSize, { color: theme.textSecondary }]}>
                     {FileUploadService.formatBytes(selectedPdf.size)} • PDF Document
                   </Text>
                 </View>
-                <View style={styles.fileActionBtnsRow}>
+                <View style={styles.compactActionsCol}>
                   <Pressable
                     onPress={handlePickPdf}
-                    style={[styles.smallBtn, { backgroundColor: theme.surfaceVariant }]}
+                    style={[styles.compactSmallBtn, { backgroundColor: theme.surfaceVariant }]}
                   >
-                    <Ionicons name="refresh-outline" size={14} color={theme.text} />
-                    <Text style={[styles.smallBtnText, { color: theme.text }]}>Change</Text>
+                    <Ionicons name="refresh-outline" size={13} color={theme.text} />
+                    <Text style={[styles.compactSmallBtnText, { color: theme.text }]}>Change</Text>
                   </Pressable>
                   <Pressable
                     onPress={handleRemovePdf}
-                    style={[styles.smallBtn, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : palette.rose[50] }]}
+                    style={[styles.compactSmallBtn, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : palette.rose[50] }]}
                   >
-                    <Ionicons name="trash-outline" size={14} color={palette.rose[500]} />
-                    <Text style={[styles.smallBtnText, { color: palette.rose[500] }]}>Remove</Text>
+                    <Ionicons name="trash-outline" size={13} color={palette.rose[500]} />
+                    <Text style={[styles.compactSmallBtnText, { color: palette.rose[500] }]}>Remove</Text>
                   </Pressable>
                 </View>
               </View>
@@ -1354,20 +1350,33 @@ export const GeneratorFormScreen: React.FC = () => {
           </View>
         )}
 
-        {/* QR Customization Section */}
+        {/* QR Customization Section with 4 Clean Tabs */}
         {isFileSelected && (
           <QRCustomizer
             customization={customization}
             onChange={setCustomization}
+            isPhotoType={type === 'photo'}
           />
         )}
+      </ScrollView>
 
-        {/* Upload Progress Indicator */}
+      {/* Sticky Bottom Generate Button Bar */}
+      <View
+        style={[
+          styles.stickyBottomBar,
+          {
+            backgroundColor: theme.surface,
+            borderTopColor: theme.borderLight,
+            paddingBottom: Math.max(insets.bottom + 8, spacing.md),
+          },
+        ]}
+      >
+        {/* Upload Progress Bar if Uploading */}
         {isUploading && (
-          <View style={[styles.uploadingBox, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            <View style={styles.uploadingHeaderRow}>
-              <ActivityIndicator size="small" color={theme.primary} style={{ marginRight: spacing.sm }} />
-              <Text style={[styles.uploadingText, { color: theme.text }]} numberOfLines={1}>
+          <View style={styles.stickyProgressWrapper}>
+            <View style={styles.stickyProgressHeader}>
+              <ActivityIndicator size="small" color={theme.primary} style={{ marginRight: 6 }} />
+              <Text style={[styles.stickyProgressText, { color: theme.text }]} numberOfLines={1}>
                 {uploadDetailText || 'Uploading file to cloud storage...'}
               </Text>
             </View>
@@ -1385,7 +1394,6 @@ export const GeneratorFormScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Submit Generate Button */}
         <PrimaryButton
           title={
             isUploading
@@ -1399,9 +1407,9 @@ export const GeneratorFormScreen: React.FC = () => {
           onPress={!isFileSelected ? (type === 'photo' ? handlePickPhoto : handlePickPdf) : handleGenerate}
           size="lg"
           disabled={isUploading}
-          style={styles.generateBtn}
+          style={styles.stickyGenerateBtn}
         />
-      </ScrollView>
+      </View>
 
       {/* Photo Full-Screen Modal Preview */}
       {selectedPhoto && (
@@ -1630,53 +1638,53 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semibold,
   },
-  fileCard: {
+  compactFileCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
     borderRadius: borderRadius.xl,
-    padding: spacing.md,
+    padding: spacing.sm,
   },
-  photoThumb: {
-    width: '100%',
-    height: 160,
-    borderRadius: borderRadius.lg,
-    marginBottom: spacing.md,
+  compactPhotoThumb: {
+    width: 54,
+    height: 54,
+    borderRadius: borderRadius.md,
     resizeMode: 'cover',
   },
-  docIconBox: {
+  compactDocIconBox: {
     width: 48,
     height: 48,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.sm,
   },
-  fileInfo: {
-    marginBottom: spacing.md,
+  compactFileInfo: {
+    flex: 1,
+    marginLeft: spacing.sm,
+    marginRight: spacing.xs,
   },
-  fileName: {
+  compactFileName: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semibold,
     marginBottom: 2,
   },
-  fileSize: {
+  compactFileSize: {
     fontSize: typography.fontSize.xs,
   },
-  fileActionBtnsRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
+  compactActionsCol: {
+    flexDirection: 'column',
+    gap: 4,
   },
-  smallBtn: {
-    flex: 1,
+  compactSmallBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
     borderRadius: borderRadius.md,
   },
-  smallBtnText: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.semibold,
+  compactSmallBtnText: {
+    fontSize: 11,
+    fontWeight: '600',
     marginLeft: 4,
   },
   placeholderCard: {
@@ -1720,34 +1728,41 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  uploadingBox: {
-    padding: spacing.md,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    marginBottom: spacing.md,
+  stickyBottomBar: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 6,
   },
-  uploadingHeaderRow: {
+  stickyProgressWrapper: {
+    marginBottom: spacing.xs,
+  },
+  stickyProgressHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: 4,
   },
-  uploadingText: {
+  stickyProgressText: {
     flex: 1,
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.semibold,
+    fontSize: 11,
+    fontWeight: '600',
   },
   progressBarTrack: {
-    height: 6,
-    borderRadius: 3,
+    height: 4,
+    borderRadius: 2,
     overflow: 'hidden',
     width: '100%',
   },
   progressBarFill: {
     height: '100%',
-    borderRadius: 3,
+    borderRadius: 2,
   },
-  generateBtn: {
-    marginTop: spacing.md,
+  stickyGenerateBtn: {
+    width: '100%',
   },
   modalOverlay: {
     flex: 1,

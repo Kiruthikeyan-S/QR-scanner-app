@@ -13,6 +13,13 @@ export type QRType =
   | 'json'
   | 'barcode';
 
+export type QRPattern = 'square' | 'rounded' | 'dots';
+export type QRCornerStyle = 'classic' | 'rounded' | 'soft';
+export type QRFrame = 'none' | 'simple' | 'rounded' | 'scan_me';
+export type QRThemeId = 'classic' | 'green' | 'ocean' | 'purple' | 'dark' | 'custom';
+export type PhotoQuality = 'optimized' | 'original';
+export type QRExportSize = 512 | 1024 | 2048;
+
 export interface QRCustomization {
   fgColor: string;
   bgColor: string;
@@ -20,6 +27,12 @@ export interface QRCustomization {
   customLogoUri?: string;
   size: number;
   errorCorrectionLevel: 'L' | 'M' | 'Q' | 'H';
+  pattern?: QRPattern;
+  cornerStyle?: QRCornerStyle;
+  frame?: QRFrame;
+  themeId?: QRThemeId;
+  photoQuality?: PhotoQuality;
+  exportSize?: QRExportSize;
 }
 
 export interface UploadedFileMeta {

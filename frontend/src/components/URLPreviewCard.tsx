@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, ViewStyle } from 'react-native';
-import QRCode from 'react-native-qrcode-svg';
+import { CustomQRCode } from './CustomQRCode';
 import * as Clipboard from 'expo-clipboard';
 import { useTheme } from '../theme/ThemeContext';
 import { palette } from '../theme/colors';
@@ -137,13 +137,12 @@ export const URLPreviewCard: React.FC<URLPreviewCardProps> = ({
               </View>
             </View>
 
-            {/* Instant Live QR Thumbnail */}
+            {/* Instant Live QR Thumbnail powered by qrcodegen */}
             <View style={[styles.qrThumb, { backgroundColor: '#FFFFFF', borderColor: theme.borderLight }]}>
-              <QRCode
+              <CustomQRCode
                 value={normalized || 'https://qrsmart.app'}
-                size={62}
-                color="#0F172A"
-                backgroundColor="#FFFFFF"
+                size={56}
+                showContrastWarning={false}
               />
             </View>
           </View>
