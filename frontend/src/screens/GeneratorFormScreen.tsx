@@ -122,6 +122,16 @@ export const GeneratorFormScreen: React.FC = () => {
     errorCorrectionLevel: 'M',
   });
 
+  // Reset state when generator type changes
+  React.useEffect(() => {
+    setSelectedPhoto(null);
+    setSelectedPdf(null);
+    setIsUploading(false);
+    setUploadProgress(0);
+    setUploadDetailText('');
+    uploadCache.current = {};
+  }, [type]);
+
   // Photo Picker Handler
   const handlePickPhoto = async () => {
     try {
@@ -152,6 +162,8 @@ export const GeneratorFormScreen: React.FC = () => {
           return;
         }
 
+        // Reset any cached upload for fresh asset
+        uploadCache.current = {};
         setSelectedPhoto({
           uri: asset.uri,
           name,
@@ -167,6 +179,7 @@ export const GeneratorFormScreen: React.FC = () => {
   const handleRemovePhoto = () => {
     triggerLightHaptic();
     setSelectedPhoto(null);
+    uploadCache.current = {};
   };
 
   // PDF Document Picker Handler
@@ -188,6 +201,8 @@ export const GeneratorFormScreen: React.FC = () => {
           return;
         }
 
+        // Reset any cached upload for fresh asset
+        uploadCache.current = {};
         setSelectedPdf({
           uri: asset.uri,
           name,
@@ -203,6 +218,7 @@ export const GeneratorFormScreen: React.FC = () => {
   const handleRemovePdf = () => {
     triggerLightHaptic();
     setSelectedPdf(null);
+    uploadCache.current = {};
   };
 
   // Format JSON Action Handler
@@ -256,9 +272,9 @@ export const GeneratorFormScreen: React.FC = () => {
       case 'location':
         return locLat.trim() && locLng.trim() ? QRFormatter.formatLocation({ latitude: locLat, longitude: locLng, label: locLabel }) : 'geo:37.7749,-122.4194';
       case 'photo':
-        return selectedPhoto ? `http://qrsmart.local/photo/${encodeURIComponent(selectedPhoto.name)}` : 'https://qrsmart.app';
+        return selectedPhoto ? `https://qrsmart.app/photo-preview` : 'https://qrsmart.app';
       case 'file':
-        return selectedPdf ? `http://qrsmart.local/pdf/${encodeURIComponent(selectedPdf.name)}` : 'https://qrsmart.app';
+        return selectedPdf ? `https://qrsmart.app/file-preview` : 'https://qrsmart.app';
       case 'order_id':
         return orderId.trim()
           ? QRFormatter.formatOrderId({
