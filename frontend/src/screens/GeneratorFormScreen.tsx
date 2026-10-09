@@ -245,9 +245,9 @@ export const GeneratorFormScreen: React.FC = () => {
   const getPreviewPayload = (): string => {
     switch (type) {
       case 'url':
-        return url.trim() ? QRFormatter.formatURL({ url }) : 'https://qrsmart.app';
+        return url.trim() ? QRFormatter.formatURL({ url }) : 'https://qrinova.app';
       case 'text':
-        return text.trim() ? QRFormatter.formatText({ text }) : 'QR Smart Text';
+        return text.trim() ? QRFormatter.formatText({ text }) : 'Qrinova Text';
       case 'wifi':
         return wifiSsid.trim()
           ? QRFormatter.formatWifi({ ssid: wifiSsid, password: wifiPass, security: wifiSecurity, hidden: wifiHidden })
@@ -255,7 +255,7 @@ export const GeneratorFormScreen: React.FC = () => {
       case 'phone':
         return phoneNumber.trim() ? QRFormatter.formatPhone({ countryCode: phoneCode, phoneNumber }) : 'tel:+1234567890';
       case 'email':
-        return emailTo.trim() ? QRFormatter.formatEmail({ email: emailTo, subject: emailSubject, body: emailBody }) : 'mailto:hello@qrsmart.app';
+        return emailTo.trim() ? QRFormatter.formatEmail({ email: emailTo, subject: emailSubject, body: emailBody }) : 'mailto:hello@qrinova.app';
       case 'sms':
         return smsPhone.trim() ? QRFormatter.formatSMS({ phoneNumber: smsPhone, message: smsMessage }) : 'smsto:+1234567890:Hi';
       case 'contact':
@@ -272,9 +272,9 @@ export const GeneratorFormScreen: React.FC = () => {
       case 'location':
         return locLat.trim() && locLng.trim() ? QRFormatter.formatLocation({ latitude: locLat, longitude: locLng, label: locLabel }) : 'geo:37.7749,-122.4194';
       case 'photo':
-        return selectedPhoto ? `https://qrsmart.app/photo-preview` : 'https://qrsmart.app';
+        return selectedPhoto ? `https://qrinova.app/photo-preview` : 'https://qrinova.app';
       case 'file':
-        return selectedPdf ? `https://qrsmart.app/file-preview` : 'https://qrsmart.app';
+        return selectedPdf ? `https://qrinova.app/file-preview` : 'https://qrinova.app';
       case 'order_id':
         return orderId.trim()
           ? QRFormatter.formatOrderId({
@@ -293,7 +293,7 @@ export const GeneratorFormScreen: React.FC = () => {
         }
       }
       default:
-        return 'https://qrsmart.app';
+        return 'https://qrinova.app';
     }
   };
 

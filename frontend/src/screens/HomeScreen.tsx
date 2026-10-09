@@ -126,7 +126,7 @@ export const HomeScreen: React.FC = () => {
           <View style={[styles.appIcon, { backgroundColor: theme.primaryLight }]}>
             <AppIcon name="qr-code" size={20} color={theme.primary} />
           </View>
-          <Text style={[styles.appTitle, { color: theme.text }]}>QR Smart</Text>
+          <Text style={[styles.appTitle, { color: theme.text }]}>Qrinova</Text>
         </View>
 
         <View style={styles.headerRight}>

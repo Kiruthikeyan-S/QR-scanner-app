@@ -222,7 +222,7 @@ export const NetworkCheckerScreen: React.FC = () => {
             <Text style={[styles.infoCardTitle, { color: theme.text }]}>100% Offline Capable</Text>
           </View>
           <Text style={[styles.infoCardText, { color: theme.textSecondary }]}>
-            QR Smart operates completely on-device. Camera scanning, QR creation, history, and saved codes work seamlessly without an internet connection.
+            Qrinova operates completely on-device. Camera scanning, QR creation, history, and saved codes work seamlessly without an internet connection.
           </Text>
         </View>
       </ScrollView>

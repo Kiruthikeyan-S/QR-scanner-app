@@ -116,7 +116,7 @@ export const NetworkGate: React.FC<{ children: React.ReactNode }> = ({ children 
               <Text style={[styles.tipTitle, { color: theme.text }]}>Offline QR Engine</Text>
             </View>
             <Text style={[styles.tipText, { color: theme.textSecondary }]}>
-              QR Smart's camera scanner and QR generator do not require an internet connection and remain 100% active on your device.
+              Qrinova's camera scanner and QR generator do not require an internet connection and remain 100% active on your device.
             </Text>
           </View>
         </View>

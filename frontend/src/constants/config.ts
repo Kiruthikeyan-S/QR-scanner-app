@@ -146,9 +146,9 @@ export const QR_TYPES: Record<QRType, QRTypeMetadata> = {
 };
 
 export const APP_INFO = {
-  name: 'QR Smart',
+  name: 'Qrinova',
   tagline: 'Fast & Secure QR Toolkit',
   version: '1.0.0',
   build: '100',
-  copyright: '© 2026 QR Smart',
+  copyright: '© 2026 Qrinova',
 };

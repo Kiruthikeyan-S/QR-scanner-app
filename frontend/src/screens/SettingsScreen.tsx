@@ -248,7 +248,7 @@ export const SettingsScreen: React.FC = () => {
         <View style={[styles.cardGroup, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <SettingRow
             icon="information-circle-outline"
-            title="About QR Smart"
+            title="About Qrinova"
             type="navigation"
             onPress={() => setAboutModalVisible(true)}
           />
@@ -282,9 +282,9 @@ export const SettingsScreen: React.FC = () => {
       >
         <View style={styles.modalBackdrop}>
           <View style={[styles.modalCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            <Text style={[styles.modalTitle, { color: theme.text }]}>About QR Smart</Text>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>About Qrinova</Text>
             <Text style={[styles.modalContent, { color: theme.textSecondary }]}>
-              QR Smart is a privacy-first, high-performance QR code and barcode toolkit.
+              Qrinova is a privacy-first, high-performance QR code and barcode toolkit.
               {'\n\n'}
               Key Features:
               {'\n'}• High-speed camera scanner & gallery image decoding

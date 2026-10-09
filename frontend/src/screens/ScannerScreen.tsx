@@ -223,7 +223,7 @@ export const ScannerScreen: React.FC = () => {
 
         <Text style={[styles.permTitle, { color: theme.text }]}>Camera Permission Required</Text>
         <Text style={[styles.permSubtitle, { color: theme.textSecondary }]}>
-          QR Smart needs camera access to scan and decode QR codes in real-time.
+          Qrinova needs camera access to scan and decode QR codes in real-time.
         </Text>
 
         <PrimaryButton

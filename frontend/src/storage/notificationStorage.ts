@@ -7,7 +7,7 @@ const INITIAL_NOTIFICATIONS: AppNotification[] = [
   {
     id: 'welcome-1',
     type: 'system',
-    title: 'Welcome to QR Smart',
+    title: 'Welcome to Qrinova',
     message: 'Your high-accuracy offline QR scanner and generator is ready to use.',
     timestamp: new Date().toISOString(),
     read: false,

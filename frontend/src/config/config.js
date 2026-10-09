@@ -1,5 +1,5 @@
 /**
- * Central Public Configuration for QR Smart (Expo / React Native App)
+ * Central Public Configuration for Qrinova (Expo / React Native App)
  * JavaScript export for universal compatibility.
  */
 
@@ -14,7 +14,7 @@ export const CONFIG = {
   SECURITY_API_BASE_URL: 'https://vzjdeqayeprupupwtdin.supabase.co',
 
   // App Metadata
-  APP_NAME: 'QR Smart',
+  APP_NAME: 'Qrinova',
   VERSION: '1.0.0',
 };
 
