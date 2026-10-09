@@ -456,12 +456,13 @@ export async function checkURLSafety(
     return localResult;
   }
 
-  // If online check was unreachable and local analysis was clean, mark as 'unknown' (safety check unavailable)
-  const unknownResult: URLSafetyDetails = {
+  // If online check was unreachable and local analysis is clean, return safe local result
+  const cleanResult: URLSafetyDetails = {
     ...localResult,
-    status: 'unknown',
-    reasons: ['Safety check unavailable (device offline or verification service unreachable)'],
+    status: localResult.isHttps ? 'safe' : 'unknown',
+    reasons: localResult.isHttps ? [] : ['HTTP unencrypted connection'],
   };
 
-  return unknownResult;
+  safetyCache.set(raw, { result: cleanResult, timestamp: Date.now() });
+  return cleanResult;
 }

@@ -1,14 +1,12 @@
 import { NativeModules, Platform } from 'react-native';
 import Constants from 'expo-constants';
+import { CONFIG } from '../config/config';
 import { SettingsStorage } from '../storage/settingsStorage';
 
-// Development machine LAN IP
-const CURRENT_DEV_LAN_IP = '10.74.43.79';
-
 export function getAutoDetectedHost(): string {
-  // 1. Check EXPO_PUBLIC_API_URL
-  if (process.env.EXPO_PUBLIC_API_URL) {
-    return process.env.EXPO_PUBLIC_API_URL.replace(/\/+$/, '');
+  // 1. Primary Public Production Backend from central config
+  if (CONFIG.API_BASE_URL && CONFIG.API_BASE_URL.startsWith('https://')) {
+    return CONFIG.API_BASE_URL.replace(/\/+$/, '');
   }
 
   // 2. Extract host from React Native SourceCode.scriptURL (Works in Android & iOS dev builds)
@@ -20,7 +18,7 @@ export function getAutoDetectedHost(): string {
     }
   }
 
-  // 3. Extract host from Expo constants
+  // 3. Extract host from Expo constants (development only)
   const hostUri =
     Constants.expoConfig?.hostUri ||
     (Constants as any).manifest2?.extra?.expoGo?.debuggerHost ||
@@ -34,39 +32,27 @@ export function getAutoDetectedHost(): string {
     }
   }
 
-  // 4. Default fallback on native Android & iOS mobile devices
-  if (Platform.OS !== 'web') {
-    return `http://${CURRENT_DEV_LAN_IP}:8000`;
-  }
-
-  return 'http://localhost:8000';
+  return CONFIG.API_BASE_URL.replace(/\/+$/, '');
 }
 
 export async function getAllCandidateBaseUrls(): Promise<string[]> {
   const settings = await SettingsStorage.get();
   if (
     settings.backendUrl &&
-    settings.backendUrl !== 'http://localhost:8000' &&
-    settings.backendUrl !== 'http://127.0.0.1:8000'
+    !settings.backendUrl.includes('localhost') &&
+    !settings.backendUrl.includes('127.0.0.1')
   ) {
     return [settings.backendUrl.replace(/\/+$/, '')];
   }
 
+  const primary = (CONFIG.API_BASE_URL || '').replace(/\/+$/, '');
   const autoHost = getAutoDetectedHost();
 
-  let list: string[] = [];
-  if (Platform.OS === 'web') {
-    list = ['http://localhost:8000', autoHost, 'http://127.0.0.1:8000'];
-  } else {
-    // Native mobile: Prioritize discovered LAN host and dev IP; never try localhost on physical device
-    list = [
-      autoHost,
-      `http://${CURRENT_DEV_LAN_IP}:8000`,
-      'http://10.0.2.2:8000', // Android Studio Emulator bridge
-    ];
-  }
+  const list = [primary, autoHost].filter(
+    (v, i, a) => v && v.trim().length > 0 && a.indexOf(v) === i
+  );
 
-  return list.filter((v, i, a) => v && v.trim().length > 0 && a.indexOf(v) === i);
+  return list;
 }
 
 let cachedReachableUrl: string | null = null;
@@ -74,7 +60,7 @@ let lastCheckTime = 0;
 
 export async function getFastestReachableBaseUrl(): Promise<string> {
   const now = Date.now();
-  if (cachedReachableUrl && now - lastCheckTime < 15000) {
+  if (cachedReachableUrl && now - lastCheckTime < 30000) {
     return cachedReachableUrl;
   }
 
@@ -83,7 +69,7 @@ export async function getFastestReachableBaseUrl(): Promise<string> {
   for (const url of candidates) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 1500);
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
       const res = await fetch(`${url}/health`, { signal: controller.signal });
       clearTimeout(timeoutId);
       if (res.ok) {
@@ -91,17 +77,12 @@ export async function getFastestReachableBaseUrl(): Promise<string> {
         lastCheckTime = Date.now();
         return url;
       }
-    } catch (e) {}
+    } catch {
+      // Fallback
+    }
   }
 
-  // Fallback to first non-localhost candidate on mobile, or localhost on web
-  const fallback =
-    Platform.OS === 'web'
-      ? 'http://localhost:8000'
-      : candidates.find((c) => !c.includes('localhost') && !c.includes('127.0.0.1')) ||
-        candidates[0] ||
-        `http://${CURRENT_DEV_LAN_IP}:8000`;
-
+  const fallback = candidates[0] || CONFIG.API_BASE_URL.replace(/\/+$/, '');
   cachedReachableUrl = fallback;
   lastCheckTime = Date.now();
   return fallback;

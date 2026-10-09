@@ -21,7 +21,6 @@ import { typography, borderRadius, spacing } from '../theme/typography';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { SecondaryButton } from '../components/SecondaryButton';
-import { Badge } from '../components/Badge';
 import { CustomQRCode } from '../components/CustomQRCode';
 import { SavedQRStorage } from '../storage/savedQRStorage';
 import { NotificationStorage } from '../storage/notificationStorage';
@@ -80,7 +79,7 @@ export const QRPreviewScreen: React.FC = () => {
 
     await NotificationStorage.add({
       title: 'QR Code Saved',
-      message: `"${saveTitle.trim()}" (${type.toUpperCase()}) was saved to your collection.`,
+      message: `"${saveTitle.trim()}" was saved to your collection.`,
       type: 'saved',
       data: { savedId: saved.id, name: saveTitle.trim(), qrType: type, data },
     });
@@ -88,7 +87,7 @@ export const QRPreviewScreen: React.FC = () => {
     setSaveModalVisible(false);
     setIsSaved(true);
     triggerFeedback();
-    Alert.alert('Saved Successfully', `"${saveTitle.trim()}" has been saved.`);
+    Alert.alert('Saved', 'QR code saved to your collection.');
   };
 
   const handleShare = async () => {
@@ -100,7 +99,7 @@ export const QRPreviewScreen: React.FC = () => {
     triggerLightHaptic();
     const ok = await ActionHandler.copyToClipboard(data);
     if (ok) {
-      Alert.alert('Copied', 'QR data URL copied to clipboard.');
+      Alert.alert('Copied', 'Content copied to clipboard.');
     }
   };
 
@@ -116,6 +115,43 @@ export const QRPreviewScreen: React.FC = () => {
     triggerLightHaptic();
     await ActionHandler.openUrl(data);
   };
+
+  // Helper to format clean display text
+  const getDisplayContent = () => {
+    if (fileMeta) {
+      return {
+        title: fileMeta.filename,
+        subtitle: `${fileMeta.size_formatted} • ${fileMeta.file_type_label || (fileMeta.file_type === 'photo' ? 'Photo' : 'Document')}`,
+        hasFileLink: true,
+      };
+    }
+
+    if (type === 'phone') {
+      const cleanPhone = data.replace(/^tel:/i, '').trim();
+      return {
+        title: cleanPhone,
+        subtitle: undefined,
+        hasFileLink: false,
+      };
+    }
+
+    if (type === 'url') {
+      const displayUrl = data.replace(/^https?:\/\//i, '').replace(/\/$/, '');
+      return {
+        title: displayUrl,
+        subtitle: undefined,
+        hasFileLink: false,
+      };
+    }
+
+    return {
+      title: saveTitle || data,
+      subtitle: undefined,
+      hasFileLink: false,
+    };
+  };
+
+  const contentInfo = getDisplayContent();
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -138,23 +174,7 @@ export const QRPreviewScreen: React.FC = () => {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Verification Status Banner */}
-        <View
-          style={[
-            styles.verifiedBanner,
-            {
-              backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : palette.emerald[50],
-              borderColor: palette.emerald[500],
-            },
-          ]}
-        >
-          <Ionicons name="shield-checkmark" size={18} color={palette.emerald[500]} style={{ marginRight: 8 }} />
-          <Text style={[styles.verifiedTitle, { color: palette.emerald[600] }]}>
-            QR Verified & Scannable
-          </Text>
-        </View>
-
-        {/* Clean, Premium QR Code Container Card */}
+        {/* Clean, Minimal QR Code Container Card */}
         <View
           style={[
             styles.qrCard,
@@ -165,26 +185,7 @@ export const QRPreviewScreen: React.FC = () => {
             },
           ]}
         >
-          {/* Top Row: Type Badge */}
-          <View style={styles.cardHeader}>
-            <Badge
-              label={
-                fileMeta?.file_type === 'photo'
-                  ? 'PHOTO QR'
-                  : fileMeta?.file_type === 'file' || fileMeta?.filename?.toLowerCase().endsWith('.pdf')
-                  ? 'PDF QR'
-                  : meta.label.toUpperCase()
-              }
-              variant="primary"
-              size="sm"
-            />
-            <View style={styles.cardHeaderRight}>
-              <Ionicons name="sparkles" size={14} color={palette.emerald[500]} style={{ marginRight: 4 }} />
-              <Text style={[styles.cardHeaderStatus, { color: palette.emerald[600] }]}>Ready</Text>
-            </View>
-          </View>
-
-          {/* High Contrast QR Code with Quiet-Zone & Custom Styling */}
+          {/* Large Clean QR Code */}
           <View style={styles.qrWrapper}>
             <CustomQRCode
               value={data || 'https://qrsmart.app'}
@@ -194,53 +195,35 @@ export const QRPreviewScreen: React.FC = () => {
             />
           </View>
 
-          {/* Clean Title & Formatted Metadata (No Raw Technical URL text) */}
-          <View style={styles.cardMetaSection}>
-            <Text style={[styles.qrTitle, { color: theme.text }]} numberOfLines={1}>
-              {fileMeta?.filename || saveTitle}
+          {/* Simple Content Text */}
+          <Text style={[styles.contentTitle, { color: theme.text }]} numberOfLines={2}>
+            {contentInfo.title}
+          </Text>
+
+          {contentInfo.subtitle && (
+            <Text style={[styles.contentSubtitle, { color: theme.textSecondary }]}>
+              {contentInfo.subtitle}
             </Text>
+          )}
 
-            {fileMeta ? (
-              <View style={styles.metaChipsRow}>
-                <View style={[styles.metaPill, { backgroundColor: theme.surfaceVariant }]}>
-                  <Ionicons
-                    name={
-                      fileMeta.file_category === 'image' || fileMeta.file_type === 'photo'
-                        ? 'image-outline'
-                        : 'document-text-outline'
-                    }
-                    size={13}
-                    color={theme.primary}
-                    style={{ marginRight: 4 }}
-                  />
-                  <Text style={[styles.metaPillText, { color: theme.textSecondary }]}>
-                    {fileMeta.size_formatted} • {fileMeta.file_type_label || (fileMeta.file_type === 'photo' ? 'Image File' : 'PDF Document')}
-                  </Text>
-                </View>
-
-                <Pressable
-                  onPress={handleOpenFileUrl}
-                  style={({ pressed }) => [
-                    styles.openFilePill,
-                    {
-                      backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : palette.emerald[50],
-                      opacity: pressed ? 0.7 : 1,
-                    },
-                  ]}
-                >
-                  <Ionicons name="open-outline" size={13} color={palette.emerald[600]} style={{ marginRight: 4 }} />
-                  <Text style={[styles.openFilePillText, { color: palette.emerald[600] }]}>Open File</Text>
-                </Pressable>
-              </View>
-            ) : (
-              <Text style={[styles.qrSubText, { color: theme.textSecondary }]} numberOfLines={1}>
-                {type === 'url' ? data.replace(/^https?:\/\//i, '') : meta.label}
-              </Text>
-            )}
-          </View>
+          {contentInfo.hasFileLink && (
+            <Pressable
+              onPress={handleOpenFileUrl}
+              style={({ pressed }) => [
+                styles.openFileBtn,
+                {
+                  backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : palette.emerald[50],
+                  opacity: pressed ? 0.7 : 1,
+                },
+              ]}
+            >
+              <Ionicons name="open-outline" size={13} color={palette.emerald[600]} style={{ marginRight: 4 }} />
+              <Text style={[styles.openFileBtnText, { color: palette.emerald[600] }]}>Open File</Text>
+            </Pressable>
+          )}
         </View>
 
-        {/* Primary Action Button: Save to My QR Codes */}
+        {/* Primary Action: Save to My QR Codes */}
         <PrimaryButton
           title={isSaved ? 'Saved in Collection' : 'Save to My QR Codes'}
           icon={isSaved ? 'checkmark-circle' : 'bookmark'}
@@ -249,7 +232,7 @@ export const QRPreviewScreen: React.FC = () => {
           style={styles.primaryActionBtn}
         />
 
-        {/* Secondary Action Grid: Share & Copy */}
+        {/* Secondary Action Grid */}
         <View style={styles.secondaryGrid}>
           <SecondaryButton
             title="Share Code"
@@ -259,7 +242,7 @@ export const QRPreviewScreen: React.FC = () => {
             style={styles.gridBtn}
           />
           <SecondaryButton
-            title="Copy Link"
+            title={type === 'url' || fileMeta ? 'Copy Link' : 'Copy'}
             icon="copy-outline"
             variant="outline"
             onPress={handleCopy}
@@ -269,7 +252,7 @@ export const QRPreviewScreen: React.FC = () => {
 
         {/* Tertiary Actions */}
         <SecondaryButton
-          title="Test Scan This QR"
+          title="Test Scan"
           icon="scan-outline"
           variant="tinted"
           color="secondary"
@@ -297,7 +280,7 @@ export const QRPreviewScreen: React.FC = () => {
           <View style={[styles.modalCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
             <Text style={[styles.modalTitle, { color: theme.text }]}>Save QR Code</Text>
             <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
-              Enter a name to easily find this QR code in your saved collection.
+              Enter a name for this QR code in your saved collection.
             </Text>
 
             <TextInput
@@ -307,7 +290,7 @@ export const QRPreviewScreen: React.FC = () => {
               ]}
               value={saveTitle}
               onChangeText={setSaveTitle}
-              placeholder="e.g. My Photo QR"
+              placeholder="e.g. My QR Code"
               placeholderTextColor={theme.textMuted}
               autoFocus
               selectTextOnFocus
@@ -321,7 +304,7 @@ export const QRPreviewScreen: React.FC = () => {
                 style={{ flex: 1, marginRight: spacing.sm }}
               />
               <PrimaryButton
-                title="Confirm Save"
+                title="Save"
                 onPress={confirmSave}
                 style={{ flex: 1 }}
               />
@@ -340,18 +323,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: spacing.lg,
   },
-  verifiedBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.md,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    marginBottom: spacing.base,
-  },
-  verifiedTitle: {
-    fontSize: typography.fontSize.xs + 1,
-    fontWeight: typography.fontWeight.bold,
-  },
   qrCard: {
     borderRadius: borderRadius['2xl'],
     borderWidth: 1,
@@ -360,23 +331,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.base,
     elevation: 2,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-  },
-  cardHeader: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md,
-  },
-  cardHeaderRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  cardHeaderStatus: {
-    fontSize: 12,
-    fontWeight: '700',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
   },
   qrWrapper: {
     padding: spacing.md,
@@ -389,48 +345,27 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 2,
   },
-  cardMetaSection: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  qrTitle: {
+  contentTitle: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.bold,
-    marginBottom: 4,
     textAlign: 'center',
+    marginBottom: 2,
   },
-  qrSubText: {
+  contentSubtitle: {
     fontSize: 12,
     textAlign: 'center',
+    marginBottom: spacing.xs,
   },
-  metaChipsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 2,
-  },
-  metaPill: {
+  openFileBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 5,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     borderRadius: borderRadius.full,
+    marginTop: 4,
   },
-  metaPillText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  openFilePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: borderRadius.full,
-  },
-  openFilePillText: {
-    fontSize: 11,
+  openFileBtnText: {
+    fontSize: 12,
     fontWeight: '700',
   },
   primaryActionBtn: {

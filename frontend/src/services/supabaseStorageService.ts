@@ -182,9 +182,7 @@ export const SupabaseStorageService = {
     // 2. Check Supabase Configuration
     const config = await getSupabaseConfig();
     if (!config.isConfigured) {
-      throw new Error(
-        'Supabase Storage is not configured. Please add your Supabase Project URL and Publishable Key in frontend/.env.'
-      );
+      throw new Error('File upload is currently unavailable. Please try again.');
     }
 
     const ext = this.sanitizeExt(cleanFileName, classification.category === 'image' ? 'jpg' : 'pdf');

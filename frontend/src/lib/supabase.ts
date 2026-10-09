@@ -1,10 +1,8 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { SettingsStorage } from '../storage/settingsStorage';
+import { CONFIG } from '../config/config';
 
-export const DEFAULT_SUPABASE_BUCKET = (
-  process.env.EXPO_PUBLIC_SUPABASE_BUCKET || 'qr-files'
-).trim();
+export const DEFAULT_SUPABASE_BUCKET = CONFIG.SUPABASE_BUCKET || 'qr-files';
 
 export interface SupabaseConfig {
   url: string;
@@ -14,19 +12,8 @@ export interface SupabaseConfig {
 }
 
 export async function getSupabaseConfig(): Promise<SupabaseConfig> {
-  const settings = await SettingsStorage.get();
-  const url = (
-    settings.supabaseUrl ||
-    process.env.EXPO_PUBLIC_SUPABASE_URL ||
-    ''
-  ).trim();
-
-  const key = (
-    settings.supabaseKey ||
-    process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
-    ''
-  ).trim();
+  const url = CONFIG.SUPABASE_URL.trim();
+  const key = CONFIG.SUPABASE_PUBLISHABLE_KEY.trim();
 
   const isConfigured = Boolean(
     url &&
@@ -71,12 +58,8 @@ export async function getSupabaseClient(): Promise<SupabaseClient | null> {
 }
 
 export const isSupabaseConfigured = (): boolean => {
-  const url = (process.env.EXPO_PUBLIC_SUPABASE_URL || '').trim();
-  const key = (
-    process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
-    ''
-  ).trim();
+  const url = CONFIG.SUPABASE_URL.trim();
+  const key = CONFIG.SUPABASE_PUBLISHABLE_KEY.trim();
 
   return Boolean(
     url &&

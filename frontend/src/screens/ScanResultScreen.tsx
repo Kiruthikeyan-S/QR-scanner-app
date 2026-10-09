@@ -7,16 +7,13 @@ import {
   Alert,
   Modal,
   TextInput,
-  Pressable,
 } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../types/navigation';
 import { useTheme } from '../theme/ThemeContext';
 import { typography, borderRadius, spacing } from '../theme/typography';
-import { palette } from '../theme/colors';
 import { parseQRData } from '../utils/qrParser';
 import { ResultCard } from '../components/ResultCard';
 import { URLSafetyCard } from '../components/URLSafetyCard';
@@ -34,7 +31,7 @@ type ScreenRouteProp = RouteProp<RootStackParamList, 'ScanResult'>;
 
 export const ScanResultScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
-  const { theme, isDark } = useTheme();
+  const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<ScreenRouteProp>();
 
@@ -61,10 +58,10 @@ export const ScanResultScreen: React.FC = () => {
     triggerLightHaptic();
     if (isUnsafe) {
       Alert.alert(
-        '⚠ Security Warning',
-        `Are you sure?\n\nThis link has been flagged as potentially dangerous or deceptive (${safety?.domain || 'unknown'}).\n\nContinuing may expose your device or data to risks.`,
+        'Security Warning',
+        `This link may be unsafe (${safety?.domain || 'unknown'}).\n\nAre you sure you want to proceed?`,
         [
-          { text: 'Go Back (Safe)', style: 'cancel' },
+          { text: 'Go Back', style: 'cancel' },
           {
             text: 'Open Anyway',
             style: 'destructive',
@@ -72,43 +69,8 @@ export const ScanResultScreen: React.FC = () => {
           },
         ]
       );
-    } else if (safety?.status === 'suspicious') {
-      Alert.alert(
-        'Suspicious Link Notice',
-        `We could not verify the security of this website (${safety?.domain}).\n\nContinue only if you trust the source.`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Open Link',
-            onPress: () => ActionHandler.openUrl(url),
-          },
-        ]
-      );
-    } else if (safety?.status === 'unknown') {
-      Alert.alert(
-        'Safety Check Unavailable',
-        `This link could not be verified online. Open only if you recognize and trust ${safety?.domain || 'this destination'}.`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Open with Caution',
-            onPress: () => ActionHandler.openUrl(url),
-          },
-        ]
-      );
     } else {
-      // Safe URL
-      Alert.alert(
-        'Open Website',
-        `Open verified website in browser?\n\n${details.raw}`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Open Website',
-            onPress: () => ActionHandler.openUrl(url),
-          },
-        ]
-      );
+      ActionHandler.openUrl(url);
     }
   };
 
@@ -138,7 +100,7 @@ export const ScanResultScreen: React.FC = () => {
       default:
         const ok = await ActionHandler.copyToClipboard(details.raw);
         if (ok) {
-          Alert.alert('Copied', 'Content copied to clipboard successfully.');
+          Alert.alert('Copied', 'Content copied to clipboard.');
         }
         break;
     }
@@ -149,18 +111,26 @@ export const ScanResultScreen: React.FC = () => {
     await ActionHandler.shareText(`Scanned QR: ${details.title}`, details.raw);
   };
 
+  const handleCopyLink = async () => {
+    triggerLightHaptic();
+    const ok = await ActionHandler.copyToClipboard(details.raw);
+    if (ok) {
+      Alert.alert('Copied', 'Content copied to clipboard.');
+    }
+  };
+
   const handleSaveToMyQRs = async () => {
-    if (details.type === 'url' && safety && safety.status !== 'safe') {
+    if (details.type === 'url' && safety && safety.status === 'unsafe') {
       Alert.alert(
         'Cannot Save Link',
-        'This link was flagged as unsafe or unverified and cannot be saved to your collection.'
+        'This link was flagged as unsafe and cannot be saved.'
       );
       setSaveModalVisible(false);
       return;
     }
 
     if (!saveTitle.trim()) {
-      Alert.alert('Invalid Title', 'Please enter a valid title for this QR code.');
+      Alert.alert('Invalid Title', 'Please enter a title for this QR code.');
       return;
     }
     await SavedQRStorage.add({
@@ -171,7 +141,7 @@ export const ScanResultScreen: React.FC = () => {
     setSaveModalVisible(false);
     setIsSaved(true);
     triggerFeedback();
-    Alert.alert('Saved', 'QR code saved to your collection!');
+    Alert.alert('Saved', 'QR code saved to your collection.');
   };
 
   const isUnsafeURL = details.type === 'url' && safety?.status === 'unsafe';
@@ -202,7 +172,7 @@ export const ScanResultScreen: React.FC = () => {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Render URL Safety Card for URLs, or ResultCard for non-URLs */}
+        {/* Render Clean URL Safety Card for URLs, or ResultCard for non-URLs */}
         {details.type === 'url' && safety ? (
           <URLSafetyCard safety={safety} />
         ) : (
@@ -212,22 +182,19 @@ export const ScanResultScreen: React.FC = () => {
         {/* Action Buttons for UNSAFE URLs */}
         {isUnsafeURL ? (
           <View style={styles.unsafeActionsContainer}>
-            {/* Primary / Safe Option: Go Back */}
             <PrimaryButton
-              title="Go Back (Recommended)"
+              title="Go Back"
               icon="arrow-back"
               onPress={() => navigation.navigate('MainTabs', { screen: 'HomeTab' })}
               style={styles.primaryBtn}
             />
 
-            {/* Secondary Option: Open Anyway */}
             <SecondaryButton
-              title="Open Anyway (High Risk)"
-              icon="warning-outline"
+              title="Open Anyway"
               variant="outline"
               color="danger"
               onPress={() => handleOpenUrlWithConfirmation(safety.normalizedUrl, true)}
-              style={{ marginTop: spacing.xs }}
+              style={{ marginTop: spacing.sm }}
             />
 
             <SecondaryButton
@@ -235,21 +202,16 @@ export const ScanResultScreen: React.FC = () => {
               icon="scan-outline"
               variant="ghost"
               onPress={() => navigation.replace('Scanner')}
-              style={{ marginTop: spacing.sm }}
+              style={{ marginTop: spacing.xs }}
             />
           </View>
         ) : (
-          /* Normal Action Buttons for Safe URLs & Non-URL QR Codes */
+          /* Normal Action Buttons for Safe/Normal URLs & Non-URL QR Codes */
           <>
-            {/* Primary Action Button */}
             <PrimaryButton
               title={
                 details.type === 'url'
-                  ? safety?.status === 'suspicious'
-                    ? 'Open Website (Caution)'
-                    : safety?.status === 'unknown'
-                    ? 'Open with Caution'
-                    : 'Open Website'
+                  ? 'Open Website'
                   : details.primaryAction.label
               }
               icon={details.type === 'url' ? 'open-outline' : (details.primaryAction.icon as any)}
@@ -257,8 +219,15 @@ export const ScanResultScreen: React.FC = () => {
               style={styles.primaryBtn}
             />
 
-            {/* Secondary Actions Grid */}
             <View style={styles.actionButtonsGrid}>
+              <SecondaryButton
+                title="Copy Link"
+                icon="copy-outline"
+                variant="outline"
+                onPress={handleCopyLink}
+                style={styles.actionGridBtn}
+              />
+
               <SecondaryButton
                 title="Scan Again"
                 icon="scan-outline"
@@ -266,49 +235,15 @@ export const ScanResultScreen: React.FC = () => {
                 onPress={() => navigation.replace('Scanner')}
                 style={styles.actionGridBtn}
               />
-
-              {(!safety || safety.status === 'safe') && (
-                <SecondaryButton
-                  title={isSaved ? 'Saved' : 'Save QR'}
-                  icon={isSaved ? 'bookmark' : 'bookmark-outline'}
-                  variant="outline"
-                  color={isSaved ? 'primary' : 'neutral'}
-                  onPress={() => setSaveModalVisible(true)}
-                  style={styles.actionGridBtn}
-                />
-              )}
-
-              {safety && safety.status !== 'safe' && (
-                <SecondaryButton
-                  title="Copy Link"
-                  icon="copy-outline"
-                  variant="outline"
-                  onPress={async () => {
-                    triggerLightHaptic();
-                    const ok = await ActionHandler.copyToClipboard(details.raw);
-                    if (ok) Alert.alert('Copied', 'URL copied to clipboard.');
-                  }}
-                  style={styles.actionGridBtn}
-                />
-              )}
             </View>
 
-            {(!safety || safety.status === 'safe') && (
-              <SecondaryButton
-                title="Create QR from this data"
-                icon="qr-code-outline"
-                variant="tinted"
-                color="secondary"
-                onPress={() =>
-                  navigation.navigate('QRPreview', {
-                    type: details.type,
-                    data: details.raw,
-                    title: details.title,
-                  })
-                }
-                style={{ marginTop: spacing.md }}
-              />
-            )}
+            <SecondaryButton
+              title={isSaved ? 'Saved in Collection' : 'Save to My QR Codes'}
+              icon={isSaved ? 'bookmark' : 'bookmark-outline'}
+              variant="ghost"
+              onPress={() => setSaveModalVisible(true)}
+              style={{ marginTop: spacing.xs }}
+            />
           </>
         )}
       </ScrollView>
@@ -320,35 +255,27 @@ export const ScanResultScreen: React.FC = () => {
         animationType="fade"
         onRequestClose={() => setSaveModalVisible(false)}
       >
-        <View style={styles.modalBackdrop}>
-          <View
-            style={[
-              styles.modalCard,
-              { backgroundColor: theme.surface, borderColor: theme.border },
-            ]}
-          >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
             <Text style={[styles.modalTitle, { color: theme.text }]}>Save QR Code</Text>
             <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
-              Give this QR code a title to easily find it in your saved collection.
+              Enter a name for this QR code.
             </Text>
 
             <TextInput
               style={[
                 styles.modalInput,
-                {
-                  backgroundColor: theme.inputBackground,
-                  borderColor: theme.inputBorder,
-                  color: theme.text,
-                },
+                { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text },
               ]}
               value={saveTitle}
               onChangeText={setSaveTitle}
-              placeholder="e.g. Office Wi-Fi or Event Link"
+              placeholder="e.g. Website Link"
               placeholderTextColor={theme.textMuted}
               autoFocus
+              selectTextOnFocus
             />
 
-            <View style={styles.modalButtons}>
+            <View style={styles.modalActionRow}>
               <SecondaryButton
                 title="Cancel"
                 variant="ghost"
@@ -356,7 +283,7 @@ export const ScanResultScreen: React.FC = () => {
                 style={{ flex: 1, marginRight: spacing.sm }}
               />
               <PrimaryButton
-                title="Save Code"
+                title="Save"
                 onPress={handleSaveToMyQRs}
                 style={{ flex: 1 }}
               />
@@ -384,6 +311,7 @@ const styles = StyleSheet.create({
   actionButtonsGrid: {
     flexDirection: 'row',
     gap: spacing.md,
+    marginBottom: spacing.sm,
   },
   actionGridBtn: {
     flex: 1,
@@ -391,7 +319,7 @@ const styles = StyleSheet.create({
   unsafeActionsContainer: {
     marginTop: spacing.xs,
   },
-  modalBackdrop: {
+  modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.65)',
     justifyContent: 'center',
@@ -403,7 +331,6 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius['2xl'],
     borderWidth: 1,
     padding: spacing.xl,
-    elevation: 5,
   },
   modalTitle: {
     fontSize: typography.fontSize.lg,
@@ -412,7 +339,7 @@ const styles = StyleSheet.create({
   },
   modalSubtitle: {
     fontSize: typography.fontSize.sm,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   modalInput: {
     height: 48,
@@ -420,10 +347,9 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     paddingHorizontal: spacing.md,
     fontSize: typography.fontSize.base,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
-  modalButtons: {
+  modalActionRow: {
     flexDirection: 'row',
-    alignItems: 'center',
   },
 });
