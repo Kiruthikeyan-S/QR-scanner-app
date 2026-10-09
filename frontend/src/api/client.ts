@@ -2,6 +2,9 @@ import { NativeModules, Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { SettingsStorage } from '../storage/settingsStorage';
 
+// Development machine LAN IP
+const CURRENT_DEV_LAN_IP = '10.74.43.79';
+
 export function getAutoDetectedHost(): string {
   // 1. Check EXPO_PUBLIC_API_URL
   if (process.env.EXPO_PUBLIC_API_URL) {
@@ -33,7 +36,7 @@ export function getAutoDetectedHost(): string {
 
   // 4. Default fallback on native Android & iOS mobile devices
   if (Platform.OS !== 'web') {
-    return 'http://192.168.88.4:8000';
+    return `http://${CURRENT_DEV_LAN_IP}:8000`;
   }
 
   return 'http://localhost:8000';
@@ -50,18 +53,20 @@ export async function getAllCandidateBaseUrls(): Promise<string[]> {
   }
 
   const autoHost = getAutoDetectedHost();
-  const list =
-    Platform.OS === 'web'
-      ? ['http://localhost:8000', autoHost, 'http://127.0.0.1:8000']
-      : [
-          autoHost,
-          'http://192.168.88.4:8000',
-          'http://localhost:8000',
-          'http://10.0.2.2:8000',
-          'http://127.0.0.1:8000',
-        ];
 
-  return list.filter((v, i, a) => v && a.indexOf(v) === i);
+  let list: string[] = [];
+  if (Platform.OS === 'web') {
+    list = ['http://localhost:8000', autoHost, 'http://127.0.0.1:8000'];
+  } else {
+    // Native mobile: Prioritize discovered LAN host and dev IP; never try localhost on physical device
+    list = [
+      autoHost,
+      `http://${CURRENT_DEV_LAN_IP}:8000`,
+      'http://10.0.2.2:8000', // Android Studio Emulator bridge
+    ];
+  }
+
+  return list.filter((v, i, a) => v && v.trim().length > 0 && a.indexOf(v) === i);
 }
 
 let cachedReachableUrl: string | null = null;
@@ -78,7 +83,7 @@ export async function getFastestReachableBaseUrl(): Promise<string> {
   for (const url of candidates) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 1200);
+      const timeoutId = setTimeout(() => controller.abort(), 1500);
       const res = await fetch(`${url}/health`, { signal: controller.signal });
       clearTimeout(timeoutId);
       if (res.ok) {
@@ -95,7 +100,7 @@ export async function getFastestReachableBaseUrl(): Promise<string> {
       ? 'http://localhost:8000'
       : candidates.find((c) => !c.includes('localhost') && !c.includes('127.0.0.1')) ||
         candidates[0] ||
-        'http://192.168.88.4:8000';
+        `http://${CURRENT_DEV_LAN_IP}:8000`;
 
   cachedReachableUrl = fallback;
   lastCheckTime = Date.now();
@@ -115,7 +120,7 @@ export async function apiFetch<T>(
     const url = `${baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
 
     const response = await fetch(url, {
       ...options,

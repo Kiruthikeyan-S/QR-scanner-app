@@ -1,7 +1,7 @@
 import { uploadAsync, FileSystemUploadType } from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 import { UploadedFileMeta } from '../types/qr';
-import { getAllCandidateBaseUrls } from '../api/client';
+import { getAllCandidateBaseUrls, getFastestReachableBaseUrl } from '../api/client';
 
 export interface FileUploadProgress {
   status: 'idle' | 'uploading' | 'success' | 'error';
@@ -45,7 +45,9 @@ export const FileUploadService = {
     const prepTime = Date.now() - startTime;
     if (onProgress) onProgress(15, 0, fileSize || 0);
 
-    const candidates = await getAllCandidateBaseUrls();
+    const reachableUrl = await getFastestReachableBaseUrl();
+    const candidateList = await getAllCandidateBaseUrls();
+    const candidates = [reachableUrl, ...candidateList.filter((u) => u !== reachableUrl)];
     let lastError: any = null;
     const uploadStartTime = Date.now();
 
