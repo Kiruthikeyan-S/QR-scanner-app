@@ -25,15 +25,21 @@ export interface QRCustomization {
 export interface UploadedFileMeta {
   token_id: string;
   file_id?: string;
+  original_name?: string;
   filename: string;
   content_type: string;
+  file_category?: string;
+  file_type_label?: string;
   size_bytes: number;
   size_formatted: string;
   file_type: 'photo' | 'file';
+  storage_path?: string;
   view_url: string;
   download_url: string;
   qr_url: string;
   url?: string;
+  storage_provider?: string;
+  is_supabase?: boolean;
 }
 
 export type URLSafetyStatus = 'safe' | 'suspicious' | 'unsafe' | 'unknown';

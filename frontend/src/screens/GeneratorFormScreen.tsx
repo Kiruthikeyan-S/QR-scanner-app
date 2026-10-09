@@ -446,12 +446,7 @@ export const GeneratorFormScreen: React.FC = () => {
         if (cached && cached.url && cached.url.startsWith('https://')) {
           payload = cached.url;
           title = `Photo: ${cached.filename}`;
-          fileMeta = {
-            filename: cached.filename,
-            size_formatted: cached.size_formatted,
-            file_type: 'photo' as const,
-            content_type: cached.content_type,
-          };
+          fileMeta = cached;
           break;
         }
 
@@ -496,6 +491,7 @@ export const GeneratorFormScreen: React.FC = () => {
             payload.includes('10.0.') ||
             payload.startsWith('file://') ||
             payload.startsWith('content://') ||
+            payload.includes('tmpfiles.org') ||
             !payload.startsWith('https://')
           ) {
             Alert.alert(
@@ -511,9 +507,15 @@ export const GeneratorFormScreen: React.FC = () => {
           title = `Photo: ${result.filename}`;
           fileMeta = {
             filename: result.filename,
+            original_name: result.original_name || result.filename,
             size_formatted: result.size_formatted,
             file_type: 'photo' as const,
             content_type: result.content_type,
+            file_category: result.file_category || 'image',
+            file_type_label: result.file_type_label || 'Image File',
+            storage_path: result.storage_path,
+            storage_provider: result.storage_provider || 'supabase',
+            is_supabase: result.is_supabase ?? true,
           };
         } catch (e: any) {
           setIsUploading(false);
@@ -526,7 +528,7 @@ export const GeneratorFormScreen: React.FC = () => {
       }
       case 'file': {
         if (!selectedPdf) {
-          Alert.alert('No PDF Selected', 'Please choose a PDF document to generate a PDF QR code.');
+          Alert.alert('No File Selected', 'Please choose a file or document to generate a File QR code.');
           return;
         }
 
@@ -534,12 +536,19 @@ export const GeneratorFormScreen: React.FC = () => {
         const cached = uploadCache.current[selectedPdf.uri];
         if (cached && cached.url && cached.url.startsWith('https://')) {
           payload = cached.url;
-          title = `PDF: ${cached.filename}`;
+          const label = cached.file_type_label || (cached.filename?.toLowerCase().endsWith('.pdf') ? 'PDF' : 'File');
+          title = `${label}: ${cached.filename}`;
           fileMeta = {
             filename: cached.filename,
+            original_name: cached.original_name || cached.filename,
             size_formatted: cached.size_formatted,
             file_type: 'file' as const,
             content_type: cached.content_type,
+            file_category: cached.file_category,
+            file_type_label: cached.file_type_label,
+            storage_path: cached.storage_path,
+            storage_provider: cached.storage_provider || 'supabase',
+            is_supabase: cached.is_supabase ?? true,
           };
           break;
         }
@@ -585,11 +594,12 @@ export const GeneratorFormScreen: React.FC = () => {
             payload.includes('10.0.') ||
             payload.startsWith('file://') ||
             payload.startsWith('content://') ||
+            payload.includes('tmpfiles.org') ||
             !payload.startsWith('https://')
           ) {
             Alert.alert(
               'Public HTTPS URL Required',
-              `Cannot create a shareable QR.\n\nThe uploaded PDF does not have a public HTTPS URL (got: ${payload || 'empty'}). Ensure Supabase Storage is configured in backend/.env.`
+              `Cannot create a shareable QR.\n\nThe uploaded file does not have a public HTTPS URL (got: ${payload || 'empty'}). Ensure Supabase Storage is configured in backend/.env.`
             );
             return;
           }
@@ -597,16 +607,23 @@ export const GeneratorFormScreen: React.FC = () => {
           // Cache upload result
           uploadCache.current[selectedPdf.uri] = result;
 
-          title = `PDF: ${result.filename}`;
+          const label = result.file_type_label || (result.filename?.toLowerCase().endsWith('.pdf') ? 'PDF' : 'File');
+          title = `${label}: ${result.filename}`;
           fileMeta = {
             filename: result.filename,
+            original_name: result.original_name || result.filename,
             size_formatted: result.size_formatted,
             file_type: 'file' as const,
             content_type: result.content_type,
+            file_category: result.file_category,
+            file_type_label: result.file_type_label,
+            storage_path: result.storage_path,
+            storage_provider: result.storage_provider || 'supabase',
+            is_supabase: result.is_supabase ?? true,
           };
         } catch (e: any) {
           setIsUploading(false);
-          Alert.alert('Upload Failed', e.message || 'Could not upload PDF document to server.');
+          Alert.alert('Upload Failed', e.message || 'Could not upload document to server.');
           return;
         } finally {
           setIsUploading(false);

@@ -13,9 +13,19 @@ class Settings(BaseSettings):
     
     # Supabase Cloud Storage Configuration
     SUPABASE_URL: str = ""
+    SUPABASE_SECRET_KEY: str = ""
     SUPABASE_SERVICE_ROLE_KEY: str = ""
     SUPABASE_KEY: str = ""
     SUPABASE_BUCKET: str = "qr-files"
+
+    @property
+    def active_supabase_key(self) -> str:
+        return (
+            self.SUPABASE_SECRET_KEY
+            or self.SUPABASE_SERVICE_ROLE_KEY
+            or self.SUPABASE_KEY
+            or ""
+        ).strip()
 
     # CORS Origins
     CORS_ORIGINS: Union[List[str], str] = ["*"]

@@ -192,7 +192,7 @@ export const QRPreviewScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Photo Metadata Box if present */}
+        {/* File / Photo Metadata Box if present */}
         {fileMeta && (
           <View style={[styles.fileMetaCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
             <View
@@ -206,7 +206,19 @@ export const QRPreviewScreen: React.FC = () => {
               ]}
             >
               <Ionicons
-                name="image"
+                name={
+                  fileMeta.file_category === 'image' || fileMeta.file_type === 'photo'
+                    ? 'image'
+                    : fileMeta.file_category === 'pdf' || fileMeta.filename?.toLowerCase().endsWith('.pdf')
+                    ? 'document-text'
+                    : fileMeta.file_category === 'spreadsheet'
+                    ? 'grid-outline'
+                    : fileMeta.file_category === 'document'
+                    ? 'document-outline'
+                    : fileMeta.file_category === 'json'
+                    ? 'code-slash-outline'
+                    : 'document-attach'
+                }
                 size={22}
                 color={palette.emerald[500]}
               />
@@ -216,7 +228,7 @@ export const QRPreviewScreen: React.FC = () => {
                 {fileMeta.filename}
               </Text>
               <Text style={[styles.fileMetaSize, { color: theme.textSecondary }]}>
-                {fileMeta.size_formatted} • Image File
+                {fileMeta.size_formatted} • {fileMeta.file_type_label || (fileMeta.file_type === 'photo' ? 'Image File' : fileMeta.filename?.toLowerCase().endsWith('.pdf') ? 'PDF Document' : 'Document')}
               </Text>
             </View>
             <Pressable

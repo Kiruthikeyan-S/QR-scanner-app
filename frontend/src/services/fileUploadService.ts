@@ -86,15 +86,21 @@ export const FileUploadService = {
             return {
               token_id: fileId,
               file_id: fileId,
+              original_name: result.original_name || result.file_name || cleanFileName,
               filename: result.file_name || result.filename || cleanFileName,
               content_type: result.mime_type || result.content_type || cleanMime,
+              file_category: result.file_category || (fileType === 'photo' ? 'image' : 'file'),
+              file_type_label: result.file_type_label || (fileType === 'photo' ? 'Image File' : 'Document'),
               size_bytes: result.file_size || result.size_bytes || fileSize || 0,
               size_formatted: result.size_formatted || (fileSize ? this.formatBytes(fileSize) : 'Unknown'),
               file_type: fileType,
+              storage_path: result.storage_path || '',
               view_url: targetUrl,
               url: targetUrl,
               download_url: result.download_url || `${baseUrl}/files/download/${fileId}`,
               qr_url: targetUrl,
+              storage_provider: result.storage_provider || 'supabase',
+              is_supabase: result.is_supabase ?? true,
             };
           } else {
             let errMsg = `Upload failed with status ${response.status}`;
@@ -154,15 +160,21 @@ export const FileUploadService = {
           return {
             token_id: fileId,
             file_id: fileId,
+            original_name: result.original_name || result.file_name || cleanFileName,
             filename: result.file_name || result.filename || cleanFileName,
             content_type: result.mime_type || result.content_type || cleanMime,
+            file_category: result.file_category || (fileType === 'photo' ? 'image' : 'file'),
+            file_type_label: result.file_type_label || (fileType === 'photo' ? 'Image File' : 'Document'),
             size_bytes: result.file_size || result.size_bytes || fileSize || 0,
             size_formatted: result.size_formatted || (fileSize ? this.formatBytes(fileSize) : 'Unknown'),
             file_type: fileType,
+            storage_path: result.storage_path || '',
             view_url: targetUrl,
             url: targetUrl,
             download_url: result.download_url || `${baseUrl}/files/download/${fileId}`,
             qr_url: targetUrl,
+            storage_provider: result.storage_provider || 'supabase',
+            is_supabase: result.is_supabase ?? true,
           };
         } else {
           const errJson = await response.json().catch(() => ({}));

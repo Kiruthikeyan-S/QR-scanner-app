@@ -30,12 +30,7 @@ export type RootStackParamList = {
     isSaved?: boolean;
     savedId?: string;
     customization?: QRCustomization;
-    fileMeta?: {
-      filename: string;
-      size_formatted: string;
-      file_type: 'photo' | 'file';
-      content_type?: string;
-    };
+    fileMeta?: import('./qr').UploadedFileMeta;
     isVerified?: boolean;
   };
   NetworkChecker: undefined;
