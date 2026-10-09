@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import { uploadAsync, FileSystemUploadType } from 'expo-file-system/legacy';
-import { supabase, isSupabaseConfigured, SUPABASE_BUCKET } from '../lib/supabase';
+import { getSupabaseConfig, getSupabaseClient } from '../lib/supabase';
 import { UploadedFileMeta } from '../types/qr';
 
 const MAX_PHOTO_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -181,9 +181,10 @@ export const SupabaseStorageService = {
     }
 
     // 2. Check Supabase Configuration
-    if (!isSupabaseConfigured()) {
+    const config = await getSupabaseConfig();
+    if (!config.isConfigured) {
       throw new Error(
-        'Supabase Storage is not configured. Please add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY to frontend/.env.'
+        'Supabase Storage is not configured. Please add your Supabase Project URL and Publishable Key in frontend/.env or under App Settings.'
       );
     }
 
@@ -194,14 +195,9 @@ export const SupabaseStorageService = {
     // Storage path: photos/<random-id>.jpg or pdfs/<random-id>.pdf or files/<random-id>.xlsx
     const randomHex = Math.random().toString(36).substring(2, 10);
     const storagePath = `${classification.folder}/${randomHex}.${ext}`;
-    const bucket = SUPABASE_BUCKET || 'qr-files';
-
-    const supabaseUrl = (process.env.EXPO_PUBLIC_SUPABASE_URL || '').replace(/\/+$/, '');
-    const supabaseKey = (
-      process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
-      ''
-    ).trim();
+    const bucket = config.bucket || 'qr-files';
+    const supabaseUrl = config.url.replace(/\/+$/, '');
+    const supabaseKey = config.key;
 
     if (onProgress) onProgress(20, Math.round((fileSize || 1000) * 0.2), fileSize || 1000);
 
@@ -226,8 +222,7 @@ export const SupabaseStorageService = {
         if (response.status >= 200 && response.status < 300) {
           if (onProgress) onProgress(100, fileSize || 1000, fileSize || 1000);
 
-          const { data } = supabase.storage.from(bucket).getPublicUrl(storagePath);
-          const publicUrl = data.publicUrl;
+          const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucket}/${storagePath}`;
 
           const totalDuration = Date.now() - startTime;
           console.log(
@@ -278,7 +273,12 @@ export const SupabaseStorageService = {
 
       if (onProgress) onProgress(70, Math.round((fileSize || 1000) * 0.7), fileSize || 1000);
 
-      const { error } = await supabase.storage.from(bucket).upload(storagePath, blob, {
+      const client = await getSupabaseClient();
+      if (!client) {
+        throw new Error('Supabase client could not be initialized.');
+      }
+
+      const { error } = await client.storage.from(bucket).upload(storagePath, blob, {
         contentType: classification.mimeType,
         upsert: true,
       });
@@ -289,8 +289,7 @@ export const SupabaseStorageService = {
 
       if (onProgress) onProgress(100, fileSize || 1000, fileSize || 1000);
 
-      const { data } = supabase.storage.from(bucket).getPublicUrl(storagePath);
-      const publicUrl = data.publicUrl;
+      const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucket}/${storagePath}`;
 
       const totalDuration = Date.now() - startTime;
       console.log(`[SUPABASE UPLOAD OK] Direct Web -> ${publicUrl} (${totalDuration}ms)`);

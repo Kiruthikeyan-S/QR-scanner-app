@@ -6,6 +6,8 @@ export interface UserSettings {
   themeMode: 'system' | 'light' | 'dark';
   backendUrl: string;
   backendSyncEnabled: boolean;
+  supabaseUrl?: string;
+  supabaseKey?: string;
 }
 
 export const defaultSettings: UserSettings = {
@@ -16,4 +18,6 @@ export const defaultSettings: UserSettings = {
   themeMode: 'light',
   backendUrl: 'http://localhost:8000',
   backendSyncEnabled: false,
+  supabaseUrl: '',
+  supabaseKey: '',
 };

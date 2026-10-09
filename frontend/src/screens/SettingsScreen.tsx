@@ -40,6 +40,9 @@ export const SettingsScreen: React.FC = () => {
   const [activeBackendUrl, setActiveBackendUrl] = useState<string>('http://localhost:8000');
   const [apiUrlModalVisible, setApiUrlModalVisible] = useState(false);
   const [tempApiUrl, setTempApiUrl] = useState('');
+  const [supabaseModalVisible, setSupabaseModalVisible] = useState(false);
+  const [tempSupabaseUrl, setTempSupabaseUrl] = useState('');
+  const [tempSupabaseKey, setTempSupabaseKey] = useState('');
   const [aboutModalVisible, setAboutModalVisible] = useState(false);
   const [privacyModalVisible, setPrivacyModalVisible] = useState(false);
 
@@ -49,6 +52,15 @@ export const SettingsScreen: React.FC = () => {
       const activeUrl = await getBaseApiUrl();
       setActiveBackendUrl(activeUrl);
       setTempApiUrl(loaded.backendUrl || activeUrl);
+      setTempSupabaseUrl(
+        loaded.supabaseUrl || process.env.EXPO_PUBLIC_SUPABASE_URL || ''
+      );
+      setTempSupabaseKey(
+        loaded.supabaseKey ||
+          process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+          process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
+          ''
+      );
     });
   }, []);
 
@@ -131,6 +143,21 @@ export const SettingsScreen: React.FC = () => {
     } else {
       Alert.alert('Permission Granted', 'Camera access is active and ready for scanning.');
     }
+  };
+
+  const handleSaveSupabaseConfig = async () => {
+    let cleanUrl = tempSupabaseUrl.trim();
+    const cleanKey = tempSupabaseKey.trim();
+
+    if (cleanUrl && !/^https?:\/\//i.test(cleanUrl)) {
+      cleanUrl = `https://${cleanUrl}`;
+    }
+
+    await updateSetting('supabaseUrl', cleanUrl);
+    await updateSetting('supabaseKey', cleanKey);
+    setSupabaseModalVisible(false);
+    triggerFeedback();
+    Alert.alert('Configuration Saved', 'Supabase Cloud Storage credentials updated.');
   };
 
   return (
@@ -265,6 +292,16 @@ export const SettingsScreen: React.FC = () => {
           <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
 
           <SettingRow
+            icon="cloud-upload-outline"
+            iconColor={palette.emerald[500]}
+            iconBgColor={isDark ? 'rgba(16, 185, 129, 0.15)' : palette.emerald[50]}
+            title="Cloud Storage (Supabase)"
+            type="navigation"
+            onPress={() => setSupabaseModalVisible(true)}
+          />
+          <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+
+          <SettingRow
             icon="wifi-outline"
             iconColor={theme.primary}
             iconBgColor={theme.primaryLight}
@@ -363,6 +400,81 @@ export const SettingsScreen: React.FC = () => {
               <PrimaryButton
                 title="Save URL"
                 onPress={handleSaveApiUrl}
+                style={{ flex: 1 }}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Supabase Storage Modal */}
+      <Modal
+        visible={supabaseModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSupabaseModalVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={[styles.modalCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>Supabase Cloud Storage</Text>
+            <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
+              Enter your Supabase Project URL and Publishable Key for direct Photo & PDF QR uploads.
+            </Text>
+
+            <Text style={[styles.inputLabel, { color: theme.text, marginTop: spacing.md }]}>
+              Project URL
+            </Text>
+            <TextInput
+              style={[
+                styles.modalInput,
+                {
+                  backgroundColor: theme.inputBackground,
+                  borderColor: theme.inputBorder,
+                  color: theme.text,
+                },
+              ]}
+              value={tempSupabaseUrl}
+              onChangeText={setTempSupabaseUrl}
+              placeholder="https://your-project.supabase.co"
+              placeholderTextColor={theme.textMuted}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+
+            <Text style={[styles.inputLabel, { color: theme.text, marginTop: spacing.md }]}>
+              Publishable Key
+            </Text>
+            <TextInput
+              style={[
+                styles.modalInput,
+                {
+                  backgroundColor: theme.inputBackground,
+                  borderColor: theme.inputBorder,
+                  color: theme.text,
+                },
+              ]}
+              value={tempSupabaseKey}
+              onChangeText={setTempSupabaseKey}
+              placeholder="sb_publishable_..."
+              placeholderTextColor={theme.textMuted}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+
+            <Text style={[styles.ipHint, { color: theme.textMuted }]}>
+              Bucket: qr-files (Public). Direct upload from your mobile device without relying on localhost.
+            </Text>
+
+            <View style={styles.modalButtons}>
+              <SecondaryButton
+                title="Cancel"
+                variant="ghost"
+                onPress={() => setSupabaseModalVisible(false)}
+                style={{ flex: 1, marginRight: spacing.sm }}
+              />
+              <PrimaryButton
+                title="Save"
+                onPress={handleSaveSupabaseConfig}
                 style={{ flex: 1 }}
               />
             </View>
@@ -530,6 +642,11 @@ const styles = StyleSheet.create({
   modalContent: {
     fontSize: typography.fontSize.sm,
     lineHeight: typography.lineHeight.base,
+  },
+  inputLabel: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    marginBottom: 4,
   },
   modalInput: {
     height: 48,
