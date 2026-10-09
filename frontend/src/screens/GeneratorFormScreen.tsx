@@ -508,11 +508,13 @@ export const GeneratorFormScreen: React.FC = () => {
             payload.startsWith('file://') ||
             payload.startsWith('content://') ||
             payload.includes('tmpfiles.org') ||
-            !payload.startsWith('https://')
+            !payload.startsWith('https://') ||
+            !payload.includes('supabase.co') ||
+            !payload.includes('qr-files')
           ) {
             Alert.alert(
               'Public HTTPS URL Required',
-              `Cannot create a shareable QR.\n\nThe uploaded file does not have a public HTTPS URL (got: ${payload || 'empty'}). Ensure Supabase Storage is configured in backend/.env.`
+              'Unable to create a shareable QR. The file does not have a valid public HTTPS URL.'
             );
             return;
           }
@@ -611,11 +613,13 @@ export const GeneratorFormScreen: React.FC = () => {
             payload.startsWith('file://') ||
             payload.startsWith('content://') ||
             payload.includes('tmpfiles.org') ||
-            !payload.startsWith('https://')
+            !payload.startsWith('https://') ||
+            !payload.includes('supabase.co') ||
+            !payload.includes('qr-files')
           ) {
             Alert.alert(
               'Public HTTPS URL Required',
-              `Cannot create a shareable QR.\n\nThe uploaded file does not have a public HTTPS URL (got: ${payload || 'empty'}). Ensure Supabase Storage is configured in backend/.env.`
+              'Unable to create a shareable QR. The file does not have a valid public HTTPS URL.'
             );
             return;
           }
