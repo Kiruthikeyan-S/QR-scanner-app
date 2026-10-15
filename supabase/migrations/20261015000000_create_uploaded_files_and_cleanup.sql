@@ -56,6 +56,9 @@ TO service_role
 USING (true)
 WITH CHECK (true);
 
+-- 4. Grant table privileges to Supabase API roles
+GRANT ALL ON TABLE public.uploaded_files TO anon, authenticated, service_role;
+
 -- ==============================================================================
 -- 4. Hourly Scheduled Cleanup with pg_cron & pg_net (Supabase Extensions)
 -- Note: Requires pg_cron and pg_net extensions to be enabled in Supabase Project.
