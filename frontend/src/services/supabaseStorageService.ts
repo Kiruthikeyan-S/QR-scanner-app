@@ -197,6 +197,10 @@ export const SupabaseStorageService = {
     const supabaseUrl = config.url.replace(/\/+$/, '');
     const supabaseKey = config.key;
 
+    // 7-day automatic expiration calculation
+    const RETENTION_DAYS = 7;
+    const expiresAt = new Date(Date.now() + RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
     if (onProgress) onProgress(20, Math.round((fileSize || 1000) * 0.2), fileSize || 1000);
 
     // 3. Native Android / iOS Upload using direct binary stream to Supabase Storage REST API
@@ -221,9 +225,20 @@ export const SupabaseStorageService = {
 
           const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucket}/${storagePath}`;
 
+          // Register in uploaded_files metadata table with 7-day expires_at
+          await this.recordUploadedFileMetadata({
+            id: uuid,
+            bucket,
+            storagePath,
+            originalName: cleanFileName,
+            mimeType: classification.mimeType,
+            fileSize: fileSize || 0,
+            expiresAt,
+          });
+
           const totalDuration = Date.now() - startTime;
           console.log(
-            `[SUPABASE UPLOAD OK] Direct Native -> ${publicUrl} (${totalDuration}ms)`
+            `[SUPABASE UPLOAD OK] Direct Native -> ${publicUrl} (${totalDuration}ms, expires: ${expiresAt})`
           );
 
           return {
@@ -244,6 +259,7 @@ export const SupabaseStorageService = {
             qr_url: publicUrl,
             storage_provider: 'supabase',
             is_supabase: true,
+            expires_at: expiresAt,
           };
         } else {
           let errDetail = `Status ${response.status}`;
@@ -327,8 +343,19 @@ export const SupabaseStorageService = {
 
       const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucket}/${storagePath}`;
 
+      // Register in uploaded_files metadata table with 7-day expires_at
+      await this.recordUploadedFileMetadata({
+        id: uuid,
+        bucket,
+        storagePath,
+        originalName: cleanFileName,
+        mimeType: classification.mimeType,
+        fileSize: fileSize || blob.size || 0,
+        expiresAt,
+      });
+
       const totalDuration = Date.now() - startTime;
-      console.log(`[SUPABASE UPLOAD OK] Direct Web -> ${publicUrl} (${totalDuration}ms)`);
+      console.log(`[SUPABASE UPLOAD OK] Direct Web -> ${publicUrl} (${totalDuration}ms, expires: ${expiresAt})`);
 
       return {
         token_id: uuid,
@@ -348,6 +375,7 @@ export const SupabaseStorageService = {
         qr_url: publicUrl,
         storage_provider: 'supabase',
         is_supabase: true,
+        expires_at: expiresAt,
       };
     } catch (err: any) {
       console.error('[SUPABASE WEB UPLOAD FAILED]', err);
@@ -360,6 +388,82 @@ export const SupabaseStorageService = {
         throw new Error('Upload failed. Check your internet connection.');
       }
       throw new Error(err.message || 'Storage upload permission is not configured.');
+    }
+  },
+
+  /**
+   * Records uploaded file metadata in `uploaded_files` table with expires_at.
+   */
+  async recordUploadedFileMetadata(params: {
+    id: string;
+    bucket: string;
+    storagePath: string;
+    originalName: string;
+    mimeType: string;
+    fileSize: number;
+    expiresAt: string;
+  }): Promise<void> {
+    try {
+      const client = await getSupabaseClient();
+      if (!client) return;
+
+      const { error } = await client.from('uploaded_files').insert({
+        id: params.id,
+        storage_bucket: params.bucket,
+        storage_path: params.storagePath,
+        original_name: params.originalName,
+        mime_type: params.mimeType,
+        file_size: params.fileSize,
+        created_at: new Date().toISOString(),
+        expires_at: params.expiresAt,
+        status: 'active',
+      });
+
+      if (error) {
+        console.warn('[UPLOAD METADATA WARNING]', error.message);
+      }
+    } catch (e: any) {
+      console.warn('[UPLOAD METADATA EXCEPTION]', e.message);
+    }
+  },
+
+  /**
+   * Safe file deletion using Supabase Storage API (`remove([storagePath])`)
+   * and updating the metadata status to 'deleted'.
+   * Never performs direct SQL delete on storage.objects.
+   */
+  async deleteFile(storagePath: string, bucket = 'qr-files'): Promise<boolean> {
+    try {
+      const client = await getSupabaseClient();
+      if (!client) return false;
+
+      // 1. Storage API remove call
+      const { error: storageError } = await client.storage
+        .from(bucket)
+        .remove([storagePath]);
+
+      if (storageError) {
+        console.error('[STORAGE API DELETE ERROR]', storageError);
+        return false;
+      }
+
+      // 2. Update metadata status
+      try {
+        await client
+          .from('uploaded_files')
+          .update({
+            status: 'deleted',
+            deleted_at: new Date().toISOString(),
+          })
+          .eq('storage_path', storagePath);
+      } catch (dbErr) {
+        console.warn('[METADATA UPDATE WARNING]', dbErr);
+      }
+
+      return true;
+    } catch (e) {
+      console.error('[STORAGE DELETE EXCEPTION]', e);
+      return false;
     }
   },
 };

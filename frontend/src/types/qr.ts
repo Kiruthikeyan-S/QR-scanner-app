@@ -53,6 +53,7 @@ export interface UploadedFileMeta {
   url?: string;
   storage_provider?: string;
   is_supabase?: boolean;
+  expires_at?: string;
 }
 
 export type URLSafetyStatus = 'safe' | 'suspicious' | 'unsafe' | 'unknown';

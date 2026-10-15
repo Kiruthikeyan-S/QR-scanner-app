@@ -206,6 +206,17 @@ export const QRPreviewScreen: React.FC = () => {
             </Text>
           )}
 
+          {fileMeta && (
+            <View style={styles.expiryRow}>
+              <Ionicons name="time-outline" size={13} color={theme.textMuted} style={{ marginRight: 4 }} />
+              <Text style={[styles.expiryText, { color: theme.textMuted }]}>
+                {fileMeta.expires_at
+                  ? `Expires in 7 days (${new Date(fileMeta.expires_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })})`
+                  : 'Expires in 7 days'}
+              </Text>
+            </View>
+          )}
+
           {contentInfo.hasFileLink && (
             <Pressable
               onPress={handleOpenFileUrl}
@@ -367,6 +378,15 @@ const styles = StyleSheet.create({
   openFileBtnText: {
     fontSize: 12,
     fontWeight: '700',
+  },
+  expiryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  expiryText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.medium,
   },
   primaryActionBtn: {
     marginTop: spacing.xs,

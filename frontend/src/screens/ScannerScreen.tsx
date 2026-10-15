@@ -6,7 +6,10 @@ import {
   Alert,
   Platform,
   ActivityIndicator,
+  Modal,
+  Pressable,
 } from 'react-native';
+import { ImageScanService, DecodedCode } from '../services/imageScanService';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
@@ -34,6 +37,7 @@ export const ScannerScreen: React.FC = () => {
   const [torchEnabled, setTorchEnabled] = useState(false);
   const [isScanningLocked, setIsScanningLocked] = useState(false);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const [foundCodes, setFoundCodes] = useState<DecodedCode[] | null>(null);
 
   const isLockedRef = useRef(false);
 
@@ -53,8 +57,11 @@ export const ScannerScreen: React.FC = () => {
     await processScannedData(rawData);
   };
 
-  const processScannedData = async (rawData: string) => {
-    const qrType = detectQRType(rawData);
+  const processScannedData = async (rawData: string, isBarcode = false) => {
+    const detectedType = detectQRType(rawData);
+    // Barcodes (EAN/Code128/...) keep the 'barcode' type unless they hold a URL,
+    // in which case the same URL-safety flow as the live scanner applies.
+    const qrType = isBarcode && detectedType !== 'url' ? 'barcode' : detectedType;
     const settings = await SettingsStorage.get();
 
     // Trigger vibration & audio feedback
@@ -135,7 +142,28 @@ export const ScannerScreen: React.FC = () => {
     }
   };
 
+  const unlockScanner = () => {
+    isLockedRef.current = false;
+    setIsScanningLocked(false);
+  };
+
+  const openCodeResult = async (code: DecodedCode) => {
+    setFoundCodes(null);
+    isLockedRef.current = true;
+    setIsScanningLocked(true);
+    // Same result / history / URL-safety flow as the live camera scanner
+    await processScannedData(code.data, !code.isQR);
+  };
+
+  const showNoCodeFound = () => {
+    Alert.alert('No code found', 'No QR code or barcode was found in this image.', [
+      { text: 'Choose Another Image', onPress: () => handlePickImage() },
+      { text: 'Scan with Camera', style: 'cancel' },
+    ]);
+  };
+
   const handlePickImage = async () => {
+    if (isProcessingImage) return;
     try {
       triggerLightHaptic();
       const res = await ImagePicker.launchImageLibraryAsync({
@@ -144,50 +172,34 @@ export const ScannerScreen: React.FC = () => {
         quality: 1,
       });
 
-      if (!res.canceled && res.assets && res.assets.length > 0) {
-        setIsProcessingImage(true);
-        const imageUri = res.assets[0].uri;
-        
-        // Image selected: In Expo, if barcode scanning on static images is available
-        // or user can test custom text QR directly.
-        // Prompt for convenience or process directly
-        Alert.prompt
-          ? Alert.prompt(
-              'Decode Image QR',
-              'Enter QR data or simulated read from selected image:',
-              [
-                { text: 'Cancel', style: 'cancel', onPress: () => setIsProcessingImage(false) },
-                {
-                  text: 'Process',
-                  onPress: (text?: string) => {
-                    setIsProcessingImage(false);
-                    if (text && text.trim()) {
-                      processScannedData(text.trim());
-                    }
-                  },
-                },
-              ],
-              'plain-text',
-              'https://example.com/from-gallery'
-            )
-          : (() => {
-              setIsProcessingImage(false);
-              Alert.alert(
-                'Image Selected',
-                'Successfully selected image from gallery.',
-                [
-                  {
-                    text: 'Process Sample URL',
-                    onPress: () => processScannedData('https://example.com/from-gallery'),
-                  },
-                  { text: 'Cancel', style: 'cancel' },
-                ]
-              );
-            })();
+      if (res.canceled || !res.assets || res.assets.length === 0) return;
+
+      // Pause live camera decoding while the image is analysed locally
+      isLockedRef.current = true;
+      setIsScanningLocked(true);
+      setIsProcessingImage(true);
+
+      let codes: DecodedCode[] = [];
+      try {
+        codes = await ImageScanService.decodeImage(res.assets[0].uri);
+      } catch {
+        codes = [];
       }
-    } catch (e: any) {
       setIsProcessingImage(false);
-      Alert.alert('Error', e.message || 'Failed to select image');
+
+      if (codes.length === 0) {
+        // Failed scans are never added to History
+        unlockScanner();
+        showNoCodeFound();
+      } else if (codes.length === 1) {
+        await openCodeResult(codes[0]);
+      } else {
+        setFoundCodes(codes);
+      }
+    } catch {
+      setIsProcessingImage(false);
+      unlockScanner();
+      Alert.alert('Could not open image', 'Please try again or choose a different image.');
     }
   };
 
@@ -276,6 +288,61 @@ export const ScannerScreen: React.FC = () => {
           <Text style={styles.loadingText}>Analyzing QR code...</Text>
         </View>
       )}
+
+      {/* Multiple Codes Found Modal */}
+      <Modal
+        visible={!!foundCodes && foundCodes.length > 1}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setFoundCodes(null);
+          unlockScanner();
+        }}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={[styles.multiCodeCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <Text style={[styles.multiCodeTitle, { color: theme.text }]}>
+              {foundCodes?.length || 0} Codes Found
+            </Text>
+            <Text style={[styles.multiCodeSubtitle, { color: theme.textSecondary }]}>
+              Select a code to inspect and take action:
+            </Text>
+
+            <View style={styles.codeList}>
+              {foundCodes?.map((item, idx) => (
+                <Pressable
+                  key={`${item.format}-${idx}-${item.data.slice(0, 16)}`}
+                  style={({ pressed }) => [
+                    styles.codeItemRow,
+                    {
+                      backgroundColor: pressed ? theme.surfaceHighlight : theme.surfaceVariant,
+                      borderColor: theme.border,
+                    },
+                  ]}
+                  onPress={() => openCodeResult(item)}
+                >
+                  <View style={styles.codeBadge}>
+                    <Text style={styles.codeBadgeText}>{item.label}</Text>
+                  </View>
+                  <Text style={[styles.codeItemData, { color: theme.text }]} numberOfLines={2}>
+                    {item.data}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <SecondaryButton
+              title="Cancel"
+              variant="outline"
+              onPress={() => {
+                setFoundCodes(null);
+                unlockScanner();
+              }}
+              style={{ marginTop: spacing.md }}
+            />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -337,5 +404,55 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.lg,
+  },
+  multiCodeCard: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: borderRadius['2xl'],
+    borderWidth: 1,
+    padding: spacing.xl,
+    elevation: 8,
+  },
+  multiCodeTitle: {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    marginBottom: spacing.xs,
+  },
+  multiCodeSubtitle: {
+    fontSize: typography.fontSize.sm,
+    marginBottom: spacing.md,
+  },
+  codeList: {
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  codeItemRow: {
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    padding: spacing.md,
+  },
+  codeBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#059669',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
+    marginBottom: 4,
+  },
+  codeBadgeText: {
+    color: '#FFFFFF',
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+  },
+  codeItemData: {
+    fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.mono,
   },
 });
