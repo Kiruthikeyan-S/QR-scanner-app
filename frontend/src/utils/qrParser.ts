@@ -182,15 +182,19 @@ export function parseQRData(rawData: string): ParsedQRDetails {
     case 'photo': {
       let photoUrl = raw;
       if (!/^https?:\/\//i.test(photoUrl)) photoUrl = `https://${photoUrl}`;
+      const urlParts = photoUrl.split('?')[0].split('/');
+      const rawFileName = urlParts[urlParts.length - 1] || 'photo.jpg';
+      const ext = rawFileName.split('.').pop()?.toUpperCase() || 'JPEG';
+
       return {
         type: 'photo',
         raw: photoUrl,
-        title: 'Photo QR Image',
-        subtitle: 'Secure Photo Cloud Link',
+        title: rawFileName,
+        subtitle: `${ext} Image • Cloud Photo`,
         fields: [
-          { label: 'File Type', value: 'Image / Photo' },
-          { label: 'Photo URL', value: photoUrl },
-          { label: 'Access', value: 'Instant Browser Preview & Download' },
+          { label: 'File Name', value: rawFileName },
+          { label: 'File Type', value: `${ext} Photo` },
+          { label: 'Cloud Storage', value: 'Supabase Storage' },
         ],
         primaryAction: {
           label: 'Preview Photo',
@@ -203,15 +207,19 @@ export function parseQRData(rawData: string): ParsedQRDetails {
     case 'file': {
       let fileUrl = raw;
       if (!/^https?:\/\//i.test(fileUrl)) fileUrl = `https://${fileUrl}`;
+      const urlParts = fileUrl.split('?')[0].split('/');
+      const rawFileName = urlParts[urlParts.length - 1] || 'document.pdf';
+      const ext = rawFileName.split('.').pop()?.toUpperCase() || 'PDF';
+
       return {
         type: 'file',
         raw: fileUrl,
-        title: 'Document / PDF QR',
-        subtitle: 'Secure Document Cloud Link',
+        title: rawFileName,
+        subtitle: `${ext} Document • Cloud File`,
         fields: [
-          { label: 'File Type', value: 'Document / PDF File' },
-          { label: 'Document URL', value: fileUrl },
-          { label: 'Access', value: 'Download & View Document' },
+          { label: 'File Name', value: rawFileName },
+          { label: 'File Type', value: `${ext} Document` },
+          { label: 'Cloud Storage', value: 'Supabase Storage' },
         ],
         primaryAction: {
           label: 'Open Document',

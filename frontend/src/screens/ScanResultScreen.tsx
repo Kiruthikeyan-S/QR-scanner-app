@@ -76,7 +76,7 @@ export const ScanResultScreen: React.FC = () => {
 
   const handlePrimaryAction = async () => {
     triggerLightHaptic();
-    if (details.type === 'url') {
+    if (details.type === 'url' || details.primaryAction.actionType === 'open_url') {
       const isUnsafe = safety?.status === 'unsafe';
       const targetUrl = safety?.normalizedUrl || details.raw;
       handleOpenUrlWithConfirmation(targetUrl, isUnsafe);

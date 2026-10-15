@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ViewStyle } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ViewStyle, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ParsedQRDetails } from '../types/qr';
 import { useTheme } from '../theme/ThemeContext';
@@ -18,8 +18,11 @@ export const ResultCard: React.FC<ResultCardProps> = ({ details, scannedAt, styl
   const { theme, isDark } = useTheme();
   const [showSensitive, setShowSensitive] = useState<Record<number, boolean>>({});
   const [copiedField, setCopiedField] = useState<number | null>(null);
+  const [showFullUrl, setShowFullUrl] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   const meta = QR_TYPES[details.type] || QR_TYPES.text;
+  const isMedia = details.type === 'photo' || details.type === 'file';
 
   const toggleSensitive = (index: number) => {
     triggerLightHaptic();
@@ -33,6 +36,20 @@ export const ResultCard: React.FC<ResultCardProps> = ({ details, scannedAt, styl
       setCopiedField(index);
       setTimeout(() => setCopiedField(null), 2000);
     }
+  };
+
+  const handleCopyLink = async () => {
+    triggerLightHaptic();
+    const ok = await ActionHandler.copyToClipboard(details.raw);
+    if (ok) {
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    }
+  };
+
+  const handleOpenLink = async () => {
+    triggerLightHaptic();
+    await ActionHandler.openUrl(details.raw);
   };
 
   const formattedDate = scannedAt
@@ -50,6 +67,18 @@ export const ResultCard: React.FC<ResultCardProps> = ({ details, scannedAt, styl
         hour: '2-digit',
         minute: '2-digit',
       });
+
+  // Shorten long URLs nicely for display
+  const getShortUrlDisplay = (url: string) => {
+    try {
+      const parsed = new URL(url);
+      const pathname = parsed.pathname;
+      const filename = pathname.split('/').pop() || '';
+      return `${parsed.hostname}/.../${filename.length > 20 ? filename.slice(0, 10) + '...' + filename.slice(-7) : filename}`;
+    } catch {
+      return url.length > 36 ? `${url.slice(0, 32)}...` : url;
+    }
+  };
 
   return (
     <View
@@ -83,12 +112,84 @@ export const ResultCard: React.FC<ResultCardProps> = ({ details, scannedAt, styl
         </View>
       </View>
 
-      {/* Main Content Box with Mono Typography */}
-      <View style={[styles.monoBox, { backgroundColor: theme.surfaceVariant, borderColor: theme.border }]}>
-        <Text style={[styles.monoText, { color: theme.text }]} numberOfLines={6} selectable>
-          {details.raw}
-        </Text>
-      </View>
+      {/* Cloud Media / File Card Presentation */}
+      {isMedia ? (
+        <View style={styles.mediaContainer}>
+          {details.type === 'photo' && details.raw.startsWith('http') && (
+            <View style={[styles.photoCard, { borderColor: theme.borderLight }]}>
+              <Image
+                source={{ uri: details.raw }}
+                style={styles.photoThumb}
+                resizeMode="cover"
+              />
+            </View>
+          )}
+
+          {/* Clean Link Options Box */}
+          <View style={[styles.linkOptionsBox, { backgroundColor: theme.surfaceVariant, borderColor: theme.border }]}>
+            <View style={styles.linkHeaderRow}>
+              <View style={styles.linkHeaderLeft}>
+                <Ionicons name="link-outline" size={17} color={theme.primary} style={{ marginRight: 6 }} />
+                <Text style={[styles.linkOptionHeading, { color: theme.text }]}>Link Options</Text>
+              </View>
+              <Pressable
+                onPress={() => setShowFullUrl(!showFullUrl)}
+                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+              >
+                <Text style={[styles.toggleUrlText, { color: theme.primary }]}>
+                  {showFullUrl ? 'Hide URL' : 'View URL'}
+                </Text>
+              </Pressable>
+            </View>
+
+            <Text style={[styles.shortUrlText, { color: theme.textSecondary }]} numberOfLines={1}>
+              {getShortUrlDisplay(details.raw)}
+            </Text>
+
+            {/* Quick Link Buttons Row */}
+            <View style={styles.linkActionsRow}>
+              <Pressable
+                onPress={handleOpenLink}
+                style={[styles.linkActionBtn, { backgroundColor: theme.surface, borderColor: theme.border }]}
+              >
+                <Ionicons name="open-outline" size={14} color={theme.primary} style={{ marginRight: 4 }} />
+                <Text style={[styles.linkActionText, { color: theme.primary }]}>Open Link</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={handleCopyLink}
+                style={[styles.linkActionBtn, { backgroundColor: theme.surface, borderColor: theme.border }]}
+              >
+                <Ionicons
+                  name={copiedLink ? 'checkmark-outline' : 'copy-outline'}
+                  size={14}
+                  color={copiedLink ? '#059669' : theme.text}
+                  style={{ marginRight: 4 }}
+                />
+                <Text style={[styles.linkActionText, { color: copiedLink ? '#059669' : theme.text }]}>
+                  {copiedLink ? 'Copied' : 'Copy Link'}
+                </Text>
+              </Pressable>
+            </View>
+
+            {/* Expandable Full URL (Optional view) */}
+            {showFullUrl && (
+              <View style={[styles.expandedUrlBox, { backgroundColor: theme.surface, borderColor: theme.borderLight }]}>
+                <Text style={[styles.expandedUrlText, { color: theme.text }]} selectable>
+                  {details.raw}
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+      ) : (
+        /* Standard Content Box with Mono Typography for Text / Wi-Fi / Orders / JSON */
+        <View style={[styles.monoBox, { backgroundColor: theme.surfaceVariant, borderColor: theme.border }]}>
+          <Text style={[styles.monoText, { color: theme.text }]} numberOfLines={6} selectable>
+            {details.raw}
+          </Text>
+        </View>
+      )}
 
       {/* Structured Fields */}
       {details.fields.length > 0 && (
@@ -188,6 +289,81 @@ const styles = StyleSheet.create({
   timestamp: {
     fontSize: typography.fontSize.xs,
     marginTop: 2,
+  },
+  mediaContainer: {
+    marginBottom: spacing.base,
+  },
+  photoCard: {
+    width: '100%',
+    height: 180,
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+    borderWidth: 1,
+    marginBottom: spacing.md,
+    backgroundColor: '#000000',
+  },
+  photoThumb: {
+    width: '100%',
+    height: '100%',
+  },
+  linkOptionsBox: {
+    padding: spacing.md,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+  },
+  linkHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  linkHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  linkOptionHeading: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  toggleUrlText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+  },
+  shortUrlText: {
+    fontSize: typography.fontSize.xs,
+    fontFamily: typography.fontFamily.mono,
+    marginBottom: spacing.md,
+  },
+  linkActionsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  linkActionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+  },
+  linkActionText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+  },
+  expandedUrlBox: {
+    marginTop: spacing.md,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+  },
+  expandedUrlText: {
+    fontSize: typography.fontSize.xs,
+    fontFamily: typography.fontFamily.mono,
+    lineHeight: typography.lineHeight.xs,
   },
   monoBox: {
     padding: spacing.md,
