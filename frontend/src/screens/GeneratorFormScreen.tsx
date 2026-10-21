@@ -132,18 +132,10 @@ export const GeneratorFormScreen: React.FC = () => {
     uploadCache.current = {};
   }, [type]);
 
-  // Photo Picker Handler
+  // Photo Picker Handler (uses Android system photo picker without requiring broad gallery permissions)
   const handlePickPhoto = async () => {
     try {
       triggerLightHaptic();
-      const permResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permResult.granted) {
-        Alert.alert(
-          'Permission Required',
-          'Please allow photo gallery access in your device settings to select images.'
-        );
-        return;
-      }
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
