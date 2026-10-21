@@ -28,7 +28,9 @@
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
         "android.permission.INTERNET",
-        "android.permission.CAMERA",
+        "android.permission.CAMERA"
+      ],
+      "blockedPermissions": [
         "android.permission.RECORD_AUDIO"
       ],
       "predictiveBackGestureEnabled": false
@@ -37,7 +39,8 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Qrinova to access your camera to scan QR codes."
+          "cameraPermission": "Allow Qrinova to access your camera to scan QR codes.",
+          "recordAudioAndroid": false
         }
       ],
       [
