@@ -117,23 +117,23 @@ export const HomeScreen: React.FC = () => {
           styles.header,
           {
             paddingTop: insets.top + spacing.sm,
-            backgroundColor: theme.surface,
-            borderBottomColor: theme.border,
+            backgroundColor: '#FFFFFF',
+            borderBottomColor: '#E2E8F0',
           },
         ]}
       >
         <View style={styles.headerLeft}>
-          <View style={[styles.appIcon, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.2)' : palette.emerald[50] }]}>
-            <AppIcon name="qr-code" size={20} color={palette.emerald[600]} />
+          <View style={[styles.appIcon, { backgroundColor: palette.emerald[50] }]}>
+            <AppIcon name="qr-code-outline" size={22} color="#059669" />
           </View>
           <View>
-            <Text style={[styles.appTitle, { color: theme.text }]}>Qrinova</Text>
-            <Text style={[styles.appSubtitle, { color: theme.textSecondary }]}>Smart Scanner & Studio</Text>
+            <Text style={[styles.appTitle, { color: '#0F172A' }]}>Qrinova</Text>
+            <Text style={[styles.appSubtitle, { color: '#64748B' }]}>QR Scanner & Creator</Text>
           </View>
         </View>
 
         <View style={styles.headerRight}>
-          {/* Notification Bell */}
+          {/* Notification Icon */}
           <Pressable
             onPress={() => {
               triggerLightHaptic();
@@ -141,11 +141,11 @@ export const HomeScreen: React.FC = () => {
             }}
             style={({ pressed }) => [
               styles.headerIconBtn,
-              { backgroundColor: theme.surfaceVariant, opacity: pressed ? 0.7 : 1 },
+              { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0', opacity: pressed ? 0.7 : 1 },
             ]}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <AppIcon name="notifications-outline" size={22} color={theme.text} />
+            <AppIcon name="notifications-outline" size={22} color="#0F172A" />
             {unreadNotifications > 0 && (
               <View style={[styles.notifBadge, { backgroundColor: palette.rose[500] }]}>
                 <Text style={styles.notifBadgeText}>
@@ -167,82 +167,59 @@ export const HomeScreen: React.FC = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={theme.primary}
-            colors={[theme.primary]}
+            tintColor="#059669"
+            colors={['#059669']}
           />
         }
       >
-        {/* Hero Greeting */}
-        <View style={styles.greetingSection}>
-          <Text style={[styles.greetingTitle, { color: theme.text }]}>
-            {getGreeting()}
-          </Text>
-          <Text style={[styles.greetingSubtitle, { color: theme.textSecondary }]}>
-            {getGreetingSubtitle()}
-          </Text>
-        </View>
-
-        {/* HERO CARD: SCANNER */}
+        {/* SCANNER SECTION */}
         <Pressable
           onPress={() => {
             triggerLightHaptic();
             navigation.navigate('Scanner');
           }}
           style={({ pressed }) => [
-            styles.heroScannerCard,
+            styles.scannerHeroCard,
             {
-              backgroundColor: isDark ? '#064e3b' : '#ECFDF5',
-              borderColor: isDark ? '#047857' : '#A7F3D0',
-              opacity: pressed ? 0.95 : 1,
+              backgroundColor: '#FFFFFF',
+              borderColor: '#E2E8F0',
+              opacity: pressed ? 0.96 : 1,
               transform: [{ scale: pressed ? 0.99 : 1 }],
             },
           ]}
         >
-          <View style={styles.heroTopRow}>
-            <View style={styles.heroBadge}>
-              <View style={styles.heroPulseDot} />
-              <Text style={styles.heroBadgeText}>LIVE CAMERA SCANNER</Text>
+          <View style={styles.scannerHeroTop}>
+            <View style={styles.scannerIconWrapper}>
+              <AppIcon name="scan-outline" size={28} color="#059669" />
             </View>
-            <View style={styles.heroFormatPill}>
-              <Text style={styles.heroFormatText}>13 Formats (1D/2D)</Text>
-            </View>
-          </View>
-
-          <View style={styles.heroMainRow}>
-            <View style={{ flex: 1, paddingRight: spacing.sm }}>
-              <Text style={[styles.heroMainTitle, { color: isDark ? '#ECFDF5' : '#064E3B' }]}>
-                Scan QR & Barcodes
-              </Text>
-              <Text style={[styles.heroMainDesc, { color: isDark ? '#A7F3D0' : '#047857' }]}>
-                Instant auto-detect for products, Wi-Fi, URLs, video and files with safe preview.
-              </Text>
-            </View>
-            <View style={styles.heroCameraCircle}>
-              <AppIcon name="camera" size={24} color="#FFFFFF" />
+            <View style={styles.scannerFormatBadge}>
+              <Text style={styles.scannerFormatText}>1D & 2D Barcodes</Text>
             </View>
           </View>
 
-          <View style={styles.heroCtaRow}>
-            <View style={styles.heroCtaBtn}>
-              <AppIcon name="scan" size={15} color="#FFFFFF" />
-              <Text style={styles.heroCtaText}>Open Scanner</Text>
-            </View>
-            <Text style={[styles.heroSecurityHint, { color: isDark ? '#6EE7B7' : '#059669' }]}>
-              Safe preview shield active
-            </Text>
+          <Text style={[styles.scannerHeroTitle, { color: '#0F172A' }]}>
+            Scan QR & Barcode
+          </Text>
+          <Text style={[styles.scannerHeroDesc, { color: '#475569' }]}>
+            Point camera to scan products, tickets, Wi-Fi, media, files, and links.
+          </Text>
+
+          <View style={styles.scanNowBtn}>
+            <AppIcon name="camera-outline" size={18} color="#FFFFFF" />
+            <Text style={styles.scanNowBtnText}>Scan Now</Text>
           </View>
         </Pressable>
 
         {/* CREATE TOOLS Section */}
         <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>CREATE TOOLS</Text>
+          <Text style={[styles.sectionTitle, { color: '#0F172A' }]}>CREATE TOOLS</Text>
           <Pressable
             onPress={() => {
               triggerLightHaptic();
               navigation.navigate('GeneratorSelect');
             }}
           >
-            <Text style={[styles.sectionLink, { color: theme.primary }]}>Explore All</Text>
+            <Text style={[styles.sectionLink, { color: '#059669' }]}>View All</Text>
           </Pressable>
         </View>
 
@@ -258,17 +235,17 @@ export const HomeScreen: React.FC = () => {
               style={({ pressed }) => [
                 styles.toolCard,
                 {
-                  backgroundColor: theme.surface,
-                  borderColor: theme.border,
+                  backgroundColor: '#FFFFFF',
+                  borderColor: '#E2E8F0',
                   opacity: pressed ? 0.8 : 1,
                 },
               ]}
             >
-              <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(244, 63, 94, 0.15)' : palette.rose[50] }]}>
-                <AppIcon name="videocam" size={22} color={palette.rose[500]} />
+              <View style={[styles.toolIconBox, { backgroundColor: palette.rose[50] }]}>
+                <AppIcon name="videocam-outline" size={22} color={palette.rose[500]} />
               </View>
-              <Text style={[styles.toolTitle, { color: theme.text }]} numberOfLines={1}>Video QR</Text>
-              <Text style={[styles.toolSub, { color: theme.textSecondary }]}>MP4, MOV</Text>
+              <Text style={[styles.toolTitle, { color: '#0F172A' }]} numberOfLines={1}>Video QR</Text>
+              <Text style={[styles.toolSub, { color: '#64748B' }]}>MP4, MOV</Text>
             </Pressable>
 
             {/* Audio QR */}
@@ -280,17 +257,17 @@ export const HomeScreen: React.FC = () => {
               style={({ pressed }) => [
                 styles.toolCard,
                 {
-                  backgroundColor: theme.surface,
-                  borderColor: theme.border,
+                  backgroundColor: '#FFFFFF',
+                  borderColor: '#E2E8F0',
                   opacity: pressed ? 0.8 : 1,
                 },
               ]}
             >
-              <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(99, 102, 241, 0.15)' : palette.indigo[50] }]}>
-                <AppIcon name="musical-notes" size={22} color={palette.indigo[500]} />
+              <View style={[styles.toolIconBox, { backgroundColor: palette.indigo[50] }]}>
+                <AppIcon name="musical-notes-outline" size={22} color={palette.indigo[500]} />
               </View>
-              <Text style={[styles.toolTitle, { color: theme.text }]} numberOfLines={1}>Audio QR</Text>
-              <Text style={[styles.toolSub, { color: theme.textSecondary }]}>MP3, WAV</Text>
+              <Text style={[styles.toolTitle, { color: '#0F172A' }]} numberOfLines={1}>Audio QR</Text>
+              <Text style={[styles.toolSub, { color: '#64748B' }]}>MP3, WAV</Text>
             </Pressable>
 
             {/* Photo QR */}
@@ -302,17 +279,17 @@ export const HomeScreen: React.FC = () => {
               style={({ pressed }) => [
                 styles.toolCard,
                 {
-                  backgroundColor: theme.surface,
-                  borderColor: theme.border,
+                  backgroundColor: '#FFFFFF',
+                  borderColor: '#E2E8F0',
                   opacity: pressed ? 0.8 : 1,
                 },
               ]}
             >
-              <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : palette.emerald[50] }]}>
-                <AppIcon name="image" size={22} color={palette.emerald[500]} />
+              <View style={[styles.toolIconBox, { backgroundColor: palette.emerald[50] }]}>
+                <AppIcon name="image-outline" size={22} color="#059669" />
               </View>
-              <Text style={[styles.toolTitle, { color: theme.text }]} numberOfLines={1}>Photo QR</Text>
-              <Text style={[styles.toolSub, { color: theme.textSecondary }]}>JPG, PNG</Text>
+              <Text style={[styles.toolTitle, { color: '#0F172A' }]} numberOfLines={1}>Photo QR</Text>
+              <Text style={[styles.toolSub, { color: '#64748B' }]}>JPG, PNG</Text>
             </Pressable>
 
             {/* PDF QR */}
@@ -324,17 +301,17 @@ export const HomeScreen: React.FC = () => {
               style={({ pressed }) => [
                 styles.toolCard,
                 {
-                  backgroundColor: theme.surface,
-                  borderColor: theme.border,
+                  backgroundColor: '#FFFFFF',
+                  borderColor: '#E2E8F0',
                   opacity: pressed ? 0.8 : 1,
                 },
               ]}
             >
-              <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.15)' : palette.cyan[50] }]}>
-                <AppIcon name="document-text" size={22} color={palette.cyan[600]} />
+              <View style={[styles.toolIconBox, { backgroundColor: palette.cyan[50] }]}>
+                <AppIcon name="document-text-outline" size={22} color={palette.cyan[600]} />
               </View>
-              <Text style={[styles.toolTitle, { color: theme.text }]} numberOfLines={1}>PDF QR</Text>
-              <Text style={[styles.toolSub, { color: theme.textSecondary }]}>PDF, Docs</Text>
+              <Text style={[styles.toolTitle, { color: '#0F172A' }]} numberOfLines={1}>PDF QR</Text>
+              <Text style={[styles.toolSub, { color: '#64748B' }]}>PDF, Docs</Text>
             </Pressable>
           </View>
 
@@ -349,17 +326,17 @@ export const HomeScreen: React.FC = () => {
               style={({ pressed }) => [
                 styles.toolCard,
                 {
-                  backgroundColor: theme.surface,
-                  borderColor: theme.border,
+                  backgroundColor: '#FFFFFF',
+                  borderColor: '#E2E8F0',
                   opacity: pressed ? 0.8 : 1,
                 },
               ]}
             >
-              <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : palette.blue[50] }]}>
-                <AppIcon name="barcode" size={22} color={palette.blue[600]} />
+              <View style={[styles.toolIconBox, { backgroundColor: palette.blue[50] }]}>
+                <AppIcon name="barcode-outline" size={22} color={palette.blue[600]} />
               </View>
-              <Text style={[styles.toolTitle, { color: theme.text }]} numberOfLines={1}>Barcode</Text>
-              <Text style={[styles.toolSub, { color: theme.textSecondary }]}>13 Types</Text>
+              <Text style={[styles.toolTitle, { color: '#0F172A' }]} numberOfLines={1}>Barcode</Text>
+              <Text style={[styles.toolSub, { color: '#64748B' }]}>13 Formats</Text>
             </Pressable>
 
             {/* Order ID */}
@@ -371,17 +348,17 @@ export const HomeScreen: React.FC = () => {
               style={({ pressed }) => [
                 styles.toolCard,
                 {
-                  backgroundColor: theme.surface,
-                  borderColor: theme.border,
+                  backgroundColor: '#FFFFFF',
+                  borderColor: '#E2E8F0',
                   opacity: pressed ? 0.8 : 1,
                 },
               ]}
             >
-              <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : palette.amber[50] }]}>
-                <AppIcon name="cube-outline" size={22} color={palette.amber[500]} />
+              <View style={[styles.toolIconBox, { backgroundColor: palette.amber[50] }]}>
+                <AppIcon name="cube-outline" size={22} color={palette.amber[600]} />
               </View>
-              <Text style={[styles.toolTitle, { color: theme.text }]} numberOfLines={1}>Order ID</Text>
-              <Text style={[styles.toolSub, { color: theme.textSecondary }]}>Invoices</Text>
+              <Text style={[styles.toolTitle, { color: '#0F172A' }]} numberOfLines={1}>Order ID</Text>
+              <Text style={[styles.toolSub, { color: '#64748B' }]}>Invoices</Text>
             </Pressable>
 
             {/* JSON */}
@@ -393,17 +370,17 @@ export const HomeScreen: React.FC = () => {
               style={({ pressed }) => [
                 styles.toolCard,
                 {
-                  backgroundColor: theme.surface,
-                  borderColor: theme.border,
+                  backgroundColor: '#FFFFFF',
+                  borderColor: '#E2E8F0',
                   opacity: pressed ? 0.8 : 1,
                 },
               ]}
             >
-              <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(139, 92, 246, 0.15)' : palette.violet[50] }]}>
+              <View style={[styles.toolIconBox, { backgroundColor: palette.violet[50] }]}>
                 <AppIcon name="code-slash-outline" size={22} color={palette.violet[500]} />
               </View>
-              <Text style={[styles.toolTitle, { color: theme.text }]} numberOfLines={1}>JSON</Text>
-              <Text style={[styles.toolSub, { color: theme.textSecondary }]}>Raw Data</Text>
+              <Text style={[styles.toolTitle, { color: '#0F172A' }]} numberOfLines={1}>JSON</Text>
+              <Text style={[styles.toolSub, { color: '#64748B' }]}>Raw Data</Text>
             </Pressable>
 
             {/* Share Wi-Fi */}
@@ -415,24 +392,24 @@ export const HomeScreen: React.FC = () => {
               style={({ pressed }) => [
                 styles.toolCard,
                 {
-                  backgroundColor: theme.surface,
-                  borderColor: theme.border,
+                  backgroundColor: '#FFFFFF',
+                  borderColor: '#E2E8F0',
                   opacity: pressed ? 0.8 : 1,
                 },
               ]}
             >
-              <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(20, 184, 166, 0.15)' : palette.teal[50] }]}>
-                <AppIcon name="wifi" size={22} color={palette.teal[600]} />
+              <View style={[styles.toolIconBox, { backgroundColor: palette.teal[50] }]}>
+                <AppIcon name="wifi-outline" size={22} color={palette.teal[600]} />
               </View>
-              <Text style={[styles.toolTitle, { color: theme.text }]} numberOfLines={1}>Wi-Fi</Text>
-              <Text style={[styles.toolSub, { color: theme.textSecondary }]}>Auto-Join</Text>
+              <Text style={[styles.toolTitle, { color: '#0F172A' }]} numberOfLines={1}>Wi-Fi</Text>
+              <Text style={[styles.toolSub, { color: '#64748B' }]}>Auto-Join</Text>
             </Pressable>
           </View>
         </View>
 
-        {/* Quick Actions Shortcuts */}
+        {/* QUICK SHORTCUTS Section */}
         <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>QUICK SHORTCUTS</Text>
+          <Text style={[styles.sectionTitle, { color: '#0F172A' }]}>QUICK SHORTCUTS</Text>
         </View>
 
         <View style={styles.quickActionsGrid}>
@@ -445,19 +422,40 @@ export const HomeScreen: React.FC = () => {
             style={({ pressed }) => [
               styles.quickActionCard,
               {
-                backgroundColor: theme.surface,
-                borderColor: theme.border,
+                backgroundColor: '#FFFFFF',
+                borderColor: '#E2E8F0',
                 opacity: pressed ? 0.8 : 1,
               },
             ]}
           >
             <View style={[styles.quickIconBox, { backgroundColor: palette.emerald[50] }]}>
-              <AppIcon name="globe" size={20} color={palette.emerald[600]} />
+              <AppIcon name="globe-outline" size={20} color="#059669" />
             </View>
-            <Text style={[styles.quickActionLabel, { color: theme.text }]}>Web Link</Text>
+            <Text style={[styles.quickActionLabel, { color: '#0F172A' }]}>Web Link</Text>
           </Pressable>
 
-          {/* Quick Action 2: Contact Card */}
+          {/* Quick Action 2: Wi-Fi */}
+          <Pressable
+            onPress={() => {
+              triggerLightHaptic();
+              navigation.navigate('GeneratorForm', { type: 'wifi' });
+            }}
+            style={({ pressed }) => [
+              styles.quickActionCard,
+              {
+                backgroundColor: '#FFFFFF',
+                borderColor: '#E2E8F0',
+                opacity: pressed ? 0.8 : 1,
+              },
+            ]}
+          >
+            <View style={[styles.quickIconBox, { backgroundColor: palette.indigo[50] }]}>
+              <AppIcon name="wifi-outline" size={20} color={palette.indigo[600]} />
+            </View>
+            <Text style={[styles.quickActionLabel, { color: '#0F172A' }]}>Wi-Fi</Text>
+          </Pressable>
+
+          {/* Quick Action 3: Contact */}
           <Pressable
             onPress={() => {
               triggerLightHaptic();
@@ -466,19 +464,19 @@ export const HomeScreen: React.FC = () => {
             style={({ pressed }) => [
               styles.quickActionCard,
               {
-                backgroundColor: theme.surface,
-                borderColor: theme.border,
+                backgroundColor: '#FFFFFF',
+                borderColor: '#E2E8F0',
                 opacity: pressed ? 0.8 : 1,
               },
             ]}
           >
-            <View style={[styles.quickIconBox, { backgroundColor: palette.indigo[50] }]}>
-              <AppIcon name="person" size={20} color={palette.indigo[600]} />
+            <View style={[styles.quickIconBox, { backgroundColor: palette.blue[50] }]}>
+              <AppIcon name="person-outline" size={20} color={palette.blue[600]} />
             </View>
-            <Text style={[styles.quickActionLabel, { color: theme.text }]}>Contact Card</Text>
+            <Text style={[styles.quickActionLabel, { color: '#0F172A' }]}>Contact</Text>
           </Pressable>
 
-          {/* Quick Action 3: Phone */}
+          {/* Quick Action 4: Phone */}
           <Pressable
             onPress={() => {
               triggerLightHaptic();
@@ -487,46 +485,25 @@ export const HomeScreen: React.FC = () => {
             style={({ pressed }) => [
               styles.quickActionCard,
               {
-                backgroundColor: theme.surface,
-                borderColor: theme.border,
-                opacity: pressed ? 0.8 : 1,
-              },
-            ]}
-          >
-            <View style={[styles.quickIconBox, { backgroundColor: palette.blue[50] }]}>
-              <AppIcon name="call" size={20} color={palette.blue[600]} />
-            </View>
-            <Text style={[styles.quickActionLabel, { color: theme.text }]}>Phone Call</Text>
-          </Pressable>
-
-          {/* Quick Action 4: Network Checker */}
-          <Pressable
-            onPress={() => {
-              triggerLightHaptic();
-              navigation.navigate('NetworkChecker');
-            }}
-            style={({ pressed }) => [
-              styles.quickActionCard,
-              {
-                backgroundColor: theme.surface,
-                borderColor: theme.border,
+                backgroundColor: '#FFFFFF',
+                borderColor: '#E2E8F0',
                 opacity: pressed ? 0.8 : 1,
               },
             ]}
           >
             <View style={[styles.quickIconBox, { backgroundColor: palette.cyan[50] }]}>
-              <AppIcon name="shield-checkmark" size={20} color={palette.cyan[600]} />
+              <AppIcon name="call-outline" size={20} color={palette.cyan[600]} />
             </View>
-            <Text style={[styles.quickActionLabel, { color: theme.text }]}>Network Check</Text>
+            <Text style={[styles.quickActionLabel, { color: '#0F172A' }]}>Phone</Text>
           </Pressable>
         </View>
 
-        {/* Last Scanned Section */}
+        {/* RECENT ACTIVITY Section */}
         {recentScan && recentMeta && (
           <View style={styles.recentSection}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: theme.text }]}>LAST SCANNED</Text>
-              <Text style={[styles.timestampText, { color: theme.textMuted }]}>
+              <Text style={[styles.sectionTitle, { color: '#0F172A' }]}>RECENT ACTIVITY</Text>
+              <Text style={[styles.timestampText, { color: '#94A3B8' }]}>
                 {new Date(recentScan.scanned_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </Text>
             </View>
@@ -544,9 +521,9 @@ export const HomeScreen: React.FC = () => {
               style={({ pressed }) => [
                 styles.recentCard,
                 {
-                  backgroundColor: theme.surface,
-                  borderColor: theme.border,
-                  opacity: pressed ? 0.9 : 1,
+                  backgroundColor: '#FFFFFF',
+                  borderColor: '#E2E8F0',
+                  opacity: pressed ? 0.95 : 1,
                 },
               ]}
             >
@@ -555,7 +532,7 @@ export const HomeScreen: React.FC = () => {
                   style={[
                     styles.recentIcon,
                     {
-                      backgroundColor: isDark ? recentMeta.badgeBgDark : recentMeta.badgeBgLight,
+                      backgroundColor: recentMeta.badgeBgLight,
                     },
                   ]}
                 >
@@ -569,19 +546,27 @@ export const HomeScreen: React.FC = () => {
                   <Text style={[styles.recentType, { color: recentMeta.color }]}>
                     {recentMeta.label}
                   </Text>
-                  <Text style={[styles.recentData, { color: theme.text }]} numberOfLines={1}>
+                  <Text style={[styles.recentData, { color: '#0F172A' }]} numberOfLines={1}>
                     {recentScan.data}
                   </Text>
                 </View>
               </View>
 
-              <Pressable
-                onPress={handleCopyRecent}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                style={[styles.recentCopyBtn, { backgroundColor: theme.surfaceVariant }]}
-              >
-                <AppIcon name="copy-outline" size={16} color={theme.textSecondary} />
-              </Pressable>
+              <View style={styles.recentActionsRow}>
+                <Pressable
+                  onPress={handleCopyRecent}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  style={({ pressed }) => [
+                    styles.recentActionBtn,
+                    { backgroundColor: '#F8FAFC', opacity: pressed ? 0.7 : 1 },
+                  ]}
+                >
+                  <AppIcon name="copy-outline" size={16} color="#64748B" />
+                </Pressable>
+                <View style={styles.recentChevronBox}>
+                  <AppIcon name="chevron-forward" size={18} color="#94A3B8" />
+                </View>
+              </View>
             </Pressable>
           </View>
         )}
@@ -988,109 +973,65 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontWeight: typography.fontWeight.medium,
   },
-  heroScannerCard: {
-    borderRadius: borderRadius['2xl'] || 20,
-    borderWidth: 1.5,
+  scannerHeroCard: {
+    borderRadius: 20,
+    borderWidth: 1,
     padding: spacing.base,
     marginBottom: spacing.md,
-    elevation: 3,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
+    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
   },
-  heroTopRow: {
+  scannerHeroTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.xs + 2,
+    marginBottom: 12,
   },
-  heroBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#10B981',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: borderRadius.full,
-    gap: 5,
-  },
-  heroPulseDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#FFFFFF',
-  },
-  heroBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  heroFormatPill: {
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: borderRadius.full,
-  },
-  heroFormatText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#047857',
-  },
-  heroMainRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginVertical: spacing.xs,
-  },
-  heroMainTitle: {
-    fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.bold,
-    lineHeight: 26,
-    marginBottom: 4,
-  },
-  heroMainDesc: {
-    fontSize: typography.fontSize.xs + 1,
-    lineHeight: 17,
-  },
-  heroCameraCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#059669',
+  scannerIconWrapper: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: '#ECFDF5',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#059669',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
   },
-  heroCtaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: spacing.sm,
-    paddingTop: spacing.xs + 2,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(16, 185, 129, 0.2)',
+  scannerFormatBadge: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
   },
-  heroCtaBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#059669',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: borderRadius.md,
-    gap: 6,
-  },
-  heroCtaText: {
-    color: '#FFFFFF',
-    fontSize: typography.fontSize.xs,
-    fontWeight: '700',
-  },
-  heroSecurityHint: {
+  scannerFormatText: {
     fontSize: 11,
     fontWeight: '600',
+    color: '#475569',
+  },
+  scannerHeroTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  scannerHeroDesc: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 14,
+  },
+  scanNowBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#059669',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    gap: 8,
+  },
+  scanNowBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -1214,13 +1155,26 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.medium,
     marginTop: 2,
   },
-  recentCopyBtn: {
+  recentActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginLeft: spacing.sm,
+  },
+  recentActionBtn: {
     width: 34,
     height: 34,
     borderRadius: borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: spacing.sm,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  recentChevronBox: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   /* Modal / Bottom Sheet Styles */
   modalOverlay: {

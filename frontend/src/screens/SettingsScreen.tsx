@@ -243,13 +243,15 @@ export const SettingsScreen: React.FC = () => {
         </Text>
         <View style={[styles.cardGroup, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <SettingRow
-            icon={isDark ? 'moon' : 'sunny-outline'}
-            iconColor={isDark ? palette.indigo[400] : palette.amber[500]}
-            iconBgColor={isDark ? 'rgba(99, 102, 241, 0.15)' : palette.amber[50]}
-            title="Dark Mode"
-            type="toggle"
-            value={isDark}
-            onValueChange={handleToggleDarkMode}
+            icon="sunny-outline"
+            iconColor={palette.emerald[600]}
+            iconBgColor={palette.emerald[50]}
+            title="Theme"
+            subtitle="Clean Light Experience"
+            type="badge"
+            badgeText="Light"
+            badgeColor={palette.emerald[600]}
+            badgeBgColor={palette.emerald[50]}
           />
           <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
 

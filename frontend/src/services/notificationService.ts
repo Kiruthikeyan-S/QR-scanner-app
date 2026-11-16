@@ -74,12 +74,17 @@ export const NotificationService = {
     }
 
     if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('weekly_reminders', {
-        name: 'Weekly Reminders',
-        importance: Notifications.AndroidImportance.DEFAULT,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#059669',
-      });
+      try {
+        await Notifications.setNotificationChannelAsync('weekly_reminders', {
+          name: 'Weekly Reminders',
+          importance: Notifications.AndroidImportance.DEFAULT,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#059669',
+        });
+      } catch (channelErr) {
+        // In Expo Go or devices without channel provider, channel creation can be safely skipped
+        console.warn('[NotificationService] Android channel setup skipped:', channelErr);
+      }
     }
 
     return true;
@@ -114,21 +119,25 @@ export const NotificationService = {
     }
 
     // Schedule: Weekly on Sunday at 10:00 AM local device time
-    await Notifications.scheduleNotificationAsync({
-      identifier: WEEKLY_NOTIFICATION_ID,
-      content: {
-        title: 'Your weekly Qrinova reminder!',
-        body: summaryText,
-        sound: true,
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
-        weekday: 1, // Sunday (1 = Sunday in Expo)
-        hour: 10,
-        minute: 0,
-        channelId: Platform.OS === 'android' ? 'weekly_reminders' : undefined,
-      },
-    });
+    try {
+      await Notifications.scheduleNotificationAsync({
+        identifier: WEEKLY_NOTIFICATION_ID,
+        content: {
+          title: 'Your weekly Qrinova reminder!',
+          body: summaryText,
+          sound: true,
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+          weekday: 1, // Sunday (1 = Sunday in Expo)
+          hour: 10,
+          minute: 0,
+          channelId: Platform.OS === 'android' ? 'weekly_reminders' : undefined,
+        },
+      });
+    } catch (schedErr) {
+      console.warn('[NotificationService] Schedule notification error:', schedErr);
+    }
 
     await this.savePreferences({
       enabled: true,
@@ -158,18 +167,23 @@ export const NotificationService = {
     const granted = await this.requestPermission();
     if (!granted) return false;
 
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: 'Qrinova Test Notification',
-        body: 'Success! Qrinova notifications are configured and functioning properly.',
-        sound: true,
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-        seconds: 60, // 1 minute
-      },
-    });
-
-    return true;
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: 'Qrinova Test Notification',
+          body: 'Success! Qrinova notifications are configured and functioning properly.',
+          sound: true,
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds: 60,
+          repeats: false,
+        },
+      });
+      return true;
+    } catch (testErr) {
+      console.warn('[NotificationService] Test notification error:', testErr);
+      return false;
+    }
   },
 };

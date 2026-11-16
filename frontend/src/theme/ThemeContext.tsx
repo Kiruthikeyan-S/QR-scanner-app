@@ -24,37 +24,13 @@ const ThemeContext = createContext<ThemeContextType>({
 const THEME_STORAGE_KEY = '@qr_smart_theme_mode';
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const systemScheme = useColorScheme();
-  const [themeMode, setThemeModeState] = useState<ThemeMode>('light');
+  // Pure modern Light Theme design system
+  const theme = lightTheme;
+  const isDark = false;
+  const themeMode: ThemeMode = 'light';
 
-  useEffect(() => {
-    // Load stored preference
-    AsyncStorage.getItem(THEME_STORAGE_KEY).then((saved) => {
-      if (saved === 'light' || saved === 'dark' || saved === 'system') {
-        setThemeModeState(saved as ThemeMode);
-      }
-    }).catch(() => {});
-  }, []);
-
-  const setThemeMode = async (mode: ThemeMode) => {
-    setThemeModeState(mode);
-    try {
-      await AsyncStorage.setItem(THEME_STORAGE_KEY, mode);
-    } catch (e) {
-      console.warn('Failed to save theme mode', e);
-    }
-  };
-
-  const toggleTheme = () => {
-    setThemeMode(isDark ? 'light' : 'dark');
-  };
-
-  const isDark =
-    themeMode === 'system'
-      ? systemScheme === 'dark'
-      : themeMode === 'dark';
-
-  const theme = isDark ? darkTheme : lightTheme;
+  const setThemeMode = async (_mode: ThemeMode) => {};
+  const toggleTheme = () => {};
 
   return (
     <ThemeContext.Provider value={{ theme, isDark, themeMode, setThemeMode, toggleTheme }}>

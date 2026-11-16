@@ -76,7 +76,7 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
         </Pressable>
 
         <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>Scan QR Code</Text>
+          <Text style={styles.headerTitle}>Scan QR & Barcode</Text>
         </View>
 
         <Pressable

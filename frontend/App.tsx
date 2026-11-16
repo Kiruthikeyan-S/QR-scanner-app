@@ -14,6 +14,9 @@ LogBox.ignoreLogs([
   'Push notifications (remote notifications) are unavailable in Expo Go',
   '`expo-notifications` functionality is not fully supported in Expo Go',
   '[expo-notifications]',
+  'ExpoNotificationChannelManager',
+  'NotificationsChannelsProvider',
+  'Call to function',
 ]);
 
 interface ErrorBoundaryProps {
@@ -92,7 +95,7 @@ const AppContent: React.FC = () => {
 
   return (
     <NetworkGate>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <StatusBar style="dark" />
       <NavigationContainer theme={navigationTheme}>
         <RootNavigator />
       </NavigationContainer>
