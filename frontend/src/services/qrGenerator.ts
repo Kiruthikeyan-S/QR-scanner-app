@@ -120,7 +120,7 @@ export const QRGeneratorService = {
    * Generate QR Matrix and SVG Path using Nayuki qrcodegen
    */
   generateQR(options: QRGenerationOptions): QRGenerationResult {
-    const text = options.payload || 'https://qrsmart.app';
+    const text = options.payload || 'https://qrinova.app';
     const quietZone = typeof options.quietZone === 'number' ? options.quietZone : 4;
     const fg = options.foregroundColor || '#000000';
     const bg = options.backgroundColor || '#FFFFFF';

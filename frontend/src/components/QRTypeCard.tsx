@@ -39,12 +39,21 @@ export const QRTypeCard: React.FC<QRTypeCardProps> = ({ item, onPress }) => {
           },
         ]}
       >
-        <Ionicons name={item.iconName as any} size={24} color={item.color} />
+        <Ionicons name={item.iconName as any} size={26} color={item.color} />
       </View>
 
       <Text style={[styles.title, { color: theme.text }]} numberOfLines={1}>
         {item.label}
       </Text>
+
+      {item.description ? (
+        <Text
+          style={[styles.description, { color: theme.textSecondary }]}
+          numberOfLines={2}
+        >
+          {item.description}
+        </Text>
+      ) : null}
     </Pressable>
   );
 };
@@ -60,21 +69,25 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     flex: 1,
     margin: spacing.xs,
-    minHeight: 100,
-    alignItems: 'center',
-    justifyContent: 'center',
+    minHeight: 124,
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
   },
   iconBox: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     borderRadius: borderRadius.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.xs + 2,
+    marginBottom: spacing.xs,
   },
   title: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.sm + 1,
     fontWeight: typography.fontWeight.bold,
-    textAlign: 'center',
+    marginBottom: 2,
+  },
+  description: {
+    fontSize: typography.fontSize.xs,
+    lineHeight: 14,
   },
 });

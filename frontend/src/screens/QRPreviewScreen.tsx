@@ -197,7 +197,7 @@ export const QRPreviewScreen: React.FC = () => {
           {/* Large Clean QR Code */}
           <View style={styles.qrWrapper}>
             <CustomQRCode
-              value={data || 'https://qrsmart.app'}
+              value={data || 'https://qrinova.app'}
               size={220}
               customization={customization}
               getRef={(ref) => (qrRef.current = ref)}

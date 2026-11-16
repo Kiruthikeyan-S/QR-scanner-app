@@ -33,7 +33,7 @@ export const CustomQRCode: React.FC<CustomQRCodeProps> = ({
   // Generate QR Matrix & Path using Nayuki qrcodegen
   const qrResult = useMemo(() => {
     return QRGeneratorService.generateQR({
-      payload: value || 'https://qrsmart.app',
+      payload: value || 'https://qrinova.app',
       foregroundColor: fgColor,
       backgroundColor: bgColor,
       errorCorrectionLevel: ecl,

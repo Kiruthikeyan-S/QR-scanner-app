@@ -123,10 +123,13 @@ export const HomeScreen: React.FC = () => {
         ]}
       >
         <View style={styles.headerLeft}>
-          <View style={[styles.appIcon, { backgroundColor: theme.primaryLight }]}>
-            <AppIcon name="qr-code" size={20} color={theme.primary} />
+          <View style={[styles.appIcon, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.2)' : palette.emerald[50] }]}>
+            <AppIcon name="qr-code" size={20} color={palette.emerald[600]} />
           </View>
-          <Text style={[styles.appTitle, { color: theme.text }]}>Qrinova</Text>
+          <View>
+            <Text style={[styles.appTitle, { color: theme.text }]}>Qrinova</Text>
+            <Text style={[styles.appSubtitle, { color: theme.textSecondary }]}>Smart Scanner & Studio</Text>
+          </View>
         </View>
 
         <View style={styles.headerRight}>
@@ -138,11 +141,11 @@ export const HomeScreen: React.FC = () => {
             }}
             style={({ pressed }) => [
               styles.headerIconBtn,
-              { opacity: pressed ? 0.6 : 1 },
+              { backgroundColor: theme.surfaceVariant, opacity: pressed ? 0.7 : 1 },
             ]}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <AppIcon name="notifications-outline" size={24} color={theme.text} />
+            <AppIcon name="notifications-outline" size={22} color={theme.text} />
             {unreadNotifications > 0 && (
               <View style={[styles.notifBadge, { backgroundColor: palette.rose[500] }]}>
                 <Text style={styles.notifBadgeText}>
@@ -150,21 +153,6 @@ export const HomeScreen: React.FC = () => {
                 </Text>
               </View>
             )}
-          </Pressable>
-
-          {/* WhatsApp-style Standalone Plus Button */}
-          <Pressable
-            onPress={() => {
-              triggerLightHaptic();
-              setCreateMenuVisible(true);
-            }}
-            style={({ pressed }) => [
-              styles.headerIconBtn,
-              { opacity: pressed ? 0.6 : 1 },
-            ]}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <AppIcon name="add" size={28} color={theme.text} />
           </Pressable>
         </View>
       </View>
@@ -194,98 +182,117 @@ export const HomeScreen: React.FC = () => {
           </Text>
         </View>
 
-        {/* Hero Card 1: SCAN QR CODE */}
+        {/* HERO CARD: SCANNER */}
         <Pressable
           onPress={() => {
             triggerLightHaptic();
             navigation.navigate('Scanner');
           }}
           style={({ pressed }) => [
-            styles.heroCard,
+            styles.heroScannerCard,
             {
-              backgroundColor: theme.surface,
-              borderColor: theme.border,
-              shadowColor: theme.cardShadow,
+              backgroundColor: isDark ? '#064e3b' : '#ECFDF5',
+              borderColor: isDark ? '#047857' : '#A7F3D0',
               opacity: pressed ? 0.95 : 1,
               transform: [{ scale: pressed ? 0.99 : 1 }],
             },
           ]}
         >
-          <View
-            style={[
-              styles.heroIconCircle,
-              { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.18)' : palette.emerald[50] },
-            ]}
-          >
-            <AppIcon name="camera" size={28} color={palette.emerald[500]} />
-          </View>
-
-          <Text style={[styles.heroTitle, { color: theme.text }]}>Scan QR Code</Text>
-
-          <View style={[styles.pillTagsRow, { borderTopColor: theme.borderLight }]}>
-            <View style={styles.pillTag}>
-              <AppIcon name="flash-outline" size={13} color={palette.emerald[600]} />
-              <Text style={[styles.pillTagText, { color: theme.textSecondary }]}>High-Speed</Text>
+          <View style={styles.heroTopRow}>
+            <View style={styles.heroBadge}>
+              <View style={styles.heroPulseDot} />
+              <Text style={styles.heroBadgeText}>LIVE CAMERA SCANNER</Text>
             </View>
-            <View style={styles.pillTag}>
-              <AppIcon name="shield-checkmark-outline" size={13} color={palette.emerald[600]} />
-              <Text style={[styles.pillTagText, { color: theme.textSecondary }]}>Safe Preview</Text>
+            <View style={styles.heroFormatPill}>
+              <Text style={styles.heroFormatText}>13 Formats (1D/2D)</Text>
             </View>
           </View>
-        </Pressable>
 
-        {/* Hero Card 2: GENERATE QR CODE */}
-        <Pressable
-          onPress={() => {
-            triggerLightHaptic();
-            navigation.navigate('GeneratorSelect');
-          }}
-          style={({ pressed }) => [
-            styles.heroCard,
-            {
-              backgroundColor: theme.surface,
-              borderColor: theme.border,
-              shadowColor: theme.cardShadow,
-              opacity: pressed ? 0.95 : 1,
-              transform: [{ scale: pressed ? 0.99 : 1 }],
-            },
-          ]}
-        >
-          <View
-            style={[
-              styles.heroIconCircle,
-              { backgroundColor: isDark ? 'rgba(99, 102, 241, 0.18)' : palette.indigo[50] },
-            ]}
-          >
-            <AppIcon name="qr-code-outline" size={28} color={palette.indigo[500]} />
+          <View style={styles.heroMainRow}>
+            <View style={{ flex: 1, paddingRight: spacing.sm }}>
+              <Text style={[styles.heroMainTitle, { color: isDark ? '#ECFDF5' : '#064E3B' }]}>
+                Scan QR & Barcodes
+              </Text>
+              <Text style={[styles.heroMainDesc, { color: isDark ? '#A7F3D0' : '#047857' }]}>
+                Instant auto-detect for products, Wi-Fi, URLs, video and files with safe preview.
+              </Text>
+            </View>
+            <View style={styles.heroCameraCircle}>
+              <AppIcon name="camera" size={24} color="#FFFFFF" />
+            </View>
           </View>
 
-          <Text style={[styles.heroTitle, { color: theme.text }]}>Generate QR Code</Text>
-
-          <View style={[styles.pillTagsRow, { borderTopColor: theme.borderLight }]}>
-            <View style={styles.pillTag}>
-              <AppIcon name="globe-outline" size={13} color={palette.indigo[500]} />
-              <Text style={[styles.pillTagText, { color: theme.textSecondary }]}>URL</Text>
+          <View style={styles.heroCtaRow}>
+            <View style={styles.heroCtaBtn}>
+              <AppIcon name="scan" size={15} color="#FFFFFF" />
+              <Text style={styles.heroCtaText}>Open Scanner</Text>
             </View>
-            <View style={styles.pillTag}>
-              <AppIcon name="wifi-outline" size={13} color={palette.indigo[500]} />
-              <Text style={[styles.pillTagText, { color: theme.textSecondary }]}>Wi-Fi</Text>
-            </View>
-            <View style={styles.pillTag}>
-              <AppIcon name="image-outline" size={13} color={palette.indigo[500]} />
-              <Text style={[styles.pillTagText, { color: theme.textSecondary }]}>Photo</Text>
-            </View>
+            <Text style={[styles.heroSecurityHint, { color: isDark ? '#6EE7B7' : '#059669' }]}>
+              Safe preview shield active
+            </Text>
           </View>
         </Pressable>
 
         {/* CREATE TOOLS Section */}
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>CREATE TOOLS</Text>
+          <Pressable
+            onPress={() => {
+              triggerLightHaptic();
+              navigation.navigate('GeneratorSelect');
+            }}
+          >
+            <Text style={[styles.sectionLink, { color: theme.primary }]}>Explore All</Text>
+          </Pressable>
         </View>
 
-        <View style={styles.toolsContainer}>
-          {/* Row 1: 3 cards */}
+        <View style={styles.toolsGrid}>
+          {/* Row 1: 4 Tools */}
           <View style={styles.toolsRow}>
+            {/* Video QR */}
+            <Pressable
+              onPress={() => {
+                triggerLightHaptic();
+                navigation.navigate('GeneratorForm', { type: 'video' });
+              }}
+              style={({ pressed }) => [
+                styles.toolCard,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                  opacity: pressed ? 0.8 : 1,
+                },
+              ]}
+            >
+              <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(244, 63, 94, 0.15)' : palette.rose[50] }]}>
+                <AppIcon name="videocam" size={22} color={palette.rose[500]} />
+              </View>
+              <Text style={[styles.toolTitle, { color: theme.text }]} numberOfLines={1}>Video QR</Text>
+              <Text style={[styles.toolSub, { color: theme.textSecondary }]}>MP4, MOV</Text>
+            </Pressable>
+
+            {/* Audio QR */}
+            <Pressable
+              onPress={() => {
+                triggerLightHaptic();
+                navigation.navigate('GeneratorForm', { type: 'audio' });
+              }}
+              style={({ pressed }) => [
+                styles.toolCard,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                  opacity: pressed ? 0.8 : 1,
+                },
+              ]}
+            >
+              <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(99, 102, 241, 0.15)' : palette.indigo[50] }]}>
+                <AppIcon name="musical-notes" size={22} color={palette.indigo[500]} />
+              </View>
+              <Text style={[styles.toolTitle, { color: theme.text }]} numberOfLines={1}>Audio QR</Text>
+              <Text style={[styles.toolSub, { color: theme.textSecondary }]}>MP3, WAV</Text>
+            </Pressable>
+
             {/* Photo QR */}
             <Pressable
               onPress={() => {
@@ -301,10 +308,11 @@ export const HomeScreen: React.FC = () => {
                 },
               ]}
             >
-              <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.18)' : palette.emerald[50] }]}>
+              <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : palette.emerald[50] }]}>
                 <AppIcon name="image" size={22} color={palette.emerald[500]} />
               </View>
-              <Text style={[styles.toolTitle, { color: theme.text }]}>Photo QR</Text>
+              <Text style={[styles.toolTitle, { color: theme.text }]} numberOfLines={1}>Photo QR</Text>
+              <Text style={[styles.toolSub, { color: theme.textSecondary }]}>JPG, PNG</Text>
             </Pressable>
 
             {/* PDF QR */}
@@ -322,12 +330,16 @@ export const HomeScreen: React.FC = () => {
                 },
               ]}
             >
-              <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.18)' : palette.rose[50] }]}>
-                <AppIcon name="document-text" size={22} color={palette.rose[500]} />
+              <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.15)' : palette.cyan[50] }]}>
+                <AppIcon name="document-text" size={22} color={palette.cyan[600]} />
               </View>
-              <Text style={[styles.toolTitle, { color: theme.text }]}>PDF QR</Text>
+              <Text style={[styles.toolTitle, { color: theme.text }]} numberOfLines={1}>PDF QR</Text>
+              <Text style={[styles.toolSub, { color: theme.textSecondary }]}>PDF, Docs</Text>
             </Pressable>
+          </View>
 
+          {/* Row 2: 4 Tools */}
+          <View style={styles.toolsRow}>
             {/* Barcode */}
             <Pressable
               onPress={() => {
@@ -343,15 +355,13 @@ export const HomeScreen: React.FC = () => {
                 },
               ]}
             >
-              <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.18)' : palette.cyan[50] }]}>
-                <AppIcon name="barcode" size={22} color={palette.cyan[500]} />
+              <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : palette.blue[50] }]}>
+                <AppIcon name="barcode" size={22} color={palette.blue[600]} />
               </View>
-              <Text style={[styles.toolTitle, { color: theme.text }]}>Barcode</Text>
+              <Text style={[styles.toolTitle, { color: theme.text }]} numberOfLines={1}>Barcode</Text>
+              <Text style={[styles.toolSub, { color: theme.textSecondary }]}>13 Types</Text>
             </Pressable>
-          </View>
 
-          {/* Row 2: 2 cards */}
-          <View style={styles.toolsRow}>
             {/* Order ID */}
             <Pressable
               onPress={() => {
@@ -367,10 +377,11 @@ export const HomeScreen: React.FC = () => {
                 },
               ]}
             >
-              <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.18)' : palette.amber[50] }]}>
+              <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : palette.amber[50] }]}>
                 <AppIcon name="cube-outline" size={22} color={palette.amber[500]} />
               </View>
-              <Text style={[styles.toolTitle, { color: theme.text }]}>Order ID</Text>
+              <Text style={[styles.toolTitle, { color: theme.text }]} numberOfLines={1}>Order ID</Text>
+              <Text style={[styles.toolSub, { color: theme.textSecondary }]}>Invoices</Text>
             </Pressable>
 
             {/* JSON */}
@@ -388,50 +399,44 @@ export const HomeScreen: React.FC = () => {
                 },
               ]}
             >
-              <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(99, 102, 241, 0.18)' : palette.indigo[50] }]}>
-                <AppIcon name="code-slash-outline" size={22} color={palette.indigo[500]} />
+              <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(139, 92, 246, 0.15)' : palette.violet[50] }]}>
+                <AppIcon name="code-slash-outline" size={22} color={palette.violet[500]} />
               </View>
-              <Text style={[styles.toolTitle, { color: theme.text }]}>JSON</Text>
+              <Text style={[styles.toolTitle, { color: theme.text }]} numberOfLines={1}>JSON</Text>
+              <Text style={[styles.toolSub, { color: theme.textSecondary }]}>Raw Data</Text>
+            </Pressable>
+
+            {/* Share Wi-Fi */}
+            <Pressable
+              onPress={() => {
+                triggerLightHaptic();
+                navigation.navigate('GeneratorForm', { type: 'wifi' });
+              }}
+              style={({ pressed }) => [
+                styles.toolCard,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                  opacity: pressed ? 0.8 : 1,
+                },
+              ]}
+            >
+              <View style={[styles.toolIconBox, { backgroundColor: isDark ? 'rgba(20, 184, 166, 0.15)' : palette.teal[50] }]}>
+                <AppIcon name="wifi" size={22} color={palette.teal[600]} />
+              </View>
+              <Text style={[styles.toolTitle, { color: theme.text }]} numberOfLines={1}>Wi-Fi</Text>
+              <Text style={[styles.toolSub, { color: theme.textSecondary }]}>Auto-Join</Text>
             </Pressable>
           </View>
         </View>
 
         {/* Quick Actions Shortcuts */}
         <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Quick Actions</Text>
-          <Pressable
-            onPress={() => {
-              triggerLightHaptic();
-              navigation.navigate('GeneratorSelect');
-            }}
-          >
-            <Text style={[styles.sectionLink, { color: theme.primary }]}>View all</Text>
-          </Pressable>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>QUICK SHORTCUTS</Text>
         </View>
 
         <View style={styles.quickActionsGrid}>
-          {/* Quick Action 1: Wi-Fi Generator */}
-          <Pressable
-            onPress={() => {
-              triggerLightHaptic();
-              navigation.navigate('GeneratorForm', { type: 'wifi' });
-            }}
-            style={({ pressed }) => [
-              styles.quickActionCard,
-              {
-                backgroundColor: theme.surface,
-                borderColor: theme.border,
-                opacity: pressed ? 0.8 : 1,
-              },
-            ]}
-          >
-            <View style={[styles.quickIconBox, { backgroundColor: palette.indigo[50] }]}>
-              <AppIcon name="wifi" size={20} color={palette.indigo[600]} />
-            </View>
-            <Text style={[styles.quickActionLabel, { color: theme.text }]}>Share Wi-Fi</Text>
-          </Pressable>
-
-          {/* Quick Action 2: Website URL */}
+          {/* Quick Action 1: Website URL */}
           <Pressable
             onPress={() => {
               triggerLightHaptic();
@@ -452,7 +457,49 @@ export const HomeScreen: React.FC = () => {
             <Text style={[styles.quickActionLabel, { color: theme.text }]}>Web Link</Text>
           </Pressable>
 
-          {/* Quick Action 3: Network Checker */}
+          {/* Quick Action 2: Contact Card */}
+          <Pressable
+            onPress={() => {
+              triggerLightHaptic();
+              navigation.navigate('GeneratorForm', { type: 'contact' });
+            }}
+            style={({ pressed }) => [
+              styles.quickActionCard,
+              {
+                backgroundColor: theme.surface,
+                borderColor: theme.border,
+                opacity: pressed ? 0.8 : 1,
+              },
+            ]}
+          >
+            <View style={[styles.quickIconBox, { backgroundColor: palette.indigo[50] }]}>
+              <AppIcon name="person" size={20} color={palette.indigo[600]} />
+            </View>
+            <Text style={[styles.quickActionLabel, { color: theme.text }]}>Contact Card</Text>
+          </Pressable>
+
+          {/* Quick Action 3: Phone */}
+          <Pressable
+            onPress={() => {
+              triggerLightHaptic();
+              navigation.navigate('GeneratorForm', { type: 'phone' });
+            }}
+            style={({ pressed }) => [
+              styles.quickActionCard,
+              {
+                backgroundColor: theme.surface,
+                borderColor: theme.border,
+                opacity: pressed ? 0.8 : 1,
+              },
+            ]}
+          >
+            <View style={[styles.quickIconBox, { backgroundColor: palette.blue[50] }]}>
+              <AppIcon name="call" size={20} color={palette.blue[600]} />
+            </View>
+            <Text style={[styles.quickActionLabel, { color: theme.text }]}>Phone Call</Text>
+          </Pressable>
+
+          {/* Quick Action 4: Network Checker */}
           <Pressable
             onPress={() => {
               triggerLightHaptic();
@@ -478,7 +525,7 @@ export const HomeScreen: React.FC = () => {
         {recentScan && recentMeta && (
           <View style={styles.recentSection}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: theme.text }]}>Last Scanned</Text>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>LAST SCANNED</Text>
               <Text style={[styles.timestampText, { color: theme.textMuted }]}>
                 {new Date(recentScan.scanned_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </Text>
@@ -891,6 +938,12 @@ const styles = StyleSheet.create({
   appTitle: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
+    lineHeight: 22,
+  },
+  appSubtitle: {
+    fontSize: 11,
+    lineHeight: 13,
+    fontWeight: typography.fontWeight.medium,
   },
   headerIconBtn: {
     width: 40,
@@ -935,45 +988,109 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontWeight: typography.fontWeight.medium,
   },
-  heroCard: {
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
+  heroScannerCard: {
+    borderRadius: borderRadius['2xl'] || 20,
+    borderWidth: 1.5,
     padding: spacing.base,
     marginBottom: spacing.md,
-    elevation: 2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
+    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
   },
-  heroIconCircle: {
-    width: 46,
-    height: 46,
-    borderRadius: borderRadius.lg,
+  heroTopRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     marginBottom: spacing.xs + 2,
   },
-  heroTitle: {
-    fontSize: typography.fontSize.lg,
+  heroBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#10B981',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: borderRadius.full,
+    gap: 5,
+  },
+  heroPulseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#FFFFFF',
+  },
+  heroBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  heroFormatPill: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: borderRadius.full,
+  },
+  heroFormatText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#047857',
+  },
+  heroMainRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginVertical: spacing.xs,
+  },
+  heroMainTitle: {
+    fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
+    lineHeight: 26,
+    marginBottom: 4,
   },
-  pillTagsRow: {
+  heroMainDesc: {
+    fontSize: typography.fontSize.xs + 1,
+    lineHeight: 17,
+  },
+  heroCameraCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#059669',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#059669',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  heroCtaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: spacing.xs + 4,
-    marginTop: spacing.xs + 2,
+    justifyContent: 'space-between',
+    marginTop: spacing.sm,
+    paddingTop: spacing.xs + 2,
     borderTopWidth: 1,
-    flexWrap: 'wrap',
-    gap: spacing.sm,
+    borderTopColor: 'rgba(16, 185, 129, 0.2)',
   },
-  pillTag: {
+  heroCtaBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    backgroundColor: '#059669',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: borderRadius.md,
+    gap: 6,
   },
-  pillTagText: {
+  heroCtaText: {
+    color: '#FFFFFF',
     fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.medium,
+    fontWeight: '700',
+  },
+  heroSecurityHint: {
+    fontSize: 11,
+    fontWeight: '600',
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -983,9 +1100,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   sectionTitle: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs + 1,
     fontWeight: typography.fontWeight.bold,
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
   },
   sectionLink: {
     fontSize: typography.fontSize.xs,
@@ -994,22 +1111,26 @@ const styles = StyleSheet.create({
   timestampText: {
     fontSize: typography.fontSize.xs,
   },
-  toolsContainer: {
+  toolsGrid: {
     gap: spacing.sm,
     marginBottom: spacing.md,
   },
   toolsRow: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: spacing.xs + 2,
   },
   toolCard: {
     flex: 1,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    paddingVertical: spacing.sm + 2,
-    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: 4,
     alignItems: 'center',
     justifyContent: 'center',
+    elevation: 1,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
   },
   toolIconBox: {
     width: 38,
@@ -1020,34 +1141,39 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   toolTitle: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.semibold,
+    fontSize: 11,
+    fontWeight: typography.fontWeight.bold,
     textAlign: 'center',
+  },
+  toolSub: {
+    fontSize: 9,
+    textAlign: 'center',
+    marginTop: 1,
   },
   quickActionsGrid: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
+    gap: spacing.xs + 2,
+    marginBottom: spacing.md,
   },
   quickActionCard: {
     flex: 1,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    paddingVertical: spacing.sm + 2,
-    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: 4,
     alignItems: 'center',
     justifyContent: 'center',
   },
   quickIconBox: {
-    width: 38,
-    height: 38,
+    width: 36,
+    height: 36,
     borderRadius: borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
   },
   quickActionLabel: {
-    fontSize: typography.fontSize.xs,
+    fontSize: 11,
     fontWeight: typography.fontWeight.semibold,
     textAlign: 'center',
   },

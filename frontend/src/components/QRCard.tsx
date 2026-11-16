@@ -45,7 +45,7 @@ export const QRCard: React.FC<QRCardProps> = ({ item, onPress, onDelete, onRenam
         {/* QR Thumbnail Preview powered by qrcodegen */}
         <View style={[styles.qrThumbBox, { backgroundColor: '#FFFFFF', borderColor: theme.borderLight }]}>
           <CustomQRCode
-            value={item.data || 'https://qrsmart.app'}
+            value={item.data || 'https://qrinova.app'}
             size={52}
             showContrastWarning={false}
           />

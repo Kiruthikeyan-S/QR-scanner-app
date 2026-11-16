@@ -227,7 +227,7 @@ export const ScannerScreen: React.FC = () => {
       'https://github.com/expo/expo',
       'WIFI:T:WPA;S:Office_HighSpeed_5G;P:SecurePass2026;H:false;;',
       'tel:+14155552671',
-      'mailto:support@qrsmart.app?subject=Inquiry&body=Hello team',
+      'mailto:support@qrinova.app?subject=Inquiry&body=Hello team',
       'BEGIN:VCARD\nVERSION:3.0\nFN:Sarah Connor\nORG:Tech Corp\nTEL;TYPE=CELL:+15550199283\nEMAIL:sarah@example.com\nEND:VCARD',
       'geo:37.7749,-122.4194?q=San+Francisco',
     ];

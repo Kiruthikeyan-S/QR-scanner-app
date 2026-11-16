@@ -1,5 +1,11 @@
 import { Platform } from 'react-native';
-import { uploadAsync, FileSystemUploadType } from 'expo-file-system/legacy';
+import {
+  uploadAsync,
+  FileSystemUploadType,
+  cacheDirectory,
+  copyAsync,
+  deleteAsync,
+} from 'expo-file-system/legacy';
 import { getSupabaseConfig, getSupabaseClient } from '../lib/supabase';
 import { UploadedFileMeta } from '../types/qr';
 
@@ -263,29 +269,94 @@ export const SupabaseStorageService = {
 
     if (onProgress) onProgress(20, Math.round((fileSize || 1000) * 0.2), fileSize || 1000);
 
-    // 3. Native Android / iOS Upload using direct binary stream to Supabase Storage REST API
+    // 3. Native Android / iOS Upload using direct binary stream
     if (Platform.OS !== 'web' && typeof uploadAsync === 'function') {
-      const restUploadUrl = `${supabaseUrl}/storage/v1/object/${bucket}/${storagePath}`;
-
-      if (onProgress) onProgress(45, Math.round((fileSize || 1000) * 0.45), fileSize || 1000);
-
+      let tempLocalUri: string | null = null;
       try {
-        const response = await uploadAsync(restUploadUrl, fileUri, {
-          httpMethod: 'POST',
-          uploadType: FileSystemUploadType.BINARY_CONTENT,
-          headers: {
-            apikey: supabaseKey,
-            Authorization: `Bearer ${supabaseKey}`,
-            'Content-Type': classification.mimeType,
-          },
-        });
+        if (onProgress) onProgress(30, Math.round((fileSize || 1000) * 0.3), fileSize || 1000);
 
-        if (response.status >= 200 && response.status < 300) {
+        // Ensure file is in a readable local cache file:// path (fixes Android content:// stream issues)
+        if (fileUri.startsWith('content://') || !fileUri.startsWith('file://')) {
+          const cacheFileName = `up_${Date.now()}_${uuid}.${ext}`;
+          tempLocalUri = `${cacheDirectory}${cacheFileName}`;
+          try {
+            await copyAsync({ from: fileUri, to: tempLocalUri });
+          } catch (copyErr) {
+            console.warn('[SUPABASE CACHE COPY FAILED, using direct URI]', copyErr);
+            tempLocalUri = null;
+          }
+        }
+
+        const effectiveUri = tempLocalUri || fileUri;
+
+        if (onProgress) onProgress(50, Math.round((fileSize || 1000) * 0.5), fileSize || 1000);
+
+        let uploadSucceeded = false;
+        let lastErrorText = '';
+
+        // Method A: Signed Upload URL via Supabase (preferred binary pipeline)
+        const client = await getSupabaseClient();
+        if (client) {
+          try {
+            const { data: signedData, error: signErr } = await client.storage
+              .from(bucket)
+              .createSignedUploadUrl(storagePath);
+
+            if (!signErr && signedData?.signedUrl) {
+              const fullSignedUrl = signedData.signedUrl.startsWith('http')
+                ? signedData.signedUrl
+                : `${supabaseUrl}/storage/v1${signedData.signedUrl.startsWith('/') ? '' : '/'}${signedData.signedUrl}`;
+
+              const putResponse = await uploadAsync(fullSignedUrl, effectiveUri, {
+                httpMethod: 'PUT',
+                uploadType: FileSystemUploadType.BINARY_CONTENT,
+                headers: {
+                  'Content-Type': classification.mimeType,
+                },
+              });
+
+              if (putResponse.status >= 200 && putResponse.status < 300) {
+                uploadSucceeded = true;
+              } else {
+                lastErrorText = `Signed PUT error: status ${putResponse.status}`;
+              }
+            }
+          } catch (signMethodErr: any) {
+            console.warn('[SIGNED UPLOAD ATTEMPT SKIPPED]', signMethodErr?.message);
+          }
+        }
+
+        // Method B: Direct Supabase REST API POST (if Method A didn't succeed)
+        if (!uploadSucceeded) {
+          const restUploadUrl = `${supabaseUrl}/storage/v1/object/${bucket}/${storagePath}`;
+          const postResponse = await uploadAsync(restUploadUrl, effectiveUri, {
+            httpMethod: 'POST',
+            uploadType: FileSystemUploadType.BINARY_CONTENT,
+            headers: {
+              apikey: supabaseKey,
+              Authorization: `Bearer ${supabaseKey}`,
+              'Content-Type': classification.mimeType,
+              'x-upsert': 'false',
+            },
+          });
+
+          if (postResponse.status >= 200 && postResponse.status < 300) {
+            uploadSucceeded = true;
+          } else {
+            let detail = `Status ${postResponse.status}`;
+            try {
+              const b = JSON.parse(postResponse.body);
+              detail = b.message || b.error || postResponse.body;
+            } catch {}
+            lastErrorText = detail;
+          }
+        }
+
+        if (uploadSucceeded) {
           if (onProgress) onProgress(100, fileSize || 1000, fileSize || 1000);
 
           const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucket}/${storagePath}`;
 
-          // Register in uploaded_files metadata table with 7-day expires_at
           await this.recordUploadedFileMetadata({
             id: uuid,
             bucket,
@@ -297,9 +368,7 @@ export const SupabaseStorageService = {
           });
 
           const totalDuration = Date.now() - startTime;
-          console.log(
-            `[SUPABASE UPLOAD OK] Direct Native -> ${publicUrl} (${totalDuration}ms, expires: ${expiresAt})`
-          );
+          console.log(`[SUPABASE UPLOAD OK] Direct Native -> ${publicUrl} (${totalDuration}ms)`);
 
           return {
             token_id: uuid,
@@ -322,45 +391,25 @@ export const SupabaseStorageService = {
             expires_at: expiresAt,
           };
         } else {
-          let errDetail = `Status ${response.status}`;
-          try {
-            const errBody = JSON.parse(response.body);
-            errDetail = errBody.message || errBody.error || response.body;
-          } catch {}
-
-          const lower = errDetail.toLowerCase();
-          if (
-            lower.includes('row-level security') ||
-            lower.includes('violates') ||
-            lower.includes('policy')
-          ) {
-            throw new Error('Storage upload permission is not configured.');
-          }
-
-          if (response.status === 404 || lower.includes('bucket') || lower.includes('not found')) {
-            throw new Error('Storage bucket or upload path is invalid.');
-          }
-
-          throw new Error(`Supabase Storage upload error: ${errDetail}`);
+          throw new Error(lastErrorText || 'Upload to storage could not be completed.');
         }
       } catch (err: any) {
         console.error('[SUPABASE DIRECT UPLOAD FAILED]', err);
         const lowerMsg = (err.message || '').toLowerCase();
         if (
-          lowerMsg.includes('network') ||
-          lowerMsg.includes('connection') ||
           lowerMsg.includes('failed to connect') ||
-          lowerMsg.includes('timeout')
+          lowerMsg.includes('timed out') ||
+          lowerMsg.includes('network request failed')
         ) {
-          throw new Error('Upload failed. Check your internet connection.');
+          throw new Error('Upload failed. Please check your internet connection.');
         }
-        if (lowerMsg.includes('storage upload permission is not configured')) {
-          throw err;
+        throw new Error(err.message || 'File upload failed. Please try again.');
+      } finally {
+        if (tempLocalUri) {
+          try {
+            await deleteAsync(tempLocalUri, { idempotent: true });
+          } catch {}
         }
-        if (lowerMsg.includes('storage bucket or upload path is invalid')) {
-          throw err;
-        }
-        throw new Error(err.message || 'Storage upload permission is not configured.');
       }
     }
 

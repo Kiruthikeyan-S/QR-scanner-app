@@ -140,7 +140,7 @@ export const URLPreviewCard: React.FC<URLPreviewCardProps> = ({
             {/* Instant Live QR Thumbnail powered by qrcodegen */}
             <View style={[styles.qrThumb, { backgroundColor: '#FFFFFF', borderColor: theme.borderLight }]}>
               <CustomQRCode
-                value={normalized || 'https://qrsmart.app'}
+                value={normalized || 'https://qrinova.app'}
                 size={56}
                 showContrastWarning={false}
               />
