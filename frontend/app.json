@@ -17,7 +17,7 @@
     },
     "android": {
       "package": "com.kiruthikeyan.scanner",
-      "versionCode": 6,
+      "versionCode": 7,
       "adaptiveIcon": {
         "backgroundColor": "#071827",
         "foregroundImage": "./assets/android-icon-foreground.png",

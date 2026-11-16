@@ -8,6 +8,8 @@ export type QRType =
   | 'contact'
   | 'location'
   | 'photo'
+  | 'video'
+  | 'audio'
   | 'file'
   | 'order_id'
   | 'json'
@@ -45,7 +47,7 @@ export interface UploadedFileMeta {
   file_type_label?: string;
   size_bytes: number;
   size_formatted: string;
-  file_type: 'photo' | 'file';
+  file_type: 'photo' | 'video' | 'audio' | 'file';
   storage_path?: string;
   view_url: string;
   download_url: string;

@@ -119,9 +119,18 @@ export const QRPreviewScreen: React.FC = () => {
   // Helper to format clean display text
   const getDisplayContent = () => {
     if (fileMeta) {
+      const typeLabel =
+        fileMeta.file_type_label ||
+        (fileMeta.file_type === 'photo'
+          ? 'Photo'
+          : fileMeta.file_type === 'video'
+          ? 'Video'
+          : fileMeta.file_type === 'audio'
+          ? 'Audio'
+          : 'Document');
       return {
         title: fileMeta.filename,
-        subtitle: `${fileMeta.size_formatted} • ${fileMeta.file_type_label || (fileMeta.file_type === 'photo' ? 'Photo' : 'Document')}`,
+        subtitle: `${fileMeta.size_formatted} • ${typeLabel}`,
         hasFileLink: true,
       };
     }

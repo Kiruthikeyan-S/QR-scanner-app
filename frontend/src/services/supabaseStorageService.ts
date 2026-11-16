@@ -3,12 +3,14 @@ import { uploadAsync, FileSystemUploadType } from 'expo-file-system/legacy';
 import { getSupabaseConfig, getSupabaseClient } from '../lib/supabase';
 import { UploadedFileMeta } from '../types/qr';
 
-const MAX_PHOTO_SIZE = 10 * 1024 * 1024; // 10 MB
-const MAX_FILE_SIZE = 25 * 1024 * 1024;  // 25 MB
+const MAX_PHOTO_SIZE = 15 * 1024 * 1024; // 15 MB
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50 MB (MP4, MOV)
+const MAX_AUDIO_SIZE = 25 * 1024 * 1024; // 25 MB (MP3, WAV, M4A)
+const MAX_FILE_SIZE = 25 * 1024 * 1024;  // 25 MB (PDF and docs)
 
 export interface FileClassification {
-  folder: 'photos' | 'pdfs' | 'files';
-  category: 'image' | 'pdf' | 'spreadsheet' | 'document' | 'json' | 'text' | 'archive' | 'file';
+  folder: 'photos' | 'videos' | 'audio' | 'pdfs' | 'files';
+  category: 'image' | 'video' | 'audio' | 'pdf' | 'spreadsheet' | 'document' | 'json' | 'text' | 'archive' | 'file';
   label: string;
   mimeType: string;
 }
@@ -40,9 +42,55 @@ export const SupabaseStorageService = {
     return defaultExt;
   },
 
-  classifyFile(filename: string, declaredType?: 'photo' | 'file', rawMime?: string): FileClassification {
+  classifyFile(filename: string, declaredType?: 'photo' | 'video' | 'audio' | 'file', rawMime?: string): FileClassification {
     const ext = this.sanitizeExt(filename);
     const mime = rawMime || '';
+
+    // Videos -> qr-files/videos/
+    if (
+      declaredType === 'video' ||
+      ['mp4', 'mov', 'm4v', 'webm', '3gp'].includes(ext) ||
+      mime.startsWith('video/')
+    ) {
+      const resolvedMime = mime.startsWith('video/')
+        ? mime
+        : ext === 'mov'
+        ? 'video/quicktime'
+        : ext === 'webm'
+        ? 'video/webm'
+        : 'video/mp4';
+      return {
+        folder: 'videos',
+        category: 'video',
+        label: 'Video File',
+        mimeType: resolvedMime,
+      };
+    }
+
+    // Audio -> qr-files/audio/
+    if (
+      declaredType === 'audio' ||
+      ['mp3', 'wav', 'm4a', 'aac', 'ogg', 'flac'].includes(ext) ||
+      mime.startsWith('audio/')
+    ) {
+      const resolvedMime = mime.startsWith('audio/')
+        ? mime
+        : ext === 'wav'
+        ? 'audio/wav'
+        : ext === 'm4a'
+        ? 'audio/m4a'
+        : ext === 'aac'
+        ? 'audio/aac'
+        : ext === 'ogg'
+        ? 'audio/ogg'
+        : 'audio/mpeg';
+      return {
+        folder: 'audio',
+        category: 'audio',
+        label: 'Audio File',
+        mimeType: resolvedMime,
+      };
+    }
 
     // Photos / Images -> qr-files/photos/
     if (
@@ -162,20 +210,32 @@ export const SupabaseStorageService = {
   async uploadFile(
     fileUri: string,
     fileName: string,
-    fileType: 'photo' | 'file' = 'photo',
+    fileType: 'photo' | 'video' | 'audio' | 'file' = 'photo',
     mimeType?: string,
     fileSize?: number,
     onProgress?: (progress: number, bytesSent?: number, totalBytes?: number) => void
   ): Promise<UploadedFileMeta> {
     const startTime = Date.now();
-    const cleanFileName = fileName || (fileType === 'photo' ? 'photo.jpg' : 'document.pdf');
+    const cleanFileName =
+      fileName ||
+      (fileType === 'photo'
+        ? 'photo.jpg'
+        : fileType === 'video'
+        ? 'video.mp4'
+        : fileType === 'audio'
+        ? 'audio.mp3'
+        : 'document.pdf');
     const classification = this.classifyFile(cleanFileName, fileType, mimeType);
 
     // 1. Validate File Size Boundaries
-    const maxAllowed = classification.category === 'image' ? MAX_PHOTO_SIZE : MAX_FILE_SIZE;
+    let maxAllowed = MAX_FILE_SIZE;
+    if (classification.category === 'image') maxAllowed = MAX_PHOTO_SIZE;
+    else if (classification.category === 'video') maxAllowed = MAX_VIDEO_SIZE;
+    else if (classification.category === 'audio') maxAllowed = MAX_AUDIO_SIZE;
+
     if (fileSize && fileSize > maxAllowed) {
       throw new Error(
-        `File size (${this.formatBytes(fileSize)}) exceeds the ${this.formatBytes(maxAllowed)} limit.`
+        `File size (${this.formatBytes(fileSize)}) exceeds the ${this.formatBytes(maxAllowed)} limit for ${classification.label}.`
       );
     }
 

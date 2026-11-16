@@ -10,10 +10,14 @@ logger = logging.getLogger("qr_smart.storage")
 logging.basicConfig(level=logging.INFO)
 
 # Size constraints
-MAX_PHOTO_SIZE = 10 * 1024 * 1024   # 10 MB
+MAX_PHOTO_SIZE = 15 * 1024 * 1024   # 15 MB
+MAX_VIDEO_SIZE = 50 * 1024 * 1024   # 50 MB
+MAX_AUDIO_SIZE = 25 * 1024 * 1024   # 25 MB
 MAX_FILE_SIZE = 25 * 1024 * 1024    # 25 MB
 
 PHOTO_EXTS = {"jpg", "jpeg", "png", "webp", "gif", "svg"}
+VIDEO_EXTS = {"mp4", "mov", "m4v", "webm", "3gp"}
+AUDIO_EXTS = {"mp3", "wav", "m4a", "aac", "ogg", "flac"}
 PDF_EXTS = {"pdf"}
 SPREADSHEET_EXTS = {"xlsx", "xls", "csv"}
 DOCUMENT_EXTS = {"docx", "doc", "odt", "rtf"}
@@ -24,6 +28,8 @@ ARCHIVE_EXTS = {"zip", "tar", "gz", "rar", "7z"}
 # Comprehensive supported extensions
 ALL_ALLOWED_EXTS = (
     PHOTO_EXTS
+    | VIDEO_EXTS
+    | AUDIO_EXTS
     | PDF_EXTS
     | SPREADSHEET_EXTS
     | DOCUMENT_EXTS
@@ -65,7 +71,27 @@ def detect_file_info(filename: str, declared_type: Optional[str] = None, content
     ext = sanitize_ext(filename)
     mime = content_type or ""
 
-    # 1. Images
+    # 1. Video Files -> qr-files/videos/
+    if ext in VIDEO_EXTS or mime.startswith("video/") or declared_type == "video":
+        resolved_mime = mime if mime.startswith("video/") else (
+            "video/quicktime" if ext == "mov"
+            else "video/webm" if ext == "webm"
+            else "video/mp4"
+        )
+        return "videos", "video", "Video File", resolved_mime
+
+    # 2. Audio Files -> qr-files/audio/
+    if ext in AUDIO_EXTS or mime.startswith("audio/") or declared_type == "audio":
+        resolved_mime = mime if mime.startswith("audio/") else (
+            "audio/wav" if ext == "wav"
+            else "audio/m4a" if ext == "m4a"
+            else "audio/aac" if ext == "aac"
+            else "audio/ogg" if ext == "ogg"
+            else "audio/mpeg"
+        )
+        return "audio", "audio", "Audio File", resolved_mime
+
+    # 3. Images
     if ext in PHOTO_EXTS or mime.startswith("image/") or declared_type == "photo":
         resolved_mime = mime if mime.startswith("image/") else (
             "image/jpeg" if ext in ("jpg", "jpeg")

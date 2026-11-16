@@ -10,7 +10,7 @@ import {
   Pressable,
 } from 'react-native';
 import { ImageScanService, DecodedCode } from '../services/imageScanService';
-import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
+import { CameraView, useCameraPermissions, BarcodeScanningResult, BarcodeType } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -29,6 +29,23 @@ import { triggerFeedback, triggerLightHaptic } from '../utils/feedback';
 import { ActionHandler } from '../utils/actionHandler';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+// All supported 1D and 2D barcode formats in Expo Camera SDK 57
+const SUPPORTED_BARCODE_TYPES: BarcodeType[] = [
+  'qr',
+  'ean13',
+  'ean8',
+  'upc_a',
+  'upc_e',
+  'code128',
+  'code39',
+  'code93',
+  'codabar',
+  'itf14',
+  'pdf417',
+  'aztec',
+  'datamatrix',
+];
 
 export const ScannerScreen: React.FC = () => {
   const { theme } = useTheme();
@@ -54,7 +71,8 @@ export const ScannerScreen: React.FC = () => {
     isLockedRef.current = true;
     setIsScanningLocked(true);
 
-    await processScannedData(rawData);
+    const isBarcode = result.type ? result.type.toLowerCase() !== 'qr' : false;
+    await processScannedData(rawData, isBarcode);
   };
 
   const processScannedData = async (rawData: string, isBarcode = false) => {
@@ -269,7 +287,7 @@ export const ScannerScreen: React.FC = () => {
         facing="back"
         enableTorch={torchEnabled}
         barcodeScannerSettings={{
-          barcodeTypes: ['qr'],
+          barcodeTypes: SUPPORTED_BARCODE_TYPES,
         }}
         onBarcodeScanned={isScanningLocked ? undefined : handleBarcodeScanned}
       />

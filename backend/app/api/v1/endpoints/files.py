@@ -13,12 +13,19 @@ from sqlalchemy.orm import Session
 
 from app.database.session import get_db, engine, Base
 from app.models.stored_file import StoredFile
+from app.services.cleanup_service import cleanup_expired_local_and_db_files
 
 # Setup logger for persistent debugging
 logger = logging.getLogger("qr_smart.files")
 logging.basicConfig(level=logging.INFO)
 
 router = APIRouter()
+
+@router.post("/cleanup-expired", summary="Trigger 7-day retention cleanup")
+def run_cleanup_endpoint(db: Session = Depends(get_db)):
+    """Triggers safe, idempotent cleanup of files older than 7 days."""
+    result = cleanup_expired_local_and_db_files(db)
+    return result
 
 # Uploads directory
 UPLOAD_DIR = Path(__file__).resolve().parent.parent.parent.parent / "uploads"
@@ -320,6 +327,8 @@ async def view_file_page(file_id: str, request: Request, raw: bool = False, db: 
     raw_url = f"{base_url}/files/raw/{record['file_id']}"
 
     is_image = record["file_type"] == "photo" or record["content_type"].startswith("image/")
+    is_video = record["file_type"] == "video" or record["content_type"].startswith("video/") or record["filename"].lower().endswith((".mp4", ".mov", ".m4v", ".webm"))
+    is_audio = record["file_type"] == "audio" or record["content_type"].startswith("audio/") or record["filename"].lower().endswith((".mp3", ".wav", ".m4a", ".aac", ".ogg"))
     is_pdf = record["content_type"] == "application/pdf" or record["filename"].lower().endswith(".pdf")
 
     preview_html = ""
@@ -329,6 +338,24 @@ async def view_file_page(file_id: str, request: Request, raw: bool = False, db: 
             <a href="{raw_url}" target="_blank">
                 <img src="{raw_url}" alt="{record['filename']}" style="max-width: 100%; max-height: 420px; border-radius: 12px; object-fit: contain; background: #0f172a; border: 1px solid #334155;" />
             </a>
+        </div>
+        '''
+    elif is_video:
+        preview_html = f'''
+        <div style="text-align: center; margin: 20px 0;">
+            <video controls playsinline style="width: 100%; max-height: 420px; border-radius: 12px; background: #000; border: 1px solid #334155;">
+                <source src="{raw_url}" type="{record['content_type']}">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+        '''
+    elif is_audio:
+        preview_html = f'''
+        <div style="text-align: center; margin: 24px 0; padding: 20px; background: #0F172A; border-radius: 12px; border: 1px solid #334155;">
+            <audio controls style="width: 100%;">
+                <source src="{raw_url}" type="{record['content_type']}">
+                Your browser does not support the audio element.
+            </audio>
         </div>
         '''
     elif is_pdf:

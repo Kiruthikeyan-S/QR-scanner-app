@@ -22,7 +22,7 @@ export const FileUploadService = {
   async uploadFile(
     fileUri: string,
     fileName: string,
-    fileType: 'photo' | 'file' = 'photo',
+    fileType: 'photo' | 'video' | 'audio' | 'file' = 'photo',
     mimeType?: string,
     fileSize?: number,
     onProgress?: (progress: number, bytesSent?: number, totalBytes?: number) => void

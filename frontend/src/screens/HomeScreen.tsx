@@ -687,6 +687,72 @@ export const HomeScreen: React.FC = () => {
                 />
               </Pressable>
 
+              {/* 3b. Video QR */}
+              <Pressable
+                onPress={() =>
+                  handleCreateOption(() =>
+                    navigation.navigate('GeneratorForm', { type: 'video' })
+                  )
+                }
+                style={({ pressed }) => [
+                  styles.createOptionRow,
+                  {
+                    backgroundColor: pressed ? theme.surfaceVariant : 'transparent',
+                    borderColor: theme.border,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.createOptionIconBox,
+                    { backgroundColor: palette.rose[500] + '18' },
+                  ]}
+                >
+                  <AppIcon name="videocam-outline" size={22} color={palette.rose[500]} />
+                </View>
+                <Text style={[styles.createOptionTitle, { color: theme.text, flex: 1 }]}>
+                  Video QR
+                </Text>
+                <AppIcon
+                  name="chevron-forward"
+                  size={20}
+                  color={theme.textMuted}
+                />
+              </Pressable>
+
+              {/* 3c. Audio QR */}
+              <Pressable
+                onPress={() =>
+                  handleCreateOption(() =>
+                    navigation.navigate('GeneratorForm', { type: 'audio' })
+                  )
+                }
+                style={({ pressed }) => [
+                  styles.createOptionRow,
+                  {
+                    backgroundColor: pressed ? theme.surfaceVariant : 'transparent',
+                    borderColor: theme.border,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.createOptionIconBox,
+                    { backgroundColor: palette.indigo[500] + '18' },
+                  ]}
+                >
+                  <AppIcon name="musical-notes-outline" size={22} color={palette.indigo[500]} />
+                </View>
+                <Text style={[styles.createOptionTitle, { color: theme.text, flex: 1 }]}>
+                  Audio QR
+                </Text>
+                <AppIcon
+                  name="chevron-forward"
+                  size={20}
+                  color={theme.textMuted}
+                />
+              </Pressable>
+
               {/* 4. Order ID */}
               <Pressable
                 onPress={() =>

@@ -23,6 +23,7 @@ import { SavedQRStorage } from '../storage/savedQRStorage';
 import { UserSettings, defaultSettings } from '../types/settings';
 import { APP_INFO } from '../constants/config';
 import { triggerFeedback, triggerLightHaptic } from '../utils/feedback';
+import { NotificationService, NotificationPreferences } from '../services/notificationService';
 
 export const SettingsScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -33,12 +34,54 @@ export const SettingsScreen: React.FC = () => {
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
   const [aboutModalVisible, setAboutModalVisible] = useState(false);
   const [privacyModalVisible, setPrivacyModalVisible] = useState(false);
+  const [notifPrefs, setNotifPrefs] = useState<NotificationPreferences>({
+    enabled: false,
+    dayOfWeek: 1,
+    hour: 10,
+    minute: 0,
+  });
 
   useEffect(() => {
     SettingsStorage.get().then((loaded) => {
       setSettings(loaded);
     });
+    NotificationService.getPreferences().then((prefs) => {
+      setNotifPrefs(prefs);
+    });
   }, []);
+
+  const handleToggleWeeklyNotifications = async (val: boolean) => {
+    triggerLightHaptic();
+    if (val) {
+      const scheduled = await NotificationService.scheduleWeeklyNotification();
+      if (scheduled) {
+        setNotifPrefs(prev => ({ ...prev, enabled: true }));
+        Alert.alert(
+          'Weekly Reminders Enabled',
+          'You will receive a weekly reminder every Sunday at 10:00 AM with your scan & creation activity.'
+        );
+      } else {
+        setNotifPrefs(prev => ({ ...prev, enabled: false }));
+        Alert.alert(
+          'Notification Permission Required',
+          'Please allow notifications in your device settings to receive your weekly summary.'
+        );
+      }
+    } else {
+      await NotificationService.cancelWeeklyNotification();
+      setNotifPrefs(prev => ({ ...prev, enabled: false }));
+    }
+  };
+
+  const handleTestNotification = async () => {
+    triggerLightHaptic();
+    const scheduled = await NotificationService.scheduleDevTestNotification();
+    if (scheduled) {
+      Alert.alert('Test Scheduled', 'A test notification will arrive in 60 seconds. You can minimize the app.');
+    } else {
+      Alert.alert('Permission Denied', 'Please enable notifications for Qrinova in device settings first.');
+    }
+  };
 
   const updateSetting = async <K extends keyof UserSettings>(
     key: K,
@@ -164,7 +207,37 @@ export const SettingsScreen: React.FC = () => {
           />
         </View>
 
-        {/* Section 2: APPEARANCE & PERMISSIONS */}
+        {/* Section 2: WEEKLY NOTIFICATIONS */}
+        <Text style={[styles.sectionHeading, { color: theme.textSecondary }]}>
+          WEEKLY NOTIFICATIONS
+        </Text>
+        <View style={[styles.cardGroup, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+          <SettingRow
+            icon="notifications-outline"
+            iconColor={theme.primary}
+            iconBgColor={theme.primaryLight}
+            title="Weekly Reminder"
+            subtitle="Every Sunday at 10:00 AM with your scan & QR summary"
+            type="toggle"
+            value={notifPrefs.enabled}
+            onValueChange={handleToggleWeeklyNotifications}
+          />
+          {__DEV__ && (
+            <>
+              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+              <SettingRow
+                icon="timer-outline"
+                iconColor={palette.indigo[500]}
+                iconBgColor={isDark ? 'rgba(99, 102, 241, 0.15)' : palette.indigo[50]}
+                title="Test Notification (60s Dev)"
+                type="action"
+                onPress={handleTestNotification}
+              />
+            </>
+          )}
+        </View>
+
+        {/* Section 3: APPEARANCE & PERMISSIONS */}
         <Text style={[styles.sectionHeading, { color: theme.textSecondary }]}>
           APPEARANCE & PERMISSIONS
         </Text>

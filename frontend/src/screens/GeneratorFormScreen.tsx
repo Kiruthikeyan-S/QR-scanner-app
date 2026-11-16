@@ -34,6 +34,7 @@ import { QRFormatter } from '../utils/qrFormatter';
 import { FileUploadService } from '../services/fileUploadService';
 import { QRCustomization } from '../types/qr';
 import { triggerLightHaptic, triggerFeedback } from '../utils/feedback';
+import { Video, ResizeMode, Audio } from 'expo-av';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type FormRouteProp = RouteProp<RootStackParamList, 'GeneratorForm'>;
@@ -104,6 +105,25 @@ export const GeneratorFormScreen: React.FC = () => {
     mimeType?: string;
   } | null>(null);
 
+  // Video & Audio States
+  const [selectedVideo, setSelectedVideo] = useState<{
+    uri: string;
+    name: string;
+    size: number;
+    mimeType?: string;
+    duration?: number;
+  } | null>(null);
+
+  const [selectedAudio, setSelectedAudio] = useState<{
+    uri: string;
+    name: string;
+    size: number;
+    mimeType?: string;
+  } | null>(null);
+
+  const [audioSound, setAudioSound] = useState<Audio.Sound | null>(null);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadDetailText, setUploadDetailText] = useState('');
@@ -126,11 +146,26 @@ export const GeneratorFormScreen: React.FC = () => {
   React.useEffect(() => {
     setSelectedPhoto(null);
     setSelectedPdf(null);
+    setSelectedVideo(null);
+    setSelectedAudio(null);
+    if (audioSound) {
+      audioSound.unloadAsync().catch(() => {});
+      setAudioSound(null);
+      setIsPlayingAudio(false);
+    }
     setIsUploading(false);
     setUploadProgress(0);
     setUploadDetailText('');
     uploadCache.current = {};
   }, [type]);
+
+  React.useEffect(() => {
+    return () => {
+      if (audioSound) {
+        audioSound.unloadAsync().catch(() => {});
+      }
+    };
+  }, [audioSound]);
 
   // Photo Picker Handler (uses Android system photo picker without requiring broad gallery permissions)
   const handlePickPhoto = async () => {
@@ -213,6 +248,126 @@ export const GeneratorFormScreen: React.FC = () => {
     uploadCache.current = {};
   };
 
+  // Video Picker Handler (MP4, MOV up to 50 MB)
+  const handlePickVideo = async () => {
+    try {
+      triggerLightHaptic();
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['videos'],
+        allowsEditing: false,
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        const name = asset.fileName || `video_${Date.now()}.mp4`;
+        const size = asset.fileSize || 0;
+        const mimeType = asset.mimeType || 'video/mp4';
+
+        if (size > 50 * 1024 * 1024) {
+          Alert.alert('File Too Large', 'Videos must be 50 MB or smaller.');
+          return;
+        }
+
+        uploadCache.current = {};
+        setSelectedVideo({
+          uri: asset.uri,
+          name,
+          size,
+          mimeType,
+          duration: asset.duration || undefined,
+        });
+      }
+    } catch (e: any) {
+      Alert.alert('Picker Error', e.message || 'Failed to select video.');
+    }
+  };
+
+  const handleRemoveVideo = () => {
+    triggerLightHaptic();
+    setSelectedVideo(null);
+    uploadCache.current = {};
+  };
+
+  // Audio Picker Handler (MP3, WAV, M4A up to 25 MB)
+  const handlePickAudio = async () => {
+    try {
+      triggerLightHaptic();
+      if (audioSound) {
+        await audioSound.unloadAsync();
+        setAudioSound(null);
+        setIsPlayingAudio(false);
+      }
+
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['audio/*', 'audio/mpeg', 'audio/wav', 'audio/x-m4a', 'audio/mp4'],
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        const size = asset.size || 0;
+        const name = asset.name || 'audio.mp3';
+
+        if (size > 25 * 1024 * 1024) {
+          Alert.alert('File Too Large', 'Audio files must be 25 MB or smaller.');
+          return;
+        }
+
+        uploadCache.current = {};
+        setSelectedAudio({
+          uri: asset.uri,
+          name,
+          size,
+          mimeType: asset.mimeType || 'audio/mpeg',
+        });
+      }
+    } catch (e: any) {
+      Alert.alert('Picker Error', e.message || 'Failed to select audio file.');
+    }
+  };
+
+  const handleTogglePlayAudio = async () => {
+    if (!selectedAudio) return;
+    try {
+      triggerLightHaptic();
+      if (audioSound) {
+        if (isPlayingAudio) {
+          await audioSound.pauseAsync();
+          setIsPlayingAudio(false);
+        } else {
+          await audioSound.playAsync();
+          setIsPlayingAudio(true);
+        }
+      } else {
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: selectedAudio.uri },
+          { shouldPlay: true }
+        );
+        sound.setOnPlaybackStatusUpdate((status) => {
+          if (status.isLoaded && status.didJustFinish) {
+            setIsPlayingAudio(false);
+          }
+        });
+        setAudioSound(sound);
+        setIsPlayingAudio(true);
+      }
+    } catch (err: any) {
+      Alert.alert('Playback Error', 'Cannot preview this audio file.');
+    }
+  };
+
+  const handleRemoveAudio = async () => {
+    triggerLightHaptic();
+    if (audioSound) {
+      await audioSound.unloadAsync().catch(() => {});
+      setAudioSound(null);
+      setIsPlayingAudio(false);
+    }
+    setSelectedAudio(null);
+    uploadCache.current = {};
+  };
+
   // Format JSON Action Handler
   const handleFormatJson = () => {
     triggerLightHaptic();
@@ -265,6 +420,10 @@ export const GeneratorFormScreen: React.FC = () => {
         return locLat.trim() && locLng.trim() ? QRFormatter.formatLocation({ latitude: locLat, longitude: locLng, label: locLabel }) : 'geo:37.7749,-122.4194';
       case 'photo':
         return selectedPhoto ? `https://qrinova.app/photo-preview` : 'https://qrinova.app';
+      case 'video':
+        return selectedVideo ? `https://qrinova.app/video-preview` : 'https://qrinova.app';
+      case 'audio':
+        return selectedAudio ? `https://qrinova.app/audio-preview` : 'https://qrinova.app';
       case 'file':
         return selectedPdf ? `https://qrinova.app/file-preview` : 'https://qrinova.app';
       case 'order_id':
@@ -289,9 +448,17 @@ export const GeneratorFormScreen: React.FC = () => {
     }
   };
 
-  // Check if file is ready (for photo and file types)
+  // Check if file is ready (for photo, video, audio, and file types)
   const isFileSelected =
-    type === 'photo' ? Boolean(selectedPhoto) : type === 'file' ? Boolean(selectedPdf) : true;
+    type === 'photo'
+      ? Boolean(selectedPhoto)
+      : type === 'video'
+      ? Boolean(selectedVideo)
+      : type === 'audio'
+      ? Boolean(selectedAudio)
+      : type === 'file'
+      ? Boolean(selectedPdf)
+      : true;
 
   const handleGenerate = async () => {
     let payload = '';
@@ -528,6 +695,144 @@ export const GeneratorFormScreen: React.FC = () => {
         } catch (e: any) {
           setIsUploading(false);
           Alert.alert('Upload Failed', e.message || 'Could not upload photo to server.');
+          return;
+        } finally {
+          setIsUploading(false);
+        }
+        break;
+      }
+      case 'video': {
+        if (!selectedVideo) {
+          Alert.alert('No Video Selected', 'Please choose a video file to generate a Video QR code.');
+          return;
+        }
+
+        const cached = uploadCache.current[selectedVideo.uri];
+        if (cached && cached.url && cached.url.startsWith('https://')) {
+          payload = cached.url;
+          title = `Video: ${cached.filename}`;
+          fileMeta = cached;
+          break;
+        }
+
+        try {
+          const netState = await Network.getNetworkStateAsync();
+          if (netState.isConnected === false) {
+            Alert.alert(
+              'No Internet Connection',
+              'An active internet connection is required to upload videos and generate shareable QR codes.'
+            );
+            return;
+          }
+        } catch {}
+
+        try {
+          setIsUploading(true);
+          setUploadProgress(10);
+          setUploadDetailText(`Uploading video ${selectedVideo.name}...`);
+
+          const result = await FileUploadService.uploadFile(
+            selectedVideo.uri,
+            selectedVideo.name,
+            'video',
+            selectedVideo.mimeType,
+            selectedVideo.size,
+            (p, sent, total) => {
+              setUploadProgress(p);
+              if (sent && total) {
+                setUploadDetailText(`Uploading... ${p}% (${FileUploadService.formatBytes(sent)} / ${FileUploadService.formatBytes(total)})`);
+              }
+            }
+          );
+
+          payload = result.url || result.view_url || result.qr_url || '';
+          uploadCache.current[selectedVideo.uri] = result;
+
+          title = `Video: ${result.filename}`;
+          fileMeta = {
+            filename: result.filename,
+            original_name: result.original_name || result.filename,
+            size_formatted: result.size_formatted,
+            file_type: 'video' as const,
+            content_type: result.content_type,
+            file_category: 'video',
+            file_type_label: 'Video File',
+            storage_path: result.storage_path,
+            storage_provider: result.storage_provider || 'supabase',
+            is_supabase: result.is_supabase ?? true,
+          };
+        } catch (e: any) {
+          setIsUploading(false);
+          Alert.alert('Upload Failed', e.message || 'Could not upload video to server.');
+          return;
+        } finally {
+          setIsUploading(false);
+        }
+        break;
+      }
+      case 'audio': {
+        if (!selectedAudio) {
+          Alert.alert('No Audio Selected', 'Please choose an audio file to generate an Audio QR code.');
+          return;
+        }
+
+        const cached = uploadCache.current[selectedAudio.uri];
+        if (cached && cached.url && cached.url.startsWith('https://')) {
+          payload = cached.url;
+          title = `Audio: ${cached.filename}`;
+          fileMeta = cached;
+          break;
+        }
+
+        try {
+          const netState = await Network.getNetworkStateAsync();
+          if (netState.isConnected === false) {
+            Alert.alert(
+              'No Internet Connection',
+              'An active internet connection is required to upload audio and generate shareable QR codes.'
+            );
+            return;
+          }
+        } catch {}
+
+        try {
+          setIsUploading(true);
+          setUploadProgress(10);
+          setUploadDetailText(`Uploading audio ${selectedAudio.name}...`);
+
+          const result = await FileUploadService.uploadFile(
+            selectedAudio.uri,
+            selectedAudio.name,
+            'audio',
+            selectedAudio.mimeType,
+            selectedAudio.size,
+            (p, sent, total) => {
+              setUploadProgress(p);
+              if (sent && total) {
+                setUploadDetailText(`Uploading... ${p}% (${FileUploadService.formatBytes(sent)} / ${FileUploadService.formatBytes(total)})`);
+              }
+            }
+          );
+
+          payload = result.url || result.view_url || result.qr_url || '';
+          uploadCache.current[selectedAudio.uri] = result;
+
+          title = `Audio: ${result.filename}`;
+          fileMeta = {
+            filename: result.filename,
+            original_name: result.original_name || result.filename,
+            size_formatted: result.size_formatted,
+            file_type: 'audio' as const,
+            content_type: result.content_type,
+            file_category: 'audio',
+            file_type_label: 'Audio File',
+            storage_path: result.storage_path,
+            storage_provider: result.storage_provider || 'supabase',
+            is_supabase: result.is_supabase ?? true,
+          };
+        } catch (e: any) {
+          setIsUploading(false);
+          Alert.alert('Upload Failed', e.message || 'Could not upload audio to server.');
           return;
         } finally {
           setIsUploading(false);
@@ -1257,6 +1562,144 @@ export const GeneratorFormScreen: React.FC = () => {
           </View>
         )}
 
+        {/* Video QR Form */}
+        {type === 'video' && (
+          <View style={styles.fieldGroup}>
+            <Text style={[styles.label, { color: theme.text }]}>Selected Video *</Text>
+            {selectedVideo ? (
+              <View style={[styles.compactFileCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                <View style={[styles.compactDocIconBox, { backgroundColor: isDark ? 'rgba(244, 63, 94, 0.18)' : palette.rose[50] }]}>
+                  <Ionicons name="videocam" size={24} color={palette.rose[500]} />
+                </View>
+                <View style={styles.compactFileInfo}>
+                  <Text style={[styles.compactFileName, { color: theme.text }]} numberOfLines={1}>
+                    {selectedVideo.name}
+                  </Text>
+                  <Text style={[styles.compactFileSize, { color: theme.textSecondary }]}>
+                    {FileUploadService.formatBytes(selectedVideo.size)} • Video
+                  </Text>
+                </View>
+                <View style={styles.compactActionsCol}>
+                  <Pressable
+                    onPress={handlePickVideo}
+                    style={[styles.compactSmallBtn, { backgroundColor: theme.surfaceVariant }]}
+                  >
+                    <Ionicons name="refresh-outline" size={13} color={theme.text} />
+                    <Text style={[styles.compactSmallBtnText, { color: theme.text }]}>Change</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={handleRemoveVideo}
+                    style={[styles.compactSmallBtn, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : palette.rose[50] }]}
+                  >
+                    <Ionicons name="trash-outline" size={13} color={palette.rose[500]} />
+                    <Text style={[styles.compactSmallBtnText, { color: palette.rose[500] }]}>Remove</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : (
+              <Pressable
+                onPress={handlePickVideo}
+                style={({ pressed }) => [
+                  styles.uploadBox,
+                  { backgroundColor: theme.surfaceVariant, borderColor: theme.border, opacity: pressed ? 0.8 : 1 },
+                ]}
+              >
+                <View style={[styles.uploadIconCircle, { backgroundColor: isDark ? 'rgba(244, 63, 94, 0.18)' : palette.rose[50] }]}>
+                  <Ionicons name="videocam-outline" size={32} color={palette.rose[500]} />
+                </View>
+                <Text style={[styles.uploadTitle, { color: theme.text }]}>Select & Upload Video</Text>
+                <Text style={[styles.uploadSubtitle, { color: theme.textSecondary }]}>
+                  Supported: MP4, MOV • Max 50 MB
+                </Text>
+                <View style={[styles.uploadPillBtn, { backgroundColor: palette.rose[500] }]}>
+                  <Ionicons name="add" size={16} color="#FFFFFF" style={{ marginRight: 4 }} />
+                  <Text style={styles.uploadPillText}>Choose Video</Text>
+                </View>
+              </Pressable>
+            )}
+
+            {/* Video Inline Preview */}
+            {selectedVideo && (
+              <View style={{ marginTop: spacing.md, borderRadius: borderRadius.lg, overflow: 'hidden', backgroundColor: '#000' }}>
+                <Video
+                  source={{ uri: selectedVideo.uri }}
+                  style={{ width: '100%', height: 200 }}
+                  useNativeControls
+                  resizeMode={ResizeMode.CONTAIN}
+                  isLooping={false}
+                />
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Audio QR Form */}
+        {type === 'audio' && (
+          <View style={styles.fieldGroup}>
+            <Text style={[styles.label, { color: theme.text }]}>Selected Audio *</Text>
+            {selectedAudio ? (
+              <View style={[styles.compactFileCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                <View style={[styles.compactDocIconBox, { backgroundColor: isDark ? 'rgba(99, 102, 241, 0.18)' : palette.indigo[50] }]}>
+                  <Ionicons name="musical-notes" size={24} color={palette.indigo[500]} />
+                </View>
+                <View style={styles.compactFileInfo}>
+                  <Text style={[styles.compactFileName, { color: theme.text }]} numberOfLines={1}>
+                    {selectedAudio.name}
+                  </Text>
+                  <Text style={[styles.compactFileSize, { color: theme.textSecondary }]}>
+                    {FileUploadService.formatBytes(selectedAudio.size)} • Audio
+                  </Text>
+                </View>
+                <View style={styles.compactActionsCol}>
+                  <Pressable
+                    onPress={handleTogglePlayAudio}
+                    style={[styles.compactSmallBtn, { backgroundColor: isDark ? 'rgba(99, 102, 241, 0.2)' : palette.indigo[50] }]}
+                  >
+                    <Ionicons name={isPlayingAudio ? 'pause' : 'play'} size={13} color={palette.indigo[600]} />
+                    <Text style={[styles.compactSmallBtnText, { color: palette.indigo[600] }]}>
+                      {isPlayingAudio ? 'Pause' : 'Play'}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={handlePickAudio}
+                    style={[styles.compactSmallBtn, { backgroundColor: theme.surfaceVariant }]}
+                  >
+                    <Ionicons name="refresh-outline" size={13} color={theme.text} />
+                    <Text style={[styles.compactSmallBtnText, { color: theme.text }]}>Change</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={handleRemoveAudio}
+                    style={[styles.compactSmallBtn, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : palette.rose[50] }]}
+                  >
+                    <Ionicons name="trash-outline" size={13} color={palette.rose[500]} />
+                    <Text style={[styles.compactSmallBtnText, { color: palette.rose[500] }]}>Remove</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : (
+              <Pressable
+                onPress={handlePickAudio}
+                style={({ pressed }) => [
+                  styles.uploadBox,
+                  { backgroundColor: theme.surfaceVariant, borderColor: theme.border, opacity: pressed ? 0.8 : 1 },
+                ]}
+              >
+                <View style={[styles.uploadIconCircle, { backgroundColor: isDark ? 'rgba(99, 102, 241, 0.18)' : palette.indigo[50] }]}>
+                  <Ionicons name="musical-notes-outline" size={32} color={palette.indigo[500]} />
+                </View>
+                <Text style={[styles.uploadTitle, { color: theme.text }]}>Select & Upload Audio</Text>
+                <Text style={[styles.uploadSubtitle, { color: theme.textSecondary }]}>
+                  Supported: MP3, WAV, M4A • Max 25 MB
+                </Text>
+                <View style={[styles.uploadPillBtn, { backgroundColor: palette.indigo[600] }]}>
+                  <Ionicons name="add" size={16} color="#FFFFFF" style={{ marginRight: 4 }} />
+                  <Text style={styles.uploadPillText}>Choose Audio</Text>
+                </View>
+              </Pressable>
+            )}
+          </View>
+        )}
+
         {/* PDF / File QR Form */}
         {type === 'file' && (
           <View style={styles.fieldGroup}>
@@ -1315,12 +1758,18 @@ export const GeneratorFormScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Pre-selection Placeholder for Photo & PDF */}
+        {/* Pre-selection Placeholder for Media & Files */}
         {!isFileSelected && (
           <View style={[styles.placeholderCard, { backgroundColor: theme.surfaceVariant, borderColor: theme.borderLight }]}>
             <Ionicons name="color-palette-outline" size={24} color={theme.textMuted} style={{ marginBottom: 6 }} />
             <Text style={[styles.placeholderTitle, { color: theme.text }]}>
-              {type === 'photo' ? 'Select a photo first' : 'Select a PDF first'}
+              {type === 'photo'
+                ? 'Select a photo first'
+                : type === 'video'
+                ? 'Select a video first'
+                : type === 'audio'
+                ? 'Select an audio file first'
+                : 'Select a PDF first'}
             </Text>
             <Text style={[styles.placeholderSubtitle, { color: theme.textSecondary }]}>
               Once selected, live QR preview and styling options will appear.
