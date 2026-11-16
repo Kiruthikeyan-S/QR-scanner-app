@@ -21,16 +21,18 @@ const DEFAULT_PREFERENCES: NotificationPreferences = {
   minute: 0,
 };
 
-// Configure local presentation handler
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+// Configure local presentation handler safely
+try {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+} catch {}
 
 export const NotificationService = {
   async getPreferences(): Promise<NotificationPreferences> {

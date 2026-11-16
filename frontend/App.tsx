@@ -1,5 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, LogBox } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
@@ -8,6 +8,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { NetworkGate } from './src/components/NetworkGate';
+
+// Suppress known Expo Go development warnings for local notifications
+LogBox.ignoreLogs([
+  'Push notifications (remote notifications) are unavailable in Expo Go',
+  '`expo-notifications` functionality is not fully supported in Expo Go',
+  '[expo-notifications]',
+]);
 
 interface ErrorBoundaryProps {
   children: ReactNode;
