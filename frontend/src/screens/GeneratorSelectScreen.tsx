@@ -103,9 +103,6 @@ export const GeneratorSelectScreen: React.FC = () => {
               <Text style={[styles.categoryTitle, { color: theme.text }]}>
                 {category.title}
               </Text>
-              <Text style={[styles.categorySubtitle, { color: theme.textSecondary }]}>
-                {category.subtitle}
-              </Text>
             </View>
 
             {renderGrid(category.types)}

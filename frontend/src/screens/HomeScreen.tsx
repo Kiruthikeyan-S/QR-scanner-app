@@ -124,12 +124,9 @@ export const HomeScreen: React.FC = () => {
       >
         <View style={styles.headerLeft}>
           <View style={[styles.appIcon, { backgroundColor: palette.emerald[50] }]}>
-            <AppIcon name="qr-code-outline" size={22} color="#059669" />
+            <AppIcon name="qr-code-outline" size={20} color="#059669" />
           </View>
-          <View>
-            <Text style={[styles.appTitle, { color: '#0F172A' }]}>Qrinova</Text>
-            <Text style={[styles.appSubtitle, { color: '#64748B' }]}>QR Scanner & Creator</Text>
-          </View>
+          <Text style={[styles.appTitle, { color: '#0F172A' }]}>Qrinova</Text>
         </View>
 
         <View style={styles.headerRight}>
@@ -190,19 +187,12 @@ export const HomeScreen: React.FC = () => {
         >
           <View style={styles.scannerHeroTop}>
             <View style={styles.scannerIconWrapper}>
-              <AppIcon name="scan-outline" size={28} color="#059669" />
+              <AppIcon name="scan-outline" size={26} color="#059669" />
             </View>
-            <View style={styles.scannerFormatBadge}>
-              <Text style={styles.scannerFormatText}>1D & 2D Barcodes</Text>
-            </View>
+            <Text style={[styles.scannerHeroTitle, { color: '#0F172A' }]}>
+              Scan QR & Barcode
+            </Text>
           </View>
-
-          <Text style={[styles.scannerHeroTitle, { color: '#0F172A' }]}>
-            Scan QR & Barcode
-          </Text>
-          <Text style={[styles.scannerHeroDesc, { color: '#475569' }]}>
-            Point camera to scan products, tickets, Wi-Fi, media, files, and links.
-          </Text>
 
           <View style={styles.scanNowBtn}>
             <AppIcon name="camera-outline" size={18} color="#FFFFFF" />
@@ -245,7 +235,6 @@ export const HomeScreen: React.FC = () => {
                 <AppIcon name="videocam-outline" size={22} color={palette.rose[500]} />
               </View>
               <Text style={[styles.toolTitle, { color: '#0F172A' }]} numberOfLines={1}>Video QR</Text>
-              <Text style={[styles.toolSub, { color: '#64748B' }]}>MP4, MOV</Text>
             </Pressable>
 
             {/* Audio QR */}
@@ -267,7 +256,6 @@ export const HomeScreen: React.FC = () => {
                 <AppIcon name="musical-notes-outline" size={22} color={palette.indigo[500]} />
               </View>
               <Text style={[styles.toolTitle, { color: '#0F172A' }]} numberOfLines={1}>Audio QR</Text>
-              <Text style={[styles.toolSub, { color: '#64748B' }]}>MP3, WAV</Text>
             </Pressable>
 
             {/* Photo QR */}
@@ -289,7 +277,6 @@ export const HomeScreen: React.FC = () => {
                 <AppIcon name="image-outline" size={22} color="#059669" />
               </View>
               <Text style={[styles.toolTitle, { color: '#0F172A' }]} numberOfLines={1}>Photo QR</Text>
-              <Text style={[styles.toolSub, { color: '#64748B' }]}>JPG, PNG</Text>
             </Pressable>
 
             {/* PDF QR */}
@@ -311,7 +298,6 @@ export const HomeScreen: React.FC = () => {
                 <AppIcon name="document-text-outline" size={22} color={palette.cyan[600]} />
               </View>
               <Text style={[styles.toolTitle, { color: '#0F172A' }]} numberOfLines={1}>PDF QR</Text>
-              <Text style={[styles.toolSub, { color: '#64748B' }]}>PDF, Docs</Text>
             </Pressable>
           </View>
 
@@ -336,7 +322,6 @@ export const HomeScreen: React.FC = () => {
                 <AppIcon name="barcode-outline" size={22} color={palette.blue[600]} />
               </View>
               <Text style={[styles.toolTitle, { color: '#0F172A' }]} numberOfLines={1}>Barcode</Text>
-              <Text style={[styles.toolSub, { color: '#64748B' }]}>13 Formats</Text>
             </Pressable>
 
             {/* Order ID */}
@@ -358,7 +343,6 @@ export const HomeScreen: React.FC = () => {
                 <AppIcon name="cube-outline" size={22} color={palette.amber[600]} />
               </View>
               <Text style={[styles.toolTitle, { color: '#0F172A' }]} numberOfLines={1}>Order ID</Text>
-              <Text style={[styles.toolSub, { color: '#64748B' }]}>Invoices</Text>
             </Pressable>
 
             {/* JSON */}
@@ -380,7 +364,6 @@ export const HomeScreen: React.FC = () => {
                 <AppIcon name="code-slash-outline" size={22} color={palette.violet[500]} />
               </View>
               <Text style={[styles.toolTitle, { color: '#0F172A' }]} numberOfLines={1}>JSON</Text>
-              <Text style={[styles.toolSub, { color: '#64748B' }]}>Raw Data</Text>
             </Pressable>
 
             {/* Share Wi-Fi */}
@@ -402,7 +385,6 @@ export const HomeScreen: React.FC = () => {
                 <AppIcon name="wifi-outline" size={22} color={palette.teal[600]} />
               </View>
               <Text style={[styles.toolTitle, { color: '#0F172A' }]} numberOfLines={1}>Wi-Fi</Text>
-              <Text style={[styles.toolSub, { color: '#64748B' }]}>Auto-Join</Text>
             </Pressable>
           </View>
         </View>
@@ -986,37 +968,21 @@ const styles = StyleSheet.create({
   scannerHeroTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 14,
   },
   scannerIconWrapper: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     backgroundColor: '#ECFDF5',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  scannerFormatBadge: {
-    backgroundColor: '#F1F5F9',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-  },
-  scannerFormatText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#475569',
+    marginRight: 12,
   },
   scannerHeroTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
-    marginBottom: 4,
-  },
-  scannerHeroDesc: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 14,
+    flex: 1,
   },
   scanNowBtn: {
     flexDirection: 'row',
@@ -1064,7 +1030,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    paddingVertical: spacing.sm,
+    paddingVertical: 10,
     paddingHorizontal: 4,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1079,17 +1045,12 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   toolTitle: {
     fontSize: 11,
-    fontWeight: typography.fontWeight.bold,
+    fontWeight: typography.fontWeight.semibold,
     textAlign: 'center',
-  },
-  toolSub: {
-    fontSize: 9,
-    textAlign: 'center',
-    marginTop: 1,
   },
   quickActionsGrid: {
     flexDirection: 'row',
