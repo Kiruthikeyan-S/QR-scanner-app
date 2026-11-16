@@ -34,10 +34,26 @@ import { QRFormatter } from '../utils/qrFormatter';
 import { FileUploadService } from '../services/fileUploadService';
 import { QRCustomization } from '../types/qr';
 import { triggerLightHaptic, triggerFeedback } from '../utils/feedback';
-import { Video, ResizeMode, Audio } from 'expo-av';
+import { useVideoPlayer, VideoView } from 'expo-video';
+import { createAudioPlayer, AudioPlayer } from 'expo-audio';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type FormRouteProp = RouteProp<RootStackParamList, 'GeneratorForm'>;
+
+const VideoPreview: React.FC<{ uri: string }> = ({ uri }) => {
+  const player = useVideoPlayer(uri, (p) => {
+    p.loop = false;
+  });
+
+  return (
+    <View style={{ marginTop: spacing.md, borderRadius: borderRadius.lg, overflow: 'hidden', backgroundColor: '#000' }}>
+      <VideoView
+        player={player}
+        style={{ width: '100%', height: 200 }}
+      />
+    </View>
+  );
+};
 
 export const GeneratorFormScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -121,7 +137,7 @@ export const GeneratorFormScreen: React.FC = () => {
     mimeType?: string;
   } | null>(null);
 
-  const [audioSound, setAudioSound] = useState<Audio.Sound | null>(null);
+  const [audioSound, setAudioSound] = useState<AudioPlayer | null>(null);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
 
   const [isUploading, setIsUploading] = useState(false);
@@ -149,7 +165,10 @@ export const GeneratorFormScreen: React.FC = () => {
     setSelectedVideo(null);
     setSelectedAudio(null);
     if (audioSound) {
-      audioSound.unloadAsync().catch(() => {});
+      try {
+        audioSound.pause();
+        audioSound.remove();
+      } catch {}
       setAudioSound(null);
       setIsPlayingAudio(false);
     }
@@ -162,7 +181,10 @@ export const GeneratorFormScreen: React.FC = () => {
   React.useEffect(() => {
     return () => {
       if (audioSound) {
-        audioSound.unloadAsync().catch(() => {});
+        try {
+          audioSound.pause();
+          audioSound.remove();
+        } catch {}
       }
     };
   }, [audioSound]);
@@ -294,7 +316,10 @@ export const GeneratorFormScreen: React.FC = () => {
     try {
       triggerLightHaptic();
       if (audioSound) {
-        await audioSound.unloadAsync();
+        try {
+          audioSound.pause();
+          audioSound.remove();
+        } catch {}
         setAudioSound(null);
         setIsPlayingAudio(false);
       }
@@ -333,23 +358,21 @@ export const GeneratorFormScreen: React.FC = () => {
       triggerLightHaptic();
       if (audioSound) {
         if (isPlayingAudio) {
-          await audioSound.pauseAsync();
+          audioSound.pause();
           setIsPlayingAudio(false);
         } else {
-          await audioSound.playAsync();
+          audioSound.play();
           setIsPlayingAudio(true);
         }
       } else {
-        const { sound } = await Audio.Sound.createAsync(
-          { uri: selectedAudio.uri },
-          { shouldPlay: true }
-        );
-        sound.setOnPlaybackStatusUpdate((status) => {
-          if (status.isLoaded && status.didJustFinish) {
+        const player = createAudioPlayer({ uri: selectedAudio.uri });
+        player.addListener('playbackStatusUpdate', (status) => {
+          if (status.didJustFinish) {
             setIsPlayingAudio(false);
           }
         });
-        setAudioSound(sound);
+        player.play();
+        setAudioSound(player);
         setIsPlayingAudio(true);
       }
     } catch (err: any) {
@@ -360,7 +383,10 @@ export const GeneratorFormScreen: React.FC = () => {
   const handleRemoveAudio = async () => {
     triggerLightHaptic();
     if (audioSound) {
-      await audioSound.unloadAsync().catch(() => {});
+      try {
+        audioSound.pause();
+        audioSound.remove();
+      } catch {}
       setAudioSound(null);
       setIsPlayingAudio(false);
     }
@@ -1620,15 +1646,7 @@ export const GeneratorFormScreen: React.FC = () => {
 
             {/* Video Inline Preview */}
             {selectedVideo && (
-              <View style={{ marginTop: spacing.md, borderRadius: borderRadius.lg, overflow: 'hidden', backgroundColor: '#000' }}>
-                <Video
-                  source={{ uri: selectedVideo.uri }}
-                  style={{ width: '100%', height: 200 }}
-                  useNativeControls
-                  resizeMode={ResizeMode.CONTAIN}
-                  isLooping={false}
-                />
-              </View>
+              <VideoPreview uri={selectedVideo.uri} />
             )}
           </View>
         )}
