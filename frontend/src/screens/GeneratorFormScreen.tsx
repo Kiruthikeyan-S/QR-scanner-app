@@ -34,6 +34,7 @@ import { QRFormatter } from '../utils/qrFormatter';
 import { FileUploadService } from '../services/fileUploadService';
 import { QRCustomization } from '../types/qr';
 import { triggerLightHaptic, triggerFeedback } from '../utils/feedback';
+import { isMediaQRType, pickMediaForQRType, PickedMediaFile } from '../utils/mediaPicker';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { createAudioPlayer, AudioPlayer } from 'expo-audio';
 
@@ -46,10 +47,10 @@ const VideoPreview: React.FC<{ uri: string }> = ({ uri }) => {
   });
 
   return (
-    <View style={{ marginTop: spacing.md, borderRadius: borderRadius.lg, overflow: 'hidden', backgroundColor: '#000' }}>
+    <View style={{ marginTop: spacing.sm, borderRadius: borderRadius.lg, overflow: 'hidden', backgroundColor: '#0F172A' }}>
       <VideoView
         player={player}
-        style={{ width: '100%', height: 200 }}
+        style={{ width: '100%', height: 160 }}
       />
     </View>
   );
@@ -61,7 +62,7 @@ export const GeneratorFormScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<FormRouteProp>();
 
-  const { type } = route.params;
+  const { type, initialMedia } = route.params;
   const meta = QR_TYPES[type] || QR_TYPES.text;
 
   // Form states
@@ -112,14 +113,14 @@ export const GeneratorFormScreen: React.FC = () => {
     name: string;
     size: number;
     mimeType?: string;
-  } | null>(null);
+  } | null>(() => (type === 'photo' && initialMedia ? initialMedia : null));
 
   const [selectedPdf, setSelectedPdf] = useState<{
     uri: string;
     name: string;
     size: number;
     mimeType?: string;
-  } | null>(null);
+  } | null>(() => (type === 'file' && initialMedia ? initialMedia : null));
 
   // Video & Audio States
   const [selectedVideo, setSelectedVideo] = useState<{
@@ -128,14 +129,14 @@ export const GeneratorFormScreen: React.FC = () => {
     size: number;
     mimeType?: string;
     duration?: number;
-  } | null>(null);
+  } | null>(() => (type === 'video' && initialMedia ? initialMedia : null));
 
   const [selectedAudio, setSelectedAudio] = useState<{
     uri: string;
     name: string;
     size: number;
     mimeType?: string;
-  } | null>(null);
+  } | null>(() => (type === 'audio' && initialMedia ? initialMedia : null));
 
   const [audioSound, setAudioSound] = useState<AudioPlayer | null>(null);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
@@ -158,12 +159,13 @@ export const GeneratorFormScreen: React.FC = () => {
     errorCorrectionLevel: 'M',
   });
 
-  // Reset state when generator type changes
+  // Sync initialMedia or auto-open native picker if opened directly without a file
   React.useEffect(() => {
-    setSelectedPhoto(null);
-    setSelectedPdf(null);
-    setSelectedVideo(null);
-    setSelectedAudio(null);
+    let isMounted = true;
+    setSelectedPhoto(type === 'photo' && initialMedia ? initialMedia : null);
+    setSelectedPdf(type === 'file' && initialMedia ? initialMedia : null);
+    setSelectedVideo(type === 'video' && initialMedia ? initialMedia : null);
+    setSelectedAudio(type === 'audio' && initialMedia ? initialMedia : null);
     if (audioSound) {
       try {
         audioSound.pause();
@@ -176,7 +178,27 @@ export const GeneratorFormScreen: React.FC = () => {
     setUploadProgress(0);
     setUploadDetailText('');
     uploadCache.current = {};
-  }, [type]);
+
+    if (isMediaQRType(type) && !initialMedia) {
+      pickMediaForQRType(type).then((picked: PickedMediaFile | null) => {
+        if (!isMounted) return;
+        if (!picked) {
+          if (navigation.canGoBack()) {
+            navigation.goBack();
+          }
+          return;
+        }
+        if (type === 'photo') setSelectedPhoto(picked);
+        else if (type === 'video') setSelectedVideo(picked);
+        else if (type === 'audio') setSelectedAudio(picked);
+        else if (type === 'file') setSelectedPdf(picked);
+      });
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [type, initialMedia]);
 
   React.useEffect(() => {
     return () => {
@@ -1525,291 +1547,146 @@ export const GeneratorFormScreen: React.FC = () => {
           </>
         )}
 
-        {/* Photo QR Form */}
-        {type === 'photo' && (
+        {/* Photo QR Selected Card */}
+        {type === 'photo' && selectedPhoto && (
           <View style={styles.fieldGroup}>
-            <Text style={[styles.label, { color: theme.text }]}>Selected Photo *</Text>
-            {selectedPhoto ? (
-              <View style={[styles.compactFileCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <View style={[styles.compactFileCard, { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }]}>
+              <Pressable onPress={() => setPreviewModalVisible(true)}>
                 <Image source={{ uri: selectedPhoto.uri }} style={styles.compactPhotoThumb} />
-                <View style={styles.compactFileInfo}>
-                  <Text style={[styles.compactFileName, { color: theme.text }]} numberOfLines={1}>
-                    {selectedPhoto.name}
-                  </Text>
-                  <Text style={[styles.compactFileSize, { color: theme.textSecondary }]}>
-                    {FileUploadService.formatBytes(selectedPhoto.size)} • Photo
-                  </Text>
-                </View>
-                <View style={styles.compactActionsCol}>
-                  <Pressable
-                    onPress={() => setPreviewModalVisible(true)}
-                    style={[styles.compactSmallBtn, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : palette.emerald[50] }]}
-                  >
-                    <Ionicons name="eye-outline" size={13} color={palette.emerald[600]} />
-                    <Text style={[styles.compactSmallBtnText, { color: palette.emerald[600] }]}>Preview</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={handlePickPhoto}
-                    style={[styles.compactSmallBtn, { backgroundColor: theme.surfaceVariant }]}
-                  >
-                    <Ionicons name="refresh-outline" size={13} color={theme.text} />
-                    <Text style={[styles.compactSmallBtnText, { color: theme.text }]}>Change</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={handleRemovePhoto}
-                    style={[styles.compactSmallBtn, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : palette.rose[50] }]}
-                  >
-                    <Ionicons name="trash-outline" size={13} color={palette.rose[500]} />
-                    <Text style={[styles.compactSmallBtnText, { color: palette.rose[500] }]}>Remove</Text>
-                  </Pressable>
-                </View>
+              </Pressable>
+              <View style={styles.compactFileInfo}>
+                <Text style={[styles.compactFileName, { color: '#0F172A' }]} numberOfLines={1}>
+                  {selectedPhoto.name}
+                </Text>
+                <Text style={[styles.compactFileSize, { color: '#64748B' }]}>
+                  {FileUploadService.formatBytes(selectedPhoto.size)} • Tap image to preview
+                </Text>
               </View>
-            ) : (
               <Pressable
                 onPress={handlePickPhoto}
                 style={({ pressed }) => [
-                  styles.uploadBox,
-                  { backgroundColor: theme.surfaceVariant, borderColor: theme.border, opacity: pressed ? 0.8 : 1 },
+                  styles.changeMediaPill,
+                  { backgroundColor: '#ECFDF5', opacity: pressed ? 0.75 : 1 },
                 ]}
               >
-                <View style={[styles.uploadIconCircle, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.18)' : palette.emerald[50] }]}>
-                  <Ionicons name="image-outline" size={32} color={palette.emerald[500]} />
-                </View>
-                <Text style={[styles.uploadTitle, { color: theme.text }]}>Select & Upload Photo</Text>
-                <Text style={[styles.uploadSubtitle, { color: theme.textSecondary }]}>
-                  Supported: JPG, JPEG, PNG, WEBP • Max 10 MB
-                </Text>
-                <View style={[styles.uploadPillBtn, { backgroundColor: theme.primary }]}>
-                  <Ionicons name="add" size={16} color="#FFFFFF" style={{ marginRight: 4 }} />
-                  <Text style={styles.uploadPillText}>Choose Image</Text>
-                </View>
+                <Ionicons name="swap-horizontal-outline" size={14} color="#059669" />
+                <Text style={[styles.changeMediaPillText, { color: '#059669' }]}>Change</Text>
               </Pressable>
-            )}
+            </View>
           </View>
         )}
 
-        {/* Video QR Form */}
-        {type === 'video' && (
+        {/* Video QR Selected Card */}
+        {type === 'video' && selectedVideo && (
           <View style={styles.fieldGroup}>
-            <Text style={[styles.label, { color: theme.text }]}>Selected Video *</Text>
-            {selectedVideo ? (
-              <View style={[styles.compactFileCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-                <View style={[styles.compactDocIconBox, { backgroundColor: isDark ? 'rgba(244, 63, 94, 0.18)' : palette.rose[50] }]}>
-                  <Ionicons name="videocam" size={24} color={palette.rose[500]} />
-                </View>
-                <View style={styles.compactFileInfo}>
-                  <Text style={[styles.compactFileName, { color: theme.text }]} numberOfLines={1}>
-                    {selectedVideo.name}
-                  </Text>
-                  <Text style={[styles.compactFileSize, { color: theme.textSecondary }]}>
-                    {FileUploadService.formatBytes(selectedVideo.size)} • Video
-                  </Text>
-                </View>
-                <View style={styles.compactActionsCol}>
-                  <Pressable
-                    onPress={handlePickVideo}
-                    style={[styles.compactSmallBtn, { backgroundColor: theme.surfaceVariant }]}
-                  >
-                    <Ionicons name="refresh-outline" size={13} color={theme.text} />
-                    <Text style={[styles.compactSmallBtnText, { color: theme.text }]}>Change</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={handleRemoveVideo}
-                    style={[styles.compactSmallBtn, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : palette.rose[50] }]}
-                  >
-                    <Ionicons name="trash-outline" size={13} color={palette.rose[500]} />
-                    <Text style={[styles.compactSmallBtnText, { color: palette.rose[500] }]}>Remove</Text>
-                  </Pressable>
-                </View>
+            <View style={[styles.compactFileCard, { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }]}>
+              <View style={[styles.compactDocIconBox, { backgroundColor: palette.rose[50] }]}>
+                <Ionicons name="videocam-outline" size={22} color={palette.rose[500]} />
               </View>
-            ) : (
+              <View style={styles.compactFileInfo}>
+                <Text style={[styles.compactFileName, { color: '#0F172A' }]} numberOfLines={1}>
+                  {selectedVideo.name}
+                </Text>
+                <Text style={[styles.compactFileSize, { color: '#64748B' }]}>
+                  {FileUploadService.formatBytes(selectedVideo.size)} • Video
+                </Text>
+              </View>
               <Pressable
                 onPress={handlePickVideo}
                 style={({ pressed }) => [
-                  styles.uploadBox,
-                  { backgroundColor: theme.surfaceVariant, borderColor: theme.border, opacity: pressed ? 0.8 : 1 },
+                  styles.changeMediaPill,
+                  { backgroundColor: '#F1F5F9', opacity: pressed ? 0.75 : 1 },
                 ]}
               >
-                <View style={[styles.uploadIconCircle, { backgroundColor: isDark ? 'rgba(244, 63, 94, 0.18)' : palette.rose[50] }]}>
-                  <Ionicons name="videocam-outline" size={32} color={palette.rose[500]} />
-                </View>
-                <Text style={[styles.uploadTitle, { color: theme.text }]}>Select & Upload Video</Text>
-                <Text style={[styles.uploadSubtitle, { color: theme.textSecondary }]}>
-                  Supported: MP4, MOV • Max 50 MB
-                </Text>
-                <View style={[styles.uploadPillBtn, { backgroundColor: palette.rose[500] }]}>
-                  <Ionicons name="add" size={16} color="#FFFFFF" style={{ marginRight: 4 }} />
-                  <Text style={styles.uploadPillText}>Choose Video</Text>
-                </View>
+                <Ionicons name="swap-horizontal-outline" size={14} color="#334155" />
+                <Text style={[styles.changeMediaPillText, { color: '#334155' }]}>Change</Text>
               </Pressable>
-            )}
+            </View>
 
-            {/* Video Inline Preview */}
-            {selectedVideo && (
-              <VideoPreview uri={selectedVideo.uri} />
-            )}
+            <VideoPreview uri={selectedVideo.uri} />
           </View>
         )}
 
-        {/* Audio QR Form */}
-        {type === 'audio' && (
+        {/* Audio QR Selected Card */}
+        {type === 'audio' && selectedAudio && (
           <View style={styles.fieldGroup}>
-            <Text style={[styles.label, { color: theme.text }]}>Selected Audio *</Text>
-            {selectedAudio ? (
-              <View style={[styles.compactFileCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-                <View style={[styles.compactDocIconBox, { backgroundColor: isDark ? 'rgba(99, 102, 241, 0.18)' : palette.indigo[50] }]}>
-                  <Ionicons name="musical-notes" size={24} color={palette.indigo[500]} />
-                </View>
-                <View style={styles.compactFileInfo}>
-                  <Text style={[styles.compactFileName, { color: theme.text }]} numberOfLines={1}>
-                    {selectedAudio.name}
-                  </Text>
-                  <Text style={[styles.compactFileSize, { color: theme.textSecondary }]}>
-                    {FileUploadService.formatBytes(selectedAudio.size)} • Audio
-                  </Text>
-                </View>
-                <View style={styles.compactActionsCol}>
-                  <Pressable
-                    onPress={handleTogglePlayAudio}
-                    style={[styles.compactSmallBtn, { backgroundColor: isDark ? 'rgba(99, 102, 241, 0.2)' : palette.indigo[50] }]}
-                  >
-                    <Ionicons name={isPlayingAudio ? 'pause' : 'play'} size={13} color={palette.indigo[600]} />
-                    <Text style={[styles.compactSmallBtnText, { color: palette.indigo[600] }]}>
-                      {isPlayingAudio ? 'Pause' : 'Play'}
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={handlePickAudio}
-                    style={[styles.compactSmallBtn, { backgroundColor: theme.surfaceVariant }]}
-                  >
-                    <Ionicons name="refresh-outline" size={13} color={theme.text} />
-                    <Text style={[styles.compactSmallBtnText, { color: theme.text }]}>Change</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={handleRemoveAudio}
-                    style={[styles.compactSmallBtn, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : palette.rose[50] }]}
-                  >
-                    <Ionicons name="trash-outline" size={13} color={palette.rose[500]} />
-                    <Text style={[styles.compactSmallBtnText, { color: palette.rose[500] }]}>Remove</Text>
-                  </Pressable>
-                </View>
+            <View style={[styles.compactFileCard, { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }]}>
+              <Pressable
+                onPress={handleTogglePlayAudio}
+                style={[styles.compactDocIconBox, { backgroundColor: palette.indigo[50] }]}
+              >
+                <Ionicons
+                  name={isPlayingAudio ? 'pause' : 'play'}
+                  size={20}
+                  color={palette.indigo[600]}
+                />
+              </Pressable>
+              <View style={styles.compactFileInfo}>
+                <Text style={[styles.compactFileName, { color: '#0F172A' }]} numberOfLines={1}>
+                  {selectedAudio.name}
+                </Text>
+                <Text style={[styles.compactFileSize, { color: '#64748B' }]}>
+                  {FileUploadService.formatBytes(selectedAudio.size)} • {isPlayingAudio ? 'Playing...' : 'Tap play to listen'}
+                </Text>
               </View>
-            ) : (
               <Pressable
                 onPress={handlePickAudio}
                 style={({ pressed }) => [
-                  styles.uploadBox,
-                  { backgroundColor: theme.surfaceVariant, borderColor: theme.border, opacity: pressed ? 0.8 : 1 },
+                  styles.changeMediaPill,
+                  { backgroundColor: '#F1F5F9', opacity: pressed ? 0.75 : 1 },
                 ]}
               >
-                <View style={[styles.uploadIconCircle, { backgroundColor: isDark ? 'rgba(99, 102, 241, 0.18)' : palette.indigo[50] }]}>
-                  <Ionicons name="musical-notes-outline" size={32} color={palette.indigo[500]} />
-                </View>
-                <Text style={[styles.uploadTitle, { color: theme.text }]}>Select & Upload Audio</Text>
-                <Text style={[styles.uploadSubtitle, { color: theme.textSecondary }]}>
-                  Supported: MP3, WAV, M4A • Max 25 MB
-                </Text>
-                <View style={[styles.uploadPillBtn, { backgroundColor: palette.indigo[600] }]}>
-                  <Ionicons name="add" size={16} color="#FFFFFF" style={{ marginRight: 4 }} />
-                  <Text style={styles.uploadPillText}>Choose Audio</Text>
-                </View>
+                <Ionicons name="swap-horizontal-outline" size={14} color="#334155" />
+                <Text style={[styles.changeMediaPillText, { color: '#334155' }]}>Change</Text>
               </Pressable>
-            )}
+            </View>
           </View>
         )}
 
-        {/* PDF / File QR Form */}
-        {type === 'file' && (
+        {/* PDF / File QR Selected Card */}
+        {type === 'file' && selectedPdf && (
           <View style={styles.fieldGroup}>
-            <Text style={[styles.label, { color: theme.text }]}>Selected PDF Document *</Text>
-            {selectedPdf ? (
-              <View style={[styles.compactFileCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-                <View style={[styles.compactDocIconBox, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.18)' : palette.cyan[50] }]}>
-                  <Ionicons name="document-text" size={24} color={palette.cyan[500]} />
-                </View>
-                <View style={styles.compactFileInfo}>
-                  <Text style={[styles.compactFileName, { color: theme.text }]} numberOfLines={1}>
-                    {selectedPdf.name}
-                  </Text>
-                  <Text style={[styles.compactFileSize, { color: theme.textSecondary }]}>
-                    {FileUploadService.formatBytes(selectedPdf.size)} • PDF Document
-                  </Text>
-                </View>
-                <View style={styles.compactActionsCol}>
-                  <Pressable
-                    onPress={handlePickPdf}
-                    style={[styles.compactSmallBtn, { backgroundColor: theme.surfaceVariant }]}
-                  >
-                    <Ionicons name="refresh-outline" size={13} color={theme.text} />
-                    <Text style={[styles.compactSmallBtnText, { color: theme.text }]}>Change</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={handleRemovePdf}
-                    style={[styles.compactSmallBtn, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : palette.rose[50] }]}
-                  >
-                    <Ionicons name="trash-outline" size={13} color={palette.rose[500]} />
-                    <Text style={[styles.compactSmallBtnText, { color: palette.rose[500] }]}>Remove</Text>
-                  </Pressable>
-                </View>
+            <View style={[styles.compactFileCard, { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }]}>
+              <View style={[styles.compactDocIconBox, { backgroundColor: palette.cyan[50] }]}>
+                <Ionicons name="document-text-outline" size={22} color={palette.cyan[600]} />
               </View>
-            ) : (
+              <View style={styles.compactFileInfo}>
+                <Text style={[styles.compactFileName, { color: '#0F172A' }]} numberOfLines={1}>
+                  {selectedPdf.name}
+                </Text>
+                <Text style={[styles.compactFileSize, { color: '#64748B' }]}>
+                  {FileUploadService.formatBytes(selectedPdf.size)} • PDF Document
+                </Text>
+              </View>
               <Pressable
                 onPress={handlePickPdf}
                 style={({ pressed }) => [
-                  styles.uploadBox,
-                  { backgroundColor: theme.surfaceVariant, borderColor: theme.border, opacity: pressed ? 0.8 : 1 },
+                  styles.changeMediaPill,
+                  { backgroundColor: '#F1F5F9', opacity: pressed ? 0.75 : 1 },
                 ]}
               >
-                <View style={[styles.uploadIconCircle, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.18)' : palette.cyan[50] }]}>
-                  <Ionicons name="document-attach-outline" size={32} color={palette.cyan[500]} />
-                </View>
-                <Text style={[styles.uploadTitle, { color: theme.text }]}>Select & Upload PDF</Text>
-                <Text style={[styles.uploadSubtitle, { color: theme.textSecondary }]}>
-                  Supported: PDF, Documents • Max 25 MB
-                </Text>
-                <View style={[styles.uploadPillBtn, { backgroundColor: palette.cyan[600] }]}>
-                  <Ionicons name="add" size={16} color="#FFFFFF" style={{ marginRight: 4 }} />
-                  <Text style={styles.uploadPillText}>Choose PDF</Text>
-                </View>
+                <Ionicons name="swap-horizontal-outline" size={14} color="#334155" />
+                <Text style={[styles.changeMediaPillText, { color: '#334155' }]}>Change</Text>
               </Pressable>
-            )}
+            </View>
           </View>
         )}
 
-        {/* Pre-selection Placeholder for Media & Files */}
-        {!isFileSelected && (
-          <View style={[styles.placeholderCard, { backgroundColor: theme.surfaceVariant, borderColor: theme.borderLight }]}>
-            <Ionicons name="color-palette-outline" size={24} color={theme.textMuted} style={{ marginBottom: 6 }} />
-            <Text style={[styles.placeholderTitle, { color: theme.text }]}>
-              {type === 'photo'
-                ? 'Select a photo first'
-                : type === 'video'
-                ? 'Select a video first'
-                : type === 'audio'
-                ? 'Select an audio file first'
-                : 'Select a PDF first'}
-            </Text>
-            <Text style={[styles.placeholderSubtitle, { color: theme.textSecondary }]}>
-              Once selected, live QR preview and styling options will appear.
-            </Text>
-          </View>
-        )}
-
-        {/* Live QR Preview Box (Shown only when file is selected or for standard text/URL types) */}
+        {/* Live QR Preview Card */}
         {isFileSelected && (
-          <View style={[styles.previewSection, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            <Text style={[styles.previewTitle, { color: theme.textSecondary }]}>LIVE QR PREVIEW</Text>
+          <View style={[styles.previewSection, { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }]}>
+            <Text style={[styles.previewTitle, { color: '#64748B' }]}>LIVE PREVIEW</Text>
             <View style={styles.qrCenteredWrapper}>
               <CustomQRCode
                 value={getPreviewPayload()}
-                size={180}
+                size={176}
                 customization={customization}
               />
             </View>
           </View>
         )}
 
-        {/* QR Customization Section with 4 Clean Tabs */}
+        {/* Clean QR Customization Studio */}
         {isFileSelected && (
           <QRCustomizer
             customization={customization}
@@ -1820,55 +1697,48 @@ export const GeneratorFormScreen: React.FC = () => {
       </ScrollView>
 
       {/* Sticky Bottom Generate Button Bar */}
-      <View
-        style={[
-          styles.stickyBottomBar,
-          {
-            backgroundColor: theme.surface,
-            borderTopColor: theme.borderLight,
-            paddingBottom: Math.max(insets.bottom + 8, spacing.md),
-          },
-        ]}
-      >
-        {/* Upload Progress Bar if Uploading */}
-        {isUploading && (
-          <View style={styles.stickyProgressWrapper}>
-            <View style={styles.stickyProgressHeader}>
-              <ActivityIndicator size="small" color={theme.primary} style={{ marginRight: 6 }} />
-              <Text style={[styles.stickyProgressText, { color: theme.text }]} numberOfLines={1}>
-                {uploadDetailText || 'Uploading file to cloud storage...'}
-              </Text>
+      {isFileSelected && (
+        <View
+          style={[
+            styles.stickyBottomBar,
+            {
+              backgroundColor: '#FFFFFF',
+              borderTopColor: '#E2E8F0',
+              paddingBottom: Math.max(insets.bottom + 8, spacing.md),
+            },
+          ]}
+        >
+          {isUploading && (
+            <View style={styles.stickyProgressWrapper}>
+              <View style={styles.stickyProgressHeader}>
+                <ActivityIndicator size="small" color={theme.primary} style={{ marginRight: 6 }} />
+                <Text style={[styles.stickyProgressText, { color: theme.text }]} numberOfLines={1}>
+                  {uploadDetailText || 'Uploading file...'}
+                </Text>
+              </View>
+              <View style={[styles.progressBarTrack, { backgroundColor: theme.borderLight }]}>
+                <View
+                  style={[
+                    styles.progressBarFill,
+                    {
+                      backgroundColor: theme.primary,
+                      width: `${Math.max(8, Math.min(100, uploadProgress))}%`,
+                    },
+                  ]}
+                />
+              </View>
             </View>
-            <View style={[styles.progressBarTrack, { backgroundColor: theme.borderLight }]}>
-              <View
-                style={[
-                  styles.progressBarFill,
-                  {
-                    backgroundColor: theme.primary,
-                    width: `${Math.max(8, Math.min(100, uploadProgress))}%`,
-                  },
-                ]}
-              />
-            </View>
-          </View>
-        )}
+          )}
 
-        <PrimaryButton
-          title={
-            isUploading
-              ? 'Uploading & Generating...'
-              : !isFileSelected
-              ? type === 'photo'
-                ? 'Select Photo to Continue'
-                : 'Select PDF to Continue'
-              : 'Generate QR Code'
-          }
-          onPress={!isFileSelected ? (type === 'photo' ? handlePickPhoto : handlePickPdf) : handleGenerate}
-          size="lg"
-          disabled={isUploading}
-          style={styles.stickyGenerateBtn}
-        />
-      </View>
+          <PrimaryButton
+            title={isUploading ? 'Uploading & Generating...' : 'Generate QR Code'}
+            onPress={handleGenerate}
+            size="lg"
+            disabled={isUploading}
+            style={styles.stickyGenerateBtn}
+          />
+        </View>
+      )}
 
       {/* Photo Full-Screen Modal Preview */}
       {selectedPhoto && (
@@ -2101,91 +1971,72 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: borderRadius.xl,
-    padding: spacing.sm,
+    borderRadius: 16,
+    padding: 10,
   },
   compactPhotoThumb: {
-    width: 54,
-    height: 54,
-    borderRadius: borderRadius.md,
+    width: 48,
+    height: 48,
+    borderRadius: 12,
     resizeMode: 'cover',
   },
   compactDocIconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   compactFileInfo: {
     flex: 1,
-    marginLeft: spacing.sm,
+    marginLeft: spacing.sm + 2,
     marginRight: spacing.xs,
   },
   compactFileName: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
+    fontSize: 13,
+    fontWeight: '700',
     marginBottom: 2,
   },
   compactFileSize: {
-    fontSize: typography.fontSize.xs,
+    fontSize: 11,
   },
-  compactActionsCol: {
-    flexDirection: 'column',
-    gap: 4,
-  },
-  compactSmallBtn: {
+  changeMediaPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: borderRadius.md,
+    paddingVertical: 7,
+    paddingHorizontal: 11,
+    borderRadius: borderRadius.full,
+    gap: 4,
   },
-  compactSmallBtnText: {
-    fontSize: 11,
-    fontWeight: '600',
-    marginLeft: 4,
-  },
-  placeholderCard: {
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderRadius: borderRadius.xl,
-    padding: spacing.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: spacing.md,
-  },
-  placeholderTitle: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-    marginBottom: 2,
-  },
-  placeholderSubtitle: {
-    fontSize: typography.fontSize.xs,
-    textAlign: 'center',
+  changeMediaPillText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   previewSection: {
-    borderRadius: borderRadius.xl,
+    borderRadius: 20,
     borderWidth: 1,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
+    paddingVertical: spacing.base,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.base,
     alignItems: 'center',
+    elevation: 1,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
   },
   previewTitle: {
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 1,
-    marginBottom: spacing.md,
+    marginBottom: 12,
   },
   qrCenteredWrapper: {
-    padding: spacing.md,
-    backgroundColor: '#FFFFFF',
-    borderRadius: borderRadius.xl,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
+    padding: 12,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   stickyBottomBar: {
     borderTopWidth: StyleSheet.hairlineWidth,

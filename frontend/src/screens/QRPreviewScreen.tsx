@@ -129,7 +129,7 @@ export const QRPreviewScreen: React.FC = () => {
           ? 'Audio'
           : 'Document');
       return {
-        title: fileMeta.filename,
+        title: fileMeta.original_name || fileMeta.filename,
         subtitle: `${fileMeta.size_formatted} • ${typeLabel}`,
         hasFileLink: true,
       };
@@ -355,15 +355,12 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
   },
   qrWrapper: {
-    padding: spacing.md,
-    backgroundColor: '#FFFFFF',
-    borderRadius: borderRadius.xl,
+    padding: 14,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
     marginBottom: spacing.md,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
   },
   contentTitle: {
     fontSize: typography.fontSize.base,

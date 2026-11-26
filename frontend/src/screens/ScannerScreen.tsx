@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { ImageScanService, DecodedCode } from '../services/imageScanService';
 import { CameraView, useCameraPermissions, BarcodeScanningResult, BarcodeType } from 'expo-camera';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -247,35 +248,41 @@ export const ScannerScreen: React.FC = () => {
   if (!permission.granted) {
     return (
       <View style={[styles.permissionContainer, { backgroundColor: theme.background }]}>
-        <View style={[styles.iconCircle, { backgroundColor: theme.primaryLight }]}>
-          <Text style={{ fontSize: 32 }}>📷</Text>
+        <View style={[styles.permissionCard, { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }]}>
+          <View style={[styles.iconCircle, { backgroundColor: '#ECFDF5' }]}>
+            <Ionicons name="camera-outline" size={34} color="#059669" />
+          </View>
+
+          <Text style={[styles.permTitle, { color: '#0F172A' }]}>Camera Access Needed</Text>
+          <Text style={[styles.permSubtitle, { color: '#64748B' }]}>
+            Allow camera access so Qrinova can scan QR codes and barcodes instantly.
+          </Text>
+
+          <PrimaryButton
+            title="Allow Camera"
+            icon="camera-outline"
+            onPress={requestPermission}
+            style={styles.permButton}
+          />
+
+          <SecondaryButton
+            title="Go Back"
+            variant="ghost"
+            onPress={() => navigation.goBack()}
+            style={{ marginTop: spacing.xs, width: '100%' }}
+          />
         </View>
 
-        <Text style={[styles.permTitle, { color: theme.text }]}>Camera Permission Required</Text>
-        <Text style={[styles.permSubtitle, { color: theme.textSecondary }]}>
-          Qrinova needs camera access to scan and decode QR codes in real-time.
-        </Text>
-
-        <PrimaryButton
-          title="Grant Camera Access"
-          onPress={requestPermission}
-          style={styles.permButton}
-        />
-
-        <SecondaryButton
-          title="Cancel"
-          variant="ghost"
-          onPress={() => navigation.goBack()}
-          style={{ marginTop: spacing.md }}
-        />
-
-        <SecondaryButton
-          title="Simulate Scan (Test Mode)"
-          variant="outline"
-          color="primary"
-          onPress={handleSimulateScan}
-          style={{ marginTop: spacing.xl }}
-        />
+        {__DEV__ && (
+          <SecondaryButton
+            title="Simulate Scan (Dev)"
+            variant="ghost"
+            color="primary"
+            size="sm"
+            onPress={handleSimulateScan}
+            style={{ marginTop: spacing.lg }}
+          />
+        )}
       </View>
     );
   }
@@ -384,32 +391,43 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing['2xl'],
+    padding: spacing.xl,
+  },
+  permissionCard: {
+    width: '100%',
+    maxWidth: 360,
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: spacing.xl,
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
   },
   iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 68,
+    height: 68,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   permTitle: {
-    fontSize: typography.fontSize.xl,
+    fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     textAlign: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs + 2,
   },
   permSubtitle: {
     fontSize: typography.fontSize.sm,
     textAlign: 'center',
-    lineHeight: typography.lineHeight.sm,
-    marginBottom: spacing['2xl'],
-    maxWidth: 300,
+    lineHeight: 20,
+    marginBottom: spacing.xl,
   },
   permButton: {
     width: '100%',
-    maxWidth: 280,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFill,

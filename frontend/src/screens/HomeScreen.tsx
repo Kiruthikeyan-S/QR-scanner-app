@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,13 +15,13 @@ import { RootStackParamList } from '../types/navigation';
 import { useTheme } from '../theme/ThemeContext';
 import { palette } from '../theme/colors';
 import { typography, borderRadius, spacing } from '../theme/typography';
-import { AppIcon } from '../components/AppIcon';
+import { AppIcon, IconName } from '../components/AppIcon';
 import { HistoryStorage } from '../storage/historyStorage';
 import { ScanRecord } from '../types/qr';
 import { QR_TYPES } from '../constants/config';
 import { triggerLightHaptic } from '../utils/feedback';
 import { ActionHandler } from '../utils/actionHandler';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { MediaQRType, pickMediaForQRType } from '../utils/mediaPicker';
 
 import { NotificationModal } from '../components/NotificationModal';
 import { NotificationStorage } from '../storage/notificationStorage';
@@ -30,7 +30,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const HomeScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
-  const { theme, isDark } = useTheme();
+  const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
 
   const [recentScan, setRecentScan] = useState<ScanRecord | null>(null);
@@ -38,24 +38,37 @@ export const HomeScreen: React.FC = () => {
   const [notificationModalVisible, setNotificationModalVisible] = useState(false);
   const [createMenuVisible, setCreateMenuVisible] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const [isFirstVisit, setIsFirstVisit] = useState(false);
+  const [now, setNow] = useState(() => new Date());
 
-  const getGreeting = () => {
-    if (isFirstVisit) {
-      return 'Welcome';
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(new Date());
+    }, 30000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const getTimeGreetingInfo = (): { greeting: string; icon: IconName; timeLabel: string } => {
+    const hour = now.getHours();
+    const timeLabel = now.toLocaleTimeString([], {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+
+    if (hour >= 5 && hour < 12) {
+      return { greeting: 'Good Morning', icon: 'sunny-outline', timeLabel };
     }
-    const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) return 'Good Morning';
-    if (hour >= 12 && hour < 17) return 'Good Afternoon';
-    if (hour >= 17 && hour < 22) return 'Good Evening';
-    return 'Hello';
+    if (hour >= 12 && hour < 17) {
+      return { greeting: 'Good Afternoon', icon: 'partly-sunny-outline', timeLabel };
+    }
+    return { greeting: 'Good Evening', icon: 'moon-outline', timeLabel };
   };
 
-  const getGreetingSubtitle = () => {
-    if (isFirstVisit) {
-      return 'Scan, create and manage your QR codes easily';
+  const handleOpenMediaQR = async (mediaType: MediaQRType) => {
+    const picked = await pickMediaForQRType(mediaType);
+    if (picked) {
+      navigation.navigate('GeneratorForm', { type: mediaType, initialMedia: picked });
     }
-    return 'Scan or create QR codes anytime';
   };
 
   const loadData = async () => {
@@ -69,16 +82,7 @@ export const HomeScreen: React.FC = () => {
       setRecentScan(null);
     }
     setUnreadNotifications(unread);
-
-    try {
-      const hasVisited = await AsyncStorage.getItem('qr_smart_has_visited_home');
-      if (!hasVisited) {
-        setIsFirstVisit(true);
-        await AsyncStorage.setItem('qr_smart_has_visited_home', 'true');
-      } else {
-        setIsFirstVisit(false);
-      }
-    } catch {}
+    setNow(new Date());
   };
 
   useFocusEffect(
@@ -100,6 +104,7 @@ export const HomeScreen: React.FC = () => {
   };
 
   const recentMeta = recentScan ? QR_TYPES[recentScan.type] || QR_TYPES.text : null;
+  const greetingInfo = getTimeGreetingInfo();
 
   const handleCreateOption = (action: () => void) => {
     triggerLightHaptic();
@@ -169,7 +174,24 @@ export const HomeScreen: React.FC = () => {
           />
         }
       >
-        {/* SCANNER SECTION */}
+        {/* HERO WELCOME & LIVE TIME GREETING */}
+        <View style={styles.greetingSection}>
+          <Text style={styles.welcomeMessageText}>
+            Hi, it's Qrinova — just scan, read, and enjoy the message
+          </Text>
+          <View style={styles.greetingTimeRow}>
+            <View style={styles.greetingIconBadge}>
+              <AppIcon name={greetingInfo.icon} size={15} color="#059669" />
+            </View>
+            <Text style={styles.greetingTitle}>{greetingInfo.greeting}</Text>
+            <View style={styles.liveTimePill}>
+              <View style={styles.liveDot} />
+              <Text style={styles.liveTimeText}>{greetingInfo.timeLabel}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* CENTERED SCANNER SECTION */}
         <Pressable
           onPress={() => {
             triggerLightHaptic();
@@ -185,9 +207,9 @@ export const HomeScreen: React.FC = () => {
             },
           ]}
         >
-          <View style={styles.scannerHeroTop}>
+          <View style={styles.scannerCenteredContent}>
             <View style={styles.scannerIconWrapper}>
-              <AppIcon name="scan-outline" size={26} color="#059669" />
+              <AppIcon name="scan-outline" size={30} color="#059669" />
             </View>
             <Text style={[styles.scannerHeroTitle, { color: '#0F172A' }]}>
               Scan QR & Barcode
@@ -214,14 +236,11 @@ export const HomeScreen: React.FC = () => {
         </View>
 
         <View style={styles.toolsGrid}>
-          {/* Row 1: 4 Tools */}
+          {/* Row 1: 4 Tools (Direct Picker on Tap) */}
           <View style={styles.toolsRow}>
             {/* Video QR */}
             <Pressable
-              onPress={() => {
-                triggerLightHaptic();
-                navigation.navigate('GeneratorForm', { type: 'video' });
-              }}
+              onPress={() => handleOpenMediaQR('video')}
               style={({ pressed }) => [
                 styles.toolCard,
                 {
@@ -239,10 +258,7 @@ export const HomeScreen: React.FC = () => {
 
             {/* Audio QR */}
             <Pressable
-              onPress={() => {
-                triggerLightHaptic();
-                navigation.navigate('GeneratorForm', { type: 'audio' });
-              }}
+              onPress={() => handleOpenMediaQR('audio')}
               style={({ pressed }) => [
                 styles.toolCard,
                 {
@@ -260,10 +276,7 @@ export const HomeScreen: React.FC = () => {
 
             {/* Photo QR */}
             <Pressable
-              onPress={() => {
-                triggerLightHaptic();
-                navigation.navigate('GeneratorForm', { type: 'photo' });
-              }}
+              onPress={() => handleOpenMediaQR('photo')}
               style={({ pressed }) => [
                 styles.toolCard,
                 {
@@ -281,10 +294,7 @@ export const HomeScreen: React.FC = () => {
 
             {/* PDF QR */}
             <Pressable
-              onPress={() => {
-                triggerLightHaptic();
-                navigation.navigate('GeneratorForm', { type: 'file' });
-              }}
+              onPress={() => handleOpenMediaQR('file')}
               style={({ pressed }) => [
                 styles.toolCard,
                 {
@@ -637,11 +647,7 @@ export const HomeScreen: React.FC = () => {
 
               {/* 2. Photo QR */}
               <Pressable
-                onPress={() =>
-                  handleCreateOption(() =>
-                    navigation.navigate('GeneratorForm', { type: 'photo' })
-                  )
-                }
+                onPress={() => handleCreateOption(() => handleOpenMediaQR('photo'))}
                 style={({ pressed }) => [
                   styles.createOptionRow,
                   {
@@ -670,11 +676,7 @@ export const HomeScreen: React.FC = () => {
 
               {/* 3. PDF QR */}
               <Pressable
-                onPress={() =>
-                  handleCreateOption(() =>
-                    navigation.navigate('GeneratorForm', { type: 'file' })
-                  )
-                }
+                onPress={() => handleCreateOption(() => handleOpenMediaQR('file'))}
                 style={({ pressed }) => [
                   styles.createOptionRow,
                   {
@@ -703,11 +705,7 @@ export const HomeScreen: React.FC = () => {
 
               {/* 3b. Video QR */}
               <Pressable
-                onPress={() =>
-                  handleCreateOption(() =>
-                    navigation.navigate('GeneratorForm', { type: 'video' })
-                  )
-                }
+                onPress={() => handleCreateOption(() => handleOpenMediaQR('video'))}
                 style={({ pressed }) => [
                   styles.createOptionRow,
                   {
@@ -736,11 +734,7 @@ export const HomeScreen: React.FC = () => {
 
               {/* 3c. Audio QR */}
               <Pressable
-                onPress={() =>
-                  handleCreateOption(() =>
-                    navigation.navigate('GeneratorForm', { type: 'audio' })
-                  )
-                }
+                onPress={() => handleCreateOption(() => handleOpenMediaQR('audio'))}
                 style={({ pressed }) => [
                   styles.createOptionRow,
                   {
@@ -943,54 +937,101 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   greetingSection: {
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: spacing.md,
-    marginTop: spacing.xs,
+    paddingHorizontal: spacing.xs,
   },
-  greetingTitle: {
-    fontSize: typography.fontSize['2xl'],
-    fontWeight: typography.fontWeight.bold,
+  welcomeMessageText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#475569',
+    textAlign: 'center',
+    lineHeight: 19,
+    marginBottom: 8,
   },
-  greetingSubtitle: {
-    fontSize: typography.fontSize.xs,
-    marginTop: 2,
-    fontWeight: typography.fontWeight.medium,
-  },
-  scannerHeroCard: {
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: spacing.base,
-    marginBottom: spacing.md,
-    elevation: 2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-  },
-  scannerHeroTop: {
+  greetingTimeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
+    justifyContent: 'center',
+    gap: 8,
   },
-  scannerIconWrapper: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+  greetingIconBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     backgroundColor: '#ECFDF5',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+  },
+  greetingTitle: {
+    fontSize: 19,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.2,
+  },
+  liveTimePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: borderRadius.full,
+    gap: 5,
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#10B981',
+  },
+  liveTimeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  scannerHeroCard: {
+    borderRadius: 22,
+    borderWidth: 1,
+    paddingVertical: 20,
+    paddingHorizontal: spacing.base,
+    marginBottom: spacing.md + 2,
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+  },
+  scannerCenteredContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  scannerIconWrapper: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: '#ECFDF5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
   },
   scannerHeroTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    flex: 1,
+    fontSize: 19,
+    fontWeight: '800',
+    textAlign: 'center',
   },
   scanNowBtn: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#059669',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 13,
+    paddingHorizontal: 20,
     borderRadius: 14,
     gap: 8,
   },

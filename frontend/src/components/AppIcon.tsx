@@ -57,7 +57,10 @@ export type IconName =
   | 'notifications'
   | 'notifications-outline'
   | 'checkmark-circle'
-  | 'information-circle';
+  | 'information-circle'
+  | 'sunny-outline'
+  | 'partly-sunny-outline'
+  | 'moon-outline';
 
 interface AppIconProps {
   name: IconName | string;

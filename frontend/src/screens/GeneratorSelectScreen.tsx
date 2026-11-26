@@ -10,6 +10,7 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { useTheme } from '../theme/ThemeContext';
 import { typography, spacing } from '../theme/typography';
 import { QRType } from '../types/qr';
+import { isMediaQRType, pickMediaForQRType } from '../utils/mediaPicker';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -24,7 +25,14 @@ export const GeneratorSelectScreen: React.FC = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
 
-  const handleSelectType = (type: QRType) => {
+  const handleSelectType = async (type: QRType) => {
+    if (isMediaQRType(type)) {
+      const picked = await pickMediaForQRType(type);
+      if (picked) {
+        navigation.navigate('GeneratorForm', { type, initialMedia: picked });
+      }
+      return;
+    }
     navigation.navigate('GeneratorForm', { type });
   };
 

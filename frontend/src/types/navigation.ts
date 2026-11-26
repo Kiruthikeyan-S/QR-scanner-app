@@ -22,6 +22,7 @@ export type RootStackParamList = {
   GeneratorSelect: undefined;
   GeneratorForm: {
     type: QRType;
+    initialMedia?: import('../utils/mediaPicker').PickedMediaFile;
   };
   QRPreview: {
     type: QRType;
