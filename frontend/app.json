@@ -59,7 +59,11 @@
         }
       ],
       "expo-video",
-      "expo-audio"
+      "expo-audio",
+      "expo-font",
+      "expo-sharing",
+      "expo-status-bar",
+      "expo-web-browser"
     ],
     "web": {
       "favicon": "./assets/favicon.png"
