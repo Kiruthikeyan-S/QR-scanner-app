@@ -47,7 +47,12 @@ export const HomeScreen: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const getTimeGreetingInfo = (): { greeting: string; icon: IconName; timeLabel: string } => {
+  const getTimeGreetingInfo = (): {
+    greeting: string;
+    subtitle: string;
+    icon: IconName;
+    timeLabel: string;
+  } => {
     const hour = now.getHours();
     const timeLabel = now.toLocaleTimeString([], {
       hour: 'numeric',
@@ -56,12 +61,35 @@ export const HomeScreen: React.FC = () => {
     });
 
     if (hour >= 5 && hour < 12) {
-      return { greeting: 'Good Morning', icon: 'sunny-outline', timeLabel };
+      return {
+        greeting: 'Good Morning',
+        subtitle: "Hi, it's nice to see you again",
+        icon: 'sunny-outline',
+        timeLabel,
+      };
     }
     if (hour >= 12 && hour < 17) {
-      return { greeting: 'Good Afternoon', icon: 'partly-sunny-outline', timeLabel };
+      return {
+        greeting: 'Good Afternoon',
+        subtitle: "Hi, it's nice to see you again",
+        icon: 'partly-sunny-outline',
+        timeLabel,
+      };
     }
-    return { greeting: 'Good Evening', icon: 'moon-outline', timeLabel };
+    if (hour >= 17 && hour < 22) {
+      return {
+        greeting: 'Good Evening',
+        subtitle: "Hi, it's nice to see you again",
+        icon: 'moon-outline',
+        timeLabel,
+      };
+    }
+    return {
+      greeting: "Hi, it's nice to see you again",
+      subtitle: "It's Qrinova — just scan, read, and enjoy",
+      icon: 'moon-outline',
+      timeLabel,
+    };
   };
 
   const handleOpenMediaQR = async (mediaType: MediaQRType) => {
@@ -174,21 +202,15 @@ export const HomeScreen: React.FC = () => {
           />
         }
       >
-        {/* HERO WELCOME & LIVE TIME GREETING */}
+        {/* HERO WELCOME & LIVE TIME GREETING (ABOVE SCANNER CARD) */}
         <View style={styles.greetingSection}>
-          <Text style={styles.welcomeMessageText}>
-            Hi, it's Qrinova — just scan, read, and enjoy the message
-          </Text>
-          <View style={styles.greetingTimeRow}>
-            <View style={styles.greetingIconBadge}>
-              <AppIcon name={greetingInfo.icon} size={15} color="#059669" />
-            </View>
-            <Text style={styles.greetingTitle}>{greetingInfo.greeting}</Text>
-            <View style={styles.liveTimePill}>
-              <View style={styles.liveDot} />
-              <Text style={styles.liveTimeText}>{greetingInfo.timeLabel}</Text>
-            </View>
+          <View style={styles.liveTimePill}>
+            <AppIcon name={greetingInfo.icon} size={14} color="#059669" />
+            <Text style={styles.liveTimeText}>{greetingInfo.timeLabel}</Text>
+            <View style={styles.liveDot} />
           </View>
+          <Text style={styles.greetingTitle}>{greetingInfo.greeting}</Text>
+          <Text style={styles.welcomeMessageText}>{greetingInfo.subtitle}</Text>
         </View>
 
         {/* CENTERED SCANNER SECTION */}
@@ -213,6 +235,9 @@ export const HomeScreen: React.FC = () => {
             </View>
             <Text style={[styles.scannerHeroTitle, { color: '#0F172A' }]}>
               Scan QR & Barcode
+            </Text>
+            <Text style={styles.scannerTagline}>
+              Hi, it's Qrinova — just scan, read, and enjoy the message
             </Text>
           </View>
 
@@ -939,65 +964,52 @@ const styles = StyleSheet.create({
   greetingSection: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacing.md + 2,
     paddingHorizontal: spacing.xs,
-  },
-  welcomeMessageText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#475569',
-    textAlign: 'center',
-    lineHeight: 19,
-    marginBottom: 8,
-  },
-  greetingTimeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  greetingIconBadge: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: '#ECFDF5',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  greetingTitle: {
-    fontSize: 19,
-    fontWeight: '800',
-    color: '#0F172A',
-    letterSpacing: -0.2,
   },
   liveTimePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#ECFDF5',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    paddingHorizontal: 9,
+    borderColor: '#D1FAE5',
+    paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: borderRadius.full,
-    gap: 5,
+    gap: 6,
+    marginBottom: 8,
   },
   liveDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#10B981',
+    backgroundColor: '#059669',
   },
   liveTimeText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#475569',
+    color: '#059669',
+  },
+  greetingTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0F172A',
+    textAlign: 'center',
+    letterSpacing: -0.3,
+  },
+  welcomeMessageText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#64748B',
+    textAlign: 'center',
+    marginTop: 3,
   },
   scannerHeroCard: {
     borderRadius: 22,
     borderWidth: 1,
-    paddingVertical: 20,
-    paddingHorizontal: spacing.base,
-    marginBottom: spacing.md + 2,
+    paddingVertical: 22,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md + 4,
     alignItems: 'center',
     elevation: 2,
     shadowColor: '#0F172A',
@@ -1011,9 +1023,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   scannerIconWrapper: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
+    width: 58,
+    height: 58,
+    borderRadius: 19,
     backgroundColor: '#ECFDF5',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1024,14 +1036,23 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     textAlign: 'center',
   },
+  scannerTagline: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#64748B',
+    textAlign: 'center',
+    marginTop: 4,
+    lineHeight: 17,
+  },
   scanNowBtn: {
+    minWidth: 200,
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#059669',
     paddingVertical: 13,
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     borderRadius: 14,
     gap: 8,
   },
