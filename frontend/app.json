@@ -27,7 +27,11 @@
         "INTERNET",
         "CAMERA",
         "android.permission.INTERNET",
-        "android.permission.CAMERA"
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ],
       "blockedPermissions": [
         "android.permission.READ_MEDIA_IMAGES",
@@ -70,8 +74,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "02cb596f-bccc-4e9c-ac1a-072f92e12b9e"
+        "projectId": "9cc8effa-41ff-4748-9d2a-73d2c744d95f"
       }
-    }
+    },
+    "owner": "kiruthikeyan"
   }
 }
