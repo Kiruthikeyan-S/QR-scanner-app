@@ -40,11 +40,12 @@ export function useNetwork() {
         loading: false,
       });
     } catch (e) {
+      // Do not falsely lock the app offline if network state query is restricted by OS permissions
       setNetworkInfo({
-        isConnected: false,
-        isInternetReachable: false,
-        networkType: 'NONE',
-        ipAddress: '',
+        isConnected: true,
+        isInternetReachable: true,
+        networkType: 'Connected',
+        ipAddress: 'Unavailable',
         loading: false,
       });
     }

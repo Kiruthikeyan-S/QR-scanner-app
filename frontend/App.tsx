@@ -71,9 +71,15 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
 const AppContent: React.FC = () => {
   const { theme, isDark } = useTheme();
-  const [fontsLoaded] = useFonts(Ionicons.font);
+  const [fontsLoaded, fontError] = useFonts(Ionicons.font);
+  const [fontTimedOut, setFontTimedOut] = React.useState(false);
 
-  if (!fontsLoaded) {
+  React.useEffect(() => {
+    const timer = setTimeout(() => setFontTimedOut(true), 2500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!fontsLoaded && !fontError && !fontTimedOut) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
         <ActivityIndicator size="large" color={theme.primary} />
